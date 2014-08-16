@@ -17,7 +17,7 @@ case $(hostname) in
 		hostname="veronica"
 	;;
 
-	"n21" )
+	"n2"* )
 		color_user_host="\e[38;5;64m"  # lime green
 		hostname="iandunn.name"
 	;;
@@ -35,6 +35,11 @@ case $(hostname) in
 	"iandunn.dev.dfw.wordpress.com" )
 		color_user_host="\e[0;33m"     # yellow
 		hostname="iandunn.dev.dfw.wordpress.com"
+	;;
+
+	* )
+		color_user_host="\033[m"
+		hostname=$(hostname)
 	;;
 esac
 
