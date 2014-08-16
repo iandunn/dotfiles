@@ -99,7 +99,7 @@ function svn_status {
 	branch="${color_branch}$(svn info | sed -n "/^URL:/s/.*\///p")${color_reset}"
 
 	# Determine if clean or dirty
-	if [[ $(svn stat) ]]; then
+	if [[ $(svn stat --ignore-externals) ]]; then
 		state="${color_dirty}dirty${color_reset}"
 	else
 		state="${color_clean}clean${color_reset}"
