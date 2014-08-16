@@ -72,10 +72,11 @@ function git_status {
 	fi
 
 	# Determine if clean or dirty
-	if [[ $(git status 2> /dev/null | tail -n1) != "nothing to commit, working directory clean" ]]; then
-		state="${color_dirty}dirty${color_reset}"
-	else
+	state=$(git status 2> /dev/null | tail -n1)
+	if [[ $state == *"working directory clean"* ]]; then
 		state="${color_clean}clean${color_reset}"
+	else
+		state="${color_dirty}dirty${color_reset}"
 	fi
 
 	echo -n "$branch is $state"
