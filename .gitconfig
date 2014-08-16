@@ -1,6 +1,7 @@
 [user]
 	name = Ian Dunn
 	email = ian@iandunn.name
+
 [credential]
 	helper = osxkeychain
 
@@ -24,5 +25,6 @@ cmd = '/Applications/DeltaWalker.app/Contents/MacOS/git-merge' "$LOCAL" "$REMOTE
 
 [core]
 	excludesfile = /Users/ian/.gitignore_global
+
 [color]
 	ui = true

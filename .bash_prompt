@@ -59,7 +59,7 @@ function git_status {
 	$(in_git_repo)
 	if [[ "$?" != 0 ]]; then
 		exit
-    fi
+	fi
 
 	echo -n "\nGit "
 
