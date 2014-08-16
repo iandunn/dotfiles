@@ -28,4 +28,5 @@ esac
 
 # Miscellaneous
 alias wp='wp --path=wordpress'
+alias wpd='wp --path=.'
 alias patch='patch --no-backup-if-mismatch'
