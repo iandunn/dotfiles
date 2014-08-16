@@ -18,7 +18,7 @@ case $(hostname) in
 	;;
 
 	"n21" )
-		color_user_host="\e[38;5;53m"  # purple
+		color_user_host="\e[38;5;64m"  # lime green
 		hostname="iandunn.name"
 	;;
 
