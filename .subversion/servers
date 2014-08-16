@@ -1,0 +1,12 @@
+[groups]
+wordpress-org = *.wordpress.org
+wordpress-com = *.wordpress.com
+
+[wordpress-org]
+username = iandunn
+
+[wordpress-com]
+username = iandunn
+
+[global]
+

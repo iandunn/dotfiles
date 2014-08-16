@@ -1,0 +1,28 @@
+[user]
+	name = Ian Dunn
+	email = ian@iandunn.name
+[credential]
+	helper = osxkeychain
+
+[diff]
+tool = dw
+#external = '/Applications/DeltaWalker.app/Contents/MacOS/git-diff'
+
+[difftool]
+prompt = false
+
+[difftool "dw"]
+cmd = '/Applications/DeltaWalker.app/Contents/MacOS/git-diff' "$LOCAL" "$REMOTE"
+# remote doesn't show up
+
+
+[merge]
+tool = deltawalker
+
+[mergetool "deltawalker"]
+cmd = '/Applications/DeltaWalker.app/Contents/MacOS/git-merge' "$LOCAL" "$REMOTE" "$BASE" "$MERGED"
+
+[core]
+	excludesfile = /Users/ian/.gitignore_global
+[color]
+	ui = true
