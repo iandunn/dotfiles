@@ -37,6 +37,11 @@ case $(hostname) in
 		hostname="iandunn.dev.dfw.wordpress.com"
 	;;
 
+	"holly" )
+		color_user_host="\e[0;53m"     # purple
+		hostname="carlybish.com"
+	;;
+
 	* )
 		color_user_host="\033[m"
 		hostname=$(hostname)
