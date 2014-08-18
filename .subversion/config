@@ -1,3 +1,5 @@
+# TODO figure out why symlinks don't work for this and ssh
+
 [auth]
 
 [helpers]
