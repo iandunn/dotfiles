@@ -38,7 +38,7 @@ case $(hostname) in
 	;;
 
 	"holly" )
-		color_user_host="\e[0;53m"     # purple
+		color_user_host="\e[38;5;53m"  # purple
 		hostname="carlybish.com"
 	;;
 
