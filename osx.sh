@@ -23,7 +23,6 @@ defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 defaults write com.apple.finder EmptyTrashSecurely -bool true
 
 
-
 ###
 ### Misc
 ###
@@ -36,3 +35,6 @@ defaults write com.apple.finder EmptyTrashSecurely -bool true
 
 # Save screenshots to the Downloads directory instead of the Desktop
 defaults write com.apple.screencapture location ~/Downloads/
+
+# Don't change spaces when closing an application
+defaults write com.apple.Dock workspaces-auto-swoosh -bool NO
