@@ -38,3 +38,6 @@ defaults write com.apple.screencapture location ~/Downloads/
 
 # Don't change spaces when closing an application
 defaults write com.apple.Dock workspaces-auto-swoosh -bool NO
+
+# Repeat characters when holding down a key, intead of showing accent dialog box
+defaults write -g ApplePressAndHoldEnabled -bool false
