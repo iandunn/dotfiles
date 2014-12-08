@@ -17,6 +17,7 @@ case $(hostname) in
 		alias vhosts='cd /Users/ian/vhosts/'
 		alias wpver='find /Users/ian/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
 		alias vvv='cd /Users/ian/vhosts/varying-vagrant-vagrants/www/'
+		alias wme='cd /Users/ian/vhosts/wordpress-meta-environment/www/wordpress-meta-environment'
 	;;
 
 	"veronica" )
