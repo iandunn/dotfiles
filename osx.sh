@@ -22,6 +22,9 @@ defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 # Empty Trash securely by default
 defaults write com.apple.finder EmptyTrashSecurely -bool true
 
+# Reduce transparency of the Finder sidebar
+defaults write com.apple.universalaccess reduceTransparency -boolean true
+
 
 ###
 ### Misc
