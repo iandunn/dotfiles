@@ -14,7 +14,7 @@ case $(hostname) in
 
 	"veronica" )
 		color_user_host="\e[38;5;166m" # orange
-		hostname="veronica"
+		hostname="veronica.dev"
 	;;
 
 	"n2"* )
