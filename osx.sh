@@ -44,3 +44,9 @@ defaults write com.apple.Dock workspaces-auto-swoosh -bool NO
 
 # Repeat characters when holding down a key, intead of showing accent dialog box
 defaults write -g ApplePressAndHoldEnabled -bool false
+
+# Check for software updates daily instead of once per week
+defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1
+
+# Limit Time Machine to 400GB, because it shares the disk with other things
+sudo defaults write /Library/Preferences/com.apple.TimeMachine MaxSize 400000
