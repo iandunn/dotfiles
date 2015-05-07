@@ -109,10 +109,8 @@ function svn_status {
 	branch="${color_branch}$(svn info | sed -n "/^URL:/s/.*\///p")${color_reset}"		# TODO - this is wrong if in a subdir of trunk. worst case can search for 'trunk' and assume 'trunk', then 'branches' and assume 'branches/x.y', same for 'tags'
 
 	# Determine if clean or dirty
-	if [[ $(svn stat --ignore-externals) ]]; then
+	if [[ $(svn stat --ignore-externals | grep -v 'X       ' ) ]]; then
 		state="${color_dirty}dirty${color_reset}"
-
-		# todo false positive when it outputs an X for externals. can't assume that !empty means clean. maybe strip any lines starting with `X       ` before checking if there's anything?
 	else
 		state="${color_clean}clean${color_reset}"
 	fi
