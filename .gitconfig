@@ -5,6 +5,11 @@
 [credential]
 	helper = osxkeychain
 
+[alias]
+co = checkout
+ci = commit
+stat = status
+
 [diff]
 tool = dw
 #external = '/Applications/DeltaWalker.app/Contents/MacOS/git-diff'
