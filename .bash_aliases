@@ -9,6 +9,10 @@ alias rm='rm -i'
 alias tar='tar --exclude-vcs'
 alias locate='locate -i'
 
+# Miscellaneous
+alias wp='wp --path=wordpress'
+alias wpd='wp --path=.'
+alias patch='patch --no-backup-if-mismatch'
 
 # Host-specific aliases
 case $(hostname) in
@@ -25,10 +29,9 @@ case $(hostname) in
 		alias codeception='php /srv/tools/codecept.phar --config=.'
 		alias makepot='php /srv/www/wp-develop.dev/tools/i18n/makepot.php'
 	;;
+
+	"iandunn.dev.dfw.wordpress.com" )
+		unalias wp
+		unalias wpd
+	;;
 esac
-
-
-# Miscellaneous
-alias wp='wp --path=wordpress'
-alias wpd='wp --path=.'
-alias patch='patch --no-backup-if-mismatch'
