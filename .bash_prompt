@@ -73,13 +73,17 @@ function git_status {
 
 	echo -n "\nGit "
 
-	# Get the current branch
+	# Get the current branch/tag
 	ref="$(git symbolic-ref HEAD 2> /dev/null | sed -e 's/refs\/heads\///')"
 	if [[ "$ref" == "" ]]; then
-		branch="${color_branch}(no branch)${color_reset}"
-	else
-		branch="${color_branch}$ref${color_reset}"
+		ref="$(git describe --tags)"
+
+		if [[ "$ref" == "" ]]; then
+			$ref="(no branch)"
+		fi
 	fi
+
+	branch="${color_branch}$ref${color_reset}"
 
 	# Determine if clean or dirty
 	state=$(git status 2> /dev/null | tail -n1)
