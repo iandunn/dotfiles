@@ -21,6 +21,8 @@ prompt = false
 cmd = '/Applications/DeltaWalker.app/Contents/MacOS/git-diff' "$LOCAL" "$REMOTE"
 # remote doesn't show up
 
+[branch]
+	autosetuprebase = always
 
 [merge]
 tool = deltawalker
