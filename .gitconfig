@@ -6,29 +6,29 @@
 	helper = osxkeychain
 
 [alias]
-co = checkout
-ci = commit
-stat = status
+	co = checkout
+	ci = commit
+	stat = status
 
 [diff]
-tool = dw
-#external = '/Applications/DeltaWalker.app/Contents/MacOS/git-diff'
+	tool = dw
+	#external = '/Applications/DeltaWalker.app/Contents/MacOS/git-diff'
 
 [difftool]
-prompt = false
+	prompt = false
 
 [difftool "dw"]
-cmd = '/Applications/DeltaWalker.app/Contents/MacOS/git-diff' "$LOCAL" "$REMOTE"
-# remote doesn't show up
+	cmd = '/Applications/DeltaWalker.app/Contents/MacOS/git-diff' "$LOCAL" "$REMOTE"
+	# remote doesn't show up
 
 [branch]
 	autosetuprebase = always
 
 [merge]
-tool = deltawalker
+	tool = deltawalker
 
 [mergetool "deltawalker"]
-cmd = '/Applications/DeltaWalker.app/Contents/MacOS/git-merge' "$LOCAL" "$REMOTE" "$BASE" "$MERGED"
+	cmd = '/Applications/DeltaWalker.app/Contents/MacOS/git-merge' "$LOCAL" "$REMOTE" "$BASE" "$MERGED"
 
 [core]
 	excludesfile = /Users/ian/.gitignore_global
