@@ -1,4 +1,6 @@
+.sass-cache
 .svn
 .DS_Store
 .idea
 sandbox-functionality.php
+node_modules
