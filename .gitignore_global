@@ -4,3 +4,4 @@
 .idea
 sandbox-functionality.php
 node_modules
+*.css.map
