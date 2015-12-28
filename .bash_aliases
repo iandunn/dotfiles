@@ -24,7 +24,7 @@ case $(hostname) in
 		alias wme='cd /Users/ian/vhosts/vvv-wme/www/wordpress-meta-environment'
 	;;
 
-	"veronica" )
+	"vvv" )
 		alias vvv='cd /srv/www/'
 		alias codeception='php /srv/tools/codecept.phar --config=.'
 		alias makepot='php /srv/www/wp-develop.dev/tools/i18n/makepot.php'

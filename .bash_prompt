@@ -12,9 +12,8 @@ case $(hostname) in
 		hostname="macenzie"
 	;;
 
-	"veronica" )
+	"vvv" )
 		color_user_host="\e[38;5;166m" # orange
-		hostname="veronica.dev"
 	;;
 
 	"n2"* )
@@ -77,6 +76,8 @@ function git_status {
 	ref="$(git symbolic-ref HEAD 2> /dev/null | sed -e 's/refs\/heads\///')"
 	if [[ "$ref" == "" ]]; then
 		ref="$(git describe --tags)"
+
+		// todo if on individual commit, show the rev -- https://stackoverflow.com/questions/11168141/find-which-commit-is-currently-checked-out-in-git
 
 		if [[ "$ref" == "" ]]; then
 			$ref="(no branch)"
