@@ -30,6 +30,10 @@ case $(hostname) in
 		alias makepot='php /srv/www/wp-develop.dev/tools/i18n/makepot.php'
 	;;
 
+	"iandunn.dev.wordpress.org" )
+		alias deploy='deploy-dotorg.sh'
+	;;
+
 	"iandunn.dev.dfw.wordpress.com" )
 		unalias wp
 		unalias wpd
