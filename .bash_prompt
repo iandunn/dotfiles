@@ -52,8 +52,8 @@ function in_git_repo {
 	if [[ $(git rev-parse --is-inside-work-tree 2> /dev/null) == "true" ]]; then
 
 		# Return false if we're inside the VVV container, but not at the root and not in a separate leaf-level repo
-		if [[ $(git rev-parse --show-toplevel 2> /dev/null) == "/Users/ian/vhosts/varying-vagrant-vagrants" ]]; then
-			if [[ $(pwd) != "/Users/ian/vhosts/varying-vagrant-vagrants" ]]; then
+		if [[ $(git rev-parse --show-toplevel 2> /dev/null) == "/Users/ian/vhosts/vvv-personal" ]]; then
+			if [[ $(pwd) != "/Users/ian/vhosts/vvv-personal" ]]; then
 				return 1
 			fi
 		fi
