@@ -16,7 +16,7 @@ alias patch='patch --no-backup-if-mismatch'
 
 # Host-specific aliases
 case $(hostname) in
-	"macenzie.local" )
+	"macenzie" | "macenzie.local" )
 		alias ls='ls -a -G'
 		alias vhosts='cd /Users/ian/vhosts/'
 		alias wpver='find /Users/ian/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
