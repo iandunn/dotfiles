@@ -1,5 +1,3 @@
-# TODO figure out why symlinks don't work for this and ssh
-
 [auth]
 
 [helpers]
@@ -7,7 +5,7 @@
 [tunnels]
 
 [miscellany]
-global-ignores = .idea .git* .DS_Store debug.log sandbox-functionality.php node_modules
+global-ignores = .idea .git* .DS_Store debug.log sandbox-functionality sandbox-functionality.php node_modules
 
 [auto-props]
 
