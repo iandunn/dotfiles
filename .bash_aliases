@@ -30,6 +30,11 @@ case $(hostname) in
 		alias makepot='php /srv/www/wp-develop.dev/tools/i18n/makepot.php'
 	;;
 
+	# iandunn.name cluster
+	"n2"* )
+		alias wp='~/bin/wp'
+	;;
+
 	"iandunn.dev.wordpress.org" )
 		alias deploy='deploy-dotorg.sh'
 	;;
