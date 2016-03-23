@@ -112,7 +112,9 @@ function svn_status {
 	fi
 
 	# Get the current branch
-	branch="${color_branch}$(svn info | sed -n "/^URL:/s/.*\///p")${color_reset}"		# TODO - this is wrong if in a subdir of trunk. worst case can search for 'trunk' and assume 'trunk', then 'branches' and assume 'branches/x.y', same for 'tags'
+	branch=$(svn info | grep '^URL:' | egrep -o '(tags|branches)/[^/]+|trunk' | egrep -o '[^/]+$')
+	# TODO: if URL doesn't have tags|branches|trunk in it, then just use domain name? or maybe don't put anything at all?
+	branch="${color_branch}$branch${color_reset}"
 
 	# Determine if clean or dirty
 	if [[ $(svn stat --ignore-externals | grep -v 'X       ' ) ]]; then
