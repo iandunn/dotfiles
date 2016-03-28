@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO optimize this, because it's slow on large folders
+
 color_reset="\033[m"
 color_dirty="\033[1;31m"    # red
 color_clean="\033[1;32m"    # green
@@ -113,7 +115,9 @@ function svn_status {
 
 	# Get the current branch
 	branch=$(svn info | grep '^URL:' | egrep -o '(tags|branches)/[^/]+|trunk' | egrep -o '[^/]+$')
-	# TODO: if URL doesn't have tags|branches|trunk in it, then just use domain name? or maybe don't put anything at all?
+	if [[ -z $branch ]]; then
+		branch="trunk"
+	fi
 	branch="${color_branch}$branch${color_reset}"
 
 	# Determine if clean or dirty
