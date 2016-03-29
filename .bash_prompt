@@ -97,12 +97,14 @@ function git_status {
 }
 
 function svn_status {
-	if [[ ! $(svn info 2> /dev/null) ]]; then   # todo save result to var instead of running twice
+	SVN_INFO=$(svn info 2> /dev/null)
+
+	if [[ -z $SVN_INFO ]]; then
 		exit
 	fi
 
 	# Get the current branch
-	branch=$(svn info | grep '^URL:' | egrep -o '(tags|branches)/[^/]+|trunk' | egrep -o '[^/]+$')
+	branch=$(echo "$SVN_INFO" | grep '^URL:' | egrep -o '(tags|branches)/[^/]+|trunk' | egrep -o '[^/]+$')
 	if [[ -z $branch ]]; then
 		branch="trunk"
 	fi
