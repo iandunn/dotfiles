@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# TODO optimize this, because it's slow on large folders
-
 color_reset="\033[m"
 color_dirty="\033[1;31m"    # red
 color_clean="\033[1;32m"    # green
@@ -73,8 +71,6 @@ function git_status {
 		exit
 	fi
 
-	echo -n "\nGit "
-
 	# Get the current branch/tag
 	ref="$(git symbolic-ref HEAD 2> /dev/null | sed -e 's/refs\/heads\///')"
 	if [[ "$ref" == "" ]]; then
@@ -97,20 +93,12 @@ function git_status {
 		state="${color_dirty}dirty${color_reset}"
 	fi
 
-	echo -n "$branch is $state"
+	echo -n "Git $branch is $state"
 }
 
 function svn_status {
-	if [[ ! $(svn info 2> /dev/null) ]]; then
+	if [[ ! $(svn info 2> /dev/null) ]]; then   # todo save result to var instead of running twice
 		exit
-	fi
-
-	# If we're also in a Git repo, continue the existing line; otherwise, start a new line.
-	$(in_git_repo)
-	if [[ "$?" == 0 ]]; then
-		echo -n ", SVN "
-	else
-		echo -n "\nSVN "
 	fi
 
 	# Get the current branch
@@ -129,12 +117,27 @@ function svn_status {
 
 	# todo show whether repo is public or private? to help avoid accidentally commiting private to public
 
-	echo -n "$branch is $state"
+	echo -n "SVN $branch is $state"
+}
+
+function vcs_prompt {
+	GIT_PROMPT=$(git_status)
+	SVN_PROMPT=$(svn_status)
+
+	if [[ -n $GIT_PROMPT ]]; then
+		echo -n "\n$GIT_PROMPT"
+
+		if [[ -n $SVN_PROMPT ]]; then
+			echo -n ", $SVN_PROMPT"
+		fi
+	elif [[ -n $SVN_PROMPT ]]; then
+		echo "\n$SVN_PROMPT"
+	fi
 }
 
 function set_prompt {
 	export PS1="\n${color_user_host}\u${color_reset} @ ${color_user_host}$hostname${color_reset} in ${color_folder}\w${color_reset} \
-	$(git_status)$(svn_status) \
+	$(vcs_prompt) \
 	\n> "
 }
 
