@@ -14,6 +14,10 @@ alias wp='wp --path=wordpress'
 alias wpd='wp --path=.'
 alias patch='patch --no-backup-if-mismatch'
 
+# remove noise from externals
+# todo convert this to a single regex
+alias svn-stat-pruned="svn stat |grep -v 'X   ' |grep -v 'Performing status on ex' |grep -v -e '^$'"
+
 # Host-specific aliases
 case $(hostname) in
 	"macenzie" | "macenzie.local" )
