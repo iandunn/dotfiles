@@ -111,6 +111,8 @@ function svn_status {
 	branch="${color_branch}$branch${color_reset}"
 
 	# Determine if clean or dirty
+	# todo svn stat is the slowest part. any way to optimize this?
+	# todo this will report clean if an external is modified, which could lead to missed errors. too slow to include externals though? maybe just warn that it's only internal repo that's clean?
 	if [[ $(svn stat --ignore-externals | grep -v 'X       ' ) ]]; then
 		state="${color_dirty}dirty${color_reset}"
 	else
