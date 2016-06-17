@@ -31,7 +31,10 @@
 	cmd = '/Applications/DeltaWalker.app/Contents/MacOS/git-merge' "$LOCAL" "$REMOTE" "$BASE" "$MERGED"
 
 [core]
-	excludesfile = /Users/ian/.gitignore_global
+	excludesfile = ~/.gitignore_global
+
+[push]
+	default = simple
 
 [color]
 	ui = true
