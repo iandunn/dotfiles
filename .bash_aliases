@@ -2,6 +2,7 @@
 alias ls='ls -a --color'
 alias ll='ls -lh'
 alias nano='nano -w'
+alias less='less -S'
 alias df='df -h'
 alias du='du -h'
 alias grep='grep -i'
@@ -10,8 +11,6 @@ alias tar='tar --exclude-vcs'
 alias locate='locate -i'
 
 # Miscellaneous
-alias wp='wp --path=wordpress'
-alias wpd='wp --path=.'
 alias patch='patch --no-backup-if-mismatch'
 
 # remove noise from externals
@@ -41,10 +40,5 @@ case $(hostname) in
 
 	"iandunn.dev.wordpress.org" )
 		alias deploy='deploy-dotorg.sh'
-	;;
-
-	"iandunn.dev.dfw.wordpress.com" )
-		unalias wp
-		unalias wpd
 	;;
 esac
