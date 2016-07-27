@@ -25,6 +25,7 @@ case $(hostname) in
 		alias wpver='find /Users/ian/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
 		alias vvv='cd /Users/ian/vhosts/vvv-personal/www/'
 		alias wme='cd /Users/ian/vhosts/vvv-wme/www/wordpress-meta-environment'
+		alias deploy-wordcamp="ssh wordcamp.org 'svn up '"
 	;;
 
 	"vvv" )
