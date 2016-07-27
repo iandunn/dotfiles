@@ -87,7 +87,7 @@ function git_status {
 	branch="${color_branch}$ref${color_reset}"
 
 	# Determine if clean or dirty
-	state=$(git status 2> /dev/null | tail -n1)
+	state=$(git status --long 2> /dev/null | tail -n1)
 	if [[ $state == *"working directory clean"* ]]; then
 		state="${color_clean}clean${color_reset}"
 	else
