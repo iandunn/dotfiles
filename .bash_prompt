@@ -76,7 +76,8 @@ function git_status {
 	if [[ "$ref" == "" ]]; then
 		ref="$(git describe --tags)"
 
-		// todo if on individual commit, show the rev -- https://stackoverflow.com/questions/11168141/find-which-commit-is-currently-checked-out-in-git
+		# todo if on individual commit, show the rev -- https://stackoverflow.com/questions/11168141/find-which-commit-is-currently-checked-out-in-git
+		# todo if tag, getting a "-bash: //: Is a directory" error
 
 		if [[ "$ref" == "" ]]; then
 			$ref="(no branch)"
@@ -93,7 +94,19 @@ function git_status {
 		state="${color_dirty}dirty${color_reset}"
 	fi
 
-	echo -n "Git $branch is $state"
+	if [[ -d "$(git rev-parse --show-toplevel)/.git/svn" ]]; then
+		flavor="git-svn"
+	else
+		flavor="Git"
+	fi
+
+	echo -n "$flavor $branch is $state"
+
+	# todo maybe add remote, like
+		# git-svn wordcamp.svn.wordpress.org:master
+		# git-svn meta.svn.wordpress.org:master
+		# Git github.com:master is clean - how to handle multiple remotes?
+	# add paths too? sometimes that's helpful, like with github.com
 }
 
 function svn_status {
