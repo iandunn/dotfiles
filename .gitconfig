@@ -1,14 +1,14 @@
 [user]
-	name = Ian Dunn
+	name  = Ian Dunn
 	email = ian@iandunn.name
 
 [credential]
 	helper = osxkeychain
 
 [alias]
-	co = checkout
-	ci = commit
-	stat = status
+	co       = checkout
+	ci       = commit
+	stat     = status
 
 [diff]
 	tool = dw
