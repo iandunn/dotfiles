@@ -34,6 +34,12 @@ case $(hostname) in
 		alias wpver='find /Users/ian/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
 		alias vvv='cd /Users/ian/vhosts/vvv-personal/www/'
 		alias wme='cd /Users/ian/vhosts/vvv-wme/www/wordpress-meta-environment'
+
+		# On its own, this will ask for a password for private repositories, and the password characters will be
+		# shown on the screen instead of being masked. To avoid that, setup something like this wrapper on the
+		# server:
+		#
+		# https://gist.github.com/iandunn/0d33e0abc769dd3a8c4814a80a686dd9#
 		alias deploy-wordcamp="ssh wordcamp.org 'svn up '"
 	;;
 
