@@ -6,7 +6,7 @@ export SVN_EDITOR="nano -w"
 
 # Host-specific environmental variables
 case $(hostname) in
-	"iandunn.name" )
+	"iandunn.name" | "n2"* )
 		export PATH="$HOME/bin:$PATH"
 	;;
 esac

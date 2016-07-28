@@ -44,7 +44,7 @@ case $(hostname) in
 	;;
 
 	# iandunn.name cluster
-	"n2"* )
+	"iandunn.name" | "n2"* )
 		alias wp='~/bin/wp'
 	;;
 
