@@ -9,6 +9,7 @@
 	co       = checkout
 	ci       = commit
 	stat     = status
+	statlong = status --long
 
 [diff]
 	tool = dw
