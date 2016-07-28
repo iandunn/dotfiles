@@ -3,6 +3,7 @@
 .DS_Store
 .idea
 sandbox-functionality.php
+sandbox-functionality/
 node_modules
 npm-debug.log
 *.css.map
