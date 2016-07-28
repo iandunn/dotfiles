@@ -125,6 +125,9 @@ function svn_status {
 
 	# Determine if clean or dirty
 	# todo svn stat is the slowest part. any way to optimize this?
+	# maybe can cache some of it in env variables? prob not 'cause status can change so often, but worth considering
+	# search for other people's svn bash_prompt's and look at how they do it
+	# could also post question on stackoverflow for help
 	# todo this will report clean if an external is modified, which could lead to missed errors. too slow to include externals though? maybe just warn that it's only internal repo that's clean?
 	if [[ $(svn stat --ignore-externals | grep -v 'X       ' ) ]]; then
 		state="${color_dirty}dirty${color_reset}"

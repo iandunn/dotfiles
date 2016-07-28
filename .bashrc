@@ -10,3 +10,6 @@ case $(hostname) in
 		export PATH="$HOME/bin:$PATH"
 	;;
 esac
+
+#todo source bash-completion, but need to setup path per environment. dont leak root paths
+	# maybe more proper to go in .bash_profile that .bashrc

@@ -9,9 +9,18 @@ alias grep='grep -i'
 alias rm='rm -i'
 alias tar='tar --exclude-vcs'
 alias locate='locate -i'
+# todo works but throws usage notice - alias tail='tail -n40'
 
 # Miscellaneous
 alias patch='patch --no-backup-if-mismatch'
+
+# todo works manually but not as alias
+# todo also grep for begining of sentance, to avoid false matches
+# alias svn-add-untracked="svn add $(svn status | grep ? | awk '{print $2}')"
+
+# todo works manually but not as alias
+#alias svn-revert-clean="svn revert -R . && rm -rf $(svn status | grep ? | awk '{print $2}')"
+
 
 # remove noise from externals
 # todo convert this to a single regex
