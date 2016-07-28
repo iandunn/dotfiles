@@ -4,8 +4,10 @@
 	<dict>
 		<key>Label</key>
 		<string>user.launchkeep.tunnelblick</string>
+
 		<key>KeepAlive</key>
 		<true/>
+
 		<key>Program</key>
 		<string>/Applications/Tunnelblick.app/Contents/MacOS/Tunnelblick</string>
 	</dict>
