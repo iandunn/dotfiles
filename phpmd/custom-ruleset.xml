@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<ruleset name="My custom PHPMD ruleset"
+		 xmlns="http://pmd.sf.net/ruleset/1.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd"
+		 xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd">
+
+	<rule ref="rulesets/cleancode.xml" />
+	<rule ref="rulesets/codesize.xml" />
+
+	<rule ref="rulesets/unusedcode.xml">
+		<!-- It's nice to know what variables are passed from WP hooks, even if we're not using them right now.
+		     Also, PHP doesn't support named parameters, so sometimes it's unavoidable  -->
+		<exclude name="UnusedFormalParameter" />
+
+		<!-- Too many false positives when a controller function creates a variable, and then includes a view file
+			 which uses the variable -->
+		<exclude name="UnusedLocalVariable" />
+	</rule>
+
+	<rule ref="rulesets/design.xml">
+		<!-- There are proper cases for this, like exit()'ing after a redirect -->
+		<exclude name="ExitExpression" />
+	</rule>
+
+	<rule ref="rulesets/naming.xml">
+		<!-- Variable names should be descriptive and self-documenting -->
+		<exclude name="LongVariable" />
+	</rule>
+
+	<!--
+		camelCaseIsHardToReadDammit! And I need a framework just to access $_GET?
+		<rule ref="rulesets/controversial.xml" />
+	-->
+</ruleset>
