@@ -5,6 +5,11 @@
 		 xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd"
 		 xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd">
 
+	<!-- todo
+	maybe work out better way to share dotfiles between vms, like shared folder.
+	rather than having to git pull/git push unfinished stuff, or deltawalker
+	-->
+
 	<rule ref="rulesets/cleancode.xml">
 		<!--
 			Returning early is more readable, but can make a function harder to maintain. A single point of
@@ -16,6 +21,18 @@
 	</rule>
 
 	<rule ref="rulesets/codesize.xml" />
+
+	<rule ref="rulesets/codesize.xml/ExcessiveMethodLength">
+		<properties>
+			<property name="minimum" value="70" /> <!-- todo tweak this value -->
+		</properties>
+	</rule>
+
+	<rule ref="rulesets/codesize.xml/CyclomaticComplexity">
+		<properties>
+			<property name="reportLevel" value="8" /> <!-- todo tweak this value -->
+		</properties>
+	</rule>
 
 	<!-- todo exclude staticaccess? or really should be using dependency injection? -->
 
