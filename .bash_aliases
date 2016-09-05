@@ -54,6 +54,7 @@ case $(hostname) in
 		alias vvv='cd /srv/www/'
 		alias codeception='php /srv/tools/codecept.phar --config=.'
 		alias makepot='php /srv/www/wp-develop.dev/tools/i18n/makepot.php'
+		alias phpcs='phpcs -a'
 	;;
 
 	# iandunn.name cluster
