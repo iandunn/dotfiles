@@ -10,6 +10,7 @@
 	rather than having to git pull/git push unfinished stuff, or deltawalker
 	-->
 
+
 	<rule ref="rulesets/cleancode.xml">
 		<!--
 			Returning early is more readable, but can make a function harder to maintain. A single point of
@@ -18,6 +19,9 @@
 			comments.
 		-->
 		<exclude name="ElseExpression" />
+
+		<!-- This is too strict for me right now -->
+		<exclude name="StaticAccess" />
 	</rule>
 
 	<rule ref="rulesets/codesize.xml" />
@@ -33,8 +37,6 @@
 			<property name="reportLevel" value="8" /> <!-- todo tweak this value -->
 		</properties>
 	</rule>
-
-	<!-- todo exclude staticaccess? or really should be using dependency injection? -->
 
 	<rule ref="rulesets/unusedcode.xml">
 		<!-- It's nice to know what variables are passed from WP hooks, even if we're not using them right now.
