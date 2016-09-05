@@ -44,7 +44,7 @@ case $(hostname) in
 		# server:
 		#
 		# https://gist.github.com/iandunn/0d33e0abc769dd3a8c4814a80a686dd9#
-		alias deploy-wordcamp="ssh wordcamp.org 'svn up '"
+		alias deploy="ssh wordcamp.org 'deploy '"
 	;;
 
 	"vvv" )
