@@ -26,8 +26,9 @@ alias patch='patch --no-backup-if-mismatch'
 
 
 # remove noise from externals
+alias prune-svn-stat="grep -v 'X   ' |grep -v 'Performing status on ex' |grep -v -e '^$'"
 # todo convert this to a single regex
-alias svn-stat-pruned="svn stat |grep -v 'X   ' |grep -v 'Performing status on ex' |grep -v -e '^$'"
+alias svn-stat-pruned="svn stat |prune-svn-stat"
 
 # Host-specific aliases
 case $(hostname) in
