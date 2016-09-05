@@ -10,6 +10,9 @@ alias rm='rm -i'
 alias tar='tar --exclude-vcs'
 alias locate='locate -i'
 # todo works but throws usage notice - alias tail='tail -n40'
+alias ..="cd .."
+alias ...="cd .. && cd .."
+alias ....="cd .. && cd .. && cd .."
 
 # Miscellaneous
 alias patch='patch --no-backup-if-mismatch'
