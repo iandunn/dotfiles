@@ -1,8 +1,8 @@
 # Core utilities
 alias ls='ls -a --color'
 alias ll='ls -lh'
-alias nano='nano -w'
-alias less='less -S'
+alias nano='nano -wc'
+alias less='less -SN'
 alias df='df -h'
 alias du='du -h'
 alias grep='grep -i'
