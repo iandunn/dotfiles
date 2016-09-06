@@ -14,6 +14,16 @@ alias ..="cd .."
 alias ...="cd .. && cd .."
 alias ....="cd .. && cd .. && cd .."
 
+alias curl-time='curl -w "
+DNS Lookup:    %{time_namelookup}
+TCP connect:   %{time_connect}
+TLS handshake: %{time_appconnect}
+Pre-transfer:  %{time_pretransfer}
+Redirection:   %{time_redirect}
+First byte:    %{time_starttransfer}
+Total:         %{time_total}
+"'
+
 # Miscellaneous
 alias patch='patch --no-backup-if-mismatch'
 
