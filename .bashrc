@@ -77,10 +77,13 @@ function svn-bump-ext-commit {
 	printf "\nCommit message: [$message]: "
 	read new_message
 
-	if [[ "" != $new_message ]]; then
+	# Enter and "y" both mean that the user wants to accept the default message
+	if [[ "" != $new_message && "y" != $new_message ]]; then
 		message=$new_message
 	fi
 
 	eval "svn ci --depth empty -m '$message'"
+
+	printf "\nDeploying...\n"
 	eval "deploy wp-content"
 }
