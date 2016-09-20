@@ -15,6 +15,11 @@ alias ..="cd .."
 alias ...="cd .. && cd .."
 alias ....="cd .. && cd .. && cd .."
 
+
+## Miscellaneous
+alias patch='patch --no-backup-if-mismatch'
+alias trim-whitespace="sed -i '' -e's/[[:space:]]*$//'"
+
 alias curl-time='curl -w "
 DNS Lookup:    %{time_namelookup}
 TCP connect:   %{time_connect}
@@ -24,9 +29,6 @@ Redirection:   %{time_redirect}
 First byte:    %{time_starttransfer}
 Total:         %{time_total}
 "'
-
-# Miscellaneous
-alias patch='patch --no-backup-if-mismatch'
 
 # todo works manually but not as alias
 # todo also grep for begining of sentance, to avoid false matches
