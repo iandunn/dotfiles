@@ -1,6 +1,7 @@
 [user]
 	name  = Ian Dunn
 	email = ian@iandunn.name
+	singingkey = 99B971B50343CBCB
 
 [credential]
 	helper = osxkeychain
@@ -42,3 +43,7 @@
 
 [status]
 	short = true
+[commit]
+	gpgsign = true
+[gpg]
+	program = gpg2

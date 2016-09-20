@@ -1,4 +1,4 @@
-# Core utilities
+## Core utilities
 alias ls='ls -a --color'
 alias ll='ls -lh'
 alias nano='nano -wc'
@@ -8,6 +8,7 @@ alias du='du -h'
 alias grep='grep -i'
 alias rm='rm -i'
 alias tar='tar --exclude-vcs'
+	# todo --exclude-vcs doesn't work on osx
 alias locate='locate -i'
 # todo works but throws usage notice - alias tail='tail -n40'
 alias ..="cd .."
@@ -40,7 +41,8 @@ alias prune-svn-stat="grep -v 'X   ' |grep -v 'Performing status on ex' |grep -v
 # todo convert this to a single regex
 alias svn-stat-pruned="svn stat |prune-svn-stat"
 
-# Host-specific aliases
+
+## Host-specific aliases
 case $(hostname) in
 	"macenzie" | "macenzie.local" )
 		alias ls='ls -a -G'
