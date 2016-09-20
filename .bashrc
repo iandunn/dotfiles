@@ -11,6 +11,10 @@ case $(hostname) in
 	;;
 esac
 
+if [ -f ~/bin/git-completion.bash ]; then
+  source ~/bin/git-completion.bash
+fi
+
 #todo source bash-completion, but need to setup path per environment. dont leak root paths
 	# maybe more proper to go in .bash_profile that .bashrc
 
