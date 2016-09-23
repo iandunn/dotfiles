@@ -7,6 +7,11 @@ color_branch="\e[38;5;14m"  # light blue
 color_folder="\e[38;5;19m"  # dark blue
 
 case $(hostname) in
+	"norah" )
+		color_user_host="\e[38;5;242m" # grey
+		hostname="norah"
+	;;
+
 	"macenzie" | "macenzie.local" )
 		color_user_host="\e[38;5;137m" # tan
 		hostname="macenzie"
