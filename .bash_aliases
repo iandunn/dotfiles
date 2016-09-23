@@ -79,6 +79,11 @@ case $(hostname) in
 		alias wp='~/bin/wp'
 	;;
 
+	"norah" )
+		alias reset-resolution='xrandr  --output LVDS1  --mode 1366x768'
+		alias suspend='dbus-send --system --print-reply --dest="org.freedesktop.login1" /org/freedesktop/login1 org.freedesktop.login1.Manager.Suspend boolean:true'
+	;;
+
 	"iandunn.dev.wordpress.org" )
 		alias deploy='deploy-dotorg.sh'
 	;;
