@@ -82,6 +82,8 @@ case $(hostname) in
 	"norah" )
 		alias reset-resolution='xrandr  --output LVDS1  --mode 1366x768'
 		alias suspend='dbus-send --system --print-reply --dest="org.freedesktop.login1" /org/freedesktop/login1 org.freedesktop.login1.Manager.Suspend boolean:true'
+		alias pbcopy='xsel --clipboard --input'
+		alias pbpaste='xsel --clipboard --output'
 	;;
 
 	"iandunn.dev.wordpress.org" )
