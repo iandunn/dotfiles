@@ -51,6 +51,9 @@ case $(hostname) in
 		alias vhosts='cd /Users/ian/vhosts/'
 		alias wpver='find /Users/ian/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
 		alias vvv='cd /Users/ian/vhosts/vvv-personal/www/'
+		alias vvv-up='vvv && vagrant up'
+		alias pv='cd /Users/ian/vhosts/primary-vagrant/user-data/sites'
+		alias pv-up='pv && vagrant up'
 		alias wme='cd /Users/ian/vhosts/vvv-wme/www/wordpress-meta-environment'
 
 		# On its own, this will ask for a password for private repositories, and the password characters will be
