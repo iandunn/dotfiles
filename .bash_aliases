@@ -7,6 +7,7 @@ alias df='df -h'
 alias du='du -h'
 alias grep='grep -i'
 alias rm='rm -i'
+alias diff='diff -u'
 alias tar='tar --exclude-vcs'
 	# todo --exclude-vcs doesn't work on osx
 alias locate='locate -i'
@@ -43,6 +44,7 @@ alias prune-svn-stat="grep -v 'X   ' |grep -v 'Performing status on ex' |grep -v
 # todo convert this to a single regex
 alias svn-stat-pruned="svn stat |prune-svn-stat"
 
+# todo setup https://stackoverflow.com/a/3885594/450127
 
 ## Host-specific aliases
 case $(hostname) in
@@ -52,6 +54,7 @@ case $(hostname) in
 		alias wpver='find /Users/ian/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
 		alias vvv='cd /Users/ian/vhosts/vvv-personal/www/'
 		alias vvv-up='vvv && vagrant up'
+		alias wcorg='vvv && cd wordcamp.dev/public_html/wp-content'
 		alias pv='cd /Users/ian/vhosts/primary-vagrant/user-data/sites'
 		alias pv-up='pv && vagrant up'
 		alias wme='cd /Users/ian/vhosts/vvv-wme/www/wordpress-meta-environment'
