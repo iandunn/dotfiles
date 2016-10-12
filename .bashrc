@@ -1,3 +1,11 @@
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DOTFILES_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DOTFILES_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
 # Environmental variables
 export EDITOR="nano"
 export SVN_EDITOR="nano -w"
@@ -11,9 +19,8 @@ case $(hostname) in
 	;;
 esac
 
-if [ -f ~/bin/git-completion.bash ]; then
-  source ~/bin/git-completion.bash
-fi
+source $DOTFILES_DIR/bin/git-completion.bash
+source $DOTFILES_DIR/bin/wp-cli-completion.bash
 
 #todo source bash-completion, but need to setup path per environment. dont leak root paths
 	# maybe more proper to go in .bash_profile that .bashrc
