@@ -33,7 +33,7 @@ Total:         %{time_total}
 
 # todo works manually but not as alias
 # todo also grep for begining of sentance, to avoid false matches
-# alias svn-add-untracked="svn add $(svn status | grep ? | awk '{print $2}')"
+# alias svn-add-untracked="svn add $(svn status | grep [^?] | awk '{print $2}')"
 
 # todo works manually but not as alias
 #alias svn-revert-clean="svn revert -R . && rm -rf $(svn status | grep ? | awk '{print $2}')"
