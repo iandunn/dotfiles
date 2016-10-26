@@ -7,7 +7,7 @@
 
 	  <key>ProgramArguments</key>
 	  <array>
-	    <string>/Users/iandunn/dotfiles/bin/update-checkouts.sh</string>
+	    <string>/Users/ian/dotfiles/bin/update-checkouts.sh</string>
 	  </array>
 
 	  <key>Nice</key>
