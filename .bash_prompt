@@ -93,7 +93,7 @@ function git_status {
 
 	# Determine if clean or dirty
 	state=$(git status --long 2> /dev/null | tail -n1)
-	if [[ $state == *"working directory clean"* ]]; then
+	if [[ $state == *"working directory clean"* || $state == *"working tree clean"* ]]; then
 		state="${color_clean}clean${color_reset}"
 	else
 		state="${color_dirty}dirty${color_reset}"
