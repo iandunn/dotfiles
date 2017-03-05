@@ -4,8 +4,8 @@
 # This is intended to scheduled to run automatically
 
 SVN=(
-	/Users/ian/vhosts/meta.svn.wordpress.org
-	/Users/ian/vhosts/vvv-personal/www/wordcamp.dev/public_html/wordpress
+	/Users/ian/vhosts/miscellaneous/meta.svn.wordpress.org
+	/Users/ian/vhosts/virtual-machines/vvv-personal/www/wordcamp.dev/public_html/wordpress
 )
 
 for i in "${SVN[@]}"

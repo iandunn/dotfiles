@@ -52,12 +52,12 @@ case $(hostname) in
 		alias ls='ls -a -G'
 		alias vhosts='cd /Users/ian/vhosts/'
 		alias wpver='find /Users/ian/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
-		alias vvv='cd /Users/ian/vhosts/vvv-personal/www/'
+		alias vvv='cd /Users/ian/vhosts/virtual-machines/vvv-personal/www/'
 		alias vvv-up='vvv && vagrant up && vagrant ssh'
 		alias wcorg='vvv && cd wordcamp.dev/public_html/wp-content'
-		alias pv='cd /Users/ian/vhosts/primary-vagrant/user-data/sites'
+		alias pv='cd /Users/ian/vhosts/virtual-machines/primary-vagrant/user-data/sites'
 		alias pv-up='pv && vagrant up && vagrant ssh'
-		alias wme='cd /Users/ian/vhosts/vvv-wme/www/wordpress-meta-environment'
+		alias wme='cd /Users/ian/vhosts/virtual-machines/vvv-wme/www/wordpress-meta-environment'
 		alias wme-up='wme && vagrant up && vagrant ssh'
 
 		# On its own, this will ask for a password for private repositories, and the password characters will be
