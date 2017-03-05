@@ -60,6 +60,9 @@ case $(hostname) in
 		alias wme='cd /Users/ian/vhosts/virtual-machines/vvv-wme/www/wordpress-meta-environment'
 		alias wme-up='wme && vagrant up && vagrant ssh'
 
+		# When unplug external webcam (like when traveling), then plug back in, it's not recognized until restart service
+		alias fix-camera='sudo killall VDCAssistant'
+
 		# On its own, this will ask for a password for private repositories, and the password characters will be
 		# shown on the screen instead of being masked. To avoid that, setup something like this wrapper on the
 		# server:
