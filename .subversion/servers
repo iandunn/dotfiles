@@ -1,3 +1,5 @@
+# TODO figure out why symlinks don't work for this. Until then, have to manually copy this to ~/.subversion/servers after making changes
+
 [groups]
 wordpress-org = *.wordpress.org
 wordpress-com = *.wordpress.com
@@ -7,6 +9,3 @@ username = iandunn
 
 [wordpress-com]
 username = iandunn
-
-[global]
-

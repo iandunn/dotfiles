@@ -1,11 +1,4 @@
-[auth]
-
-[helpers]
-
-[tunnels]
+# TODO figure out why symlinks don't work for this. Until then, have to manually copy this to ~/.subversion/config after making changes
 
 [miscellany]
 global-ignores = .idea .git* .DS_Store debug.log sandbox-functionality sandbox-functionality.php node_modules *.map
-
-[auto-props]
-
