@@ -11,6 +11,7 @@
 	ci       = commit --verbose
 	stat     = status
 	statlong = status --long
+	diffc    = diff --cached
 
 [diff]
 	tool = dw
