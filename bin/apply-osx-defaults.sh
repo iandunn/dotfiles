@@ -34,17 +34,16 @@ defaults write com.apple.universalaccess reduceTransparency -boolean true
 # Get rid of the Dock as much as humanly possible
 defaults write com.apple.dock autohide -bool true
 
+# Increase the dock appear delay to prevent it from getting in the way when trying to hover on scroll bars
+defaults write com.apple.dock autohide-delay -float 5000
+
 # Keep the obnoxious 5px Dock gap on the secondary monitor so it's less noticeable
 defaults write com.apple.Dock orientation -string right
-
 
 
 ###
 ### Misc
 ###
-
-# Increase the dock appear delay to ~4 seconds. I never use it and it pops up when I am trying to hover on horizontal scroll bars in Chrome.
-# TODO
 
 # Remove or reduce window shadows to avoid them overlapping full screen windows.
 # TODO - There doesn't seem to be a good, reliable solution to this, but keep looking.
