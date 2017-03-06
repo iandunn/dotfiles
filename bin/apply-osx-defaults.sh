@@ -26,6 +26,19 @@ defaults write com.apple.finder EmptyTrashSecurely -bool true
 defaults write com.apple.universalaccess reduceTransparency -boolean true
 
 
+
+###
+### Dock
+###
+
+# Get rid of the Dock as much as humanly possible
+defaults write com.apple.dock autohide -bool true
+
+# Keep the obnoxious 5px Dock gap on the secondary monitor so it's less noticeable
+defaults write com.apple.Dock orientation -string right
+
+
+
 ###
 ### Misc
 ###
@@ -58,3 +71,11 @@ defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 
 # Make notification banners show up for longer than the default
 defaults write com.apple.notificationcenterui bannerTime 6
+
+
+
+###
+### Restart any services that were affected
+###
+
+killall Dock
