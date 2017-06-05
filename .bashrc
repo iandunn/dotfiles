@@ -98,3 +98,17 @@ function svn-bump-ext-commit {
 	printf "\nDeploying...\n"
 	eval "deploy wp-content"
 }
+
+
+# Alias to convert a stereo recording to mono
+#
+# See https://iandunn.name/2017/06/04/dropping-quicktime-recording-from-stereo-to-mono/
+#
+# $1 - The input filename
+function qtmono {
+	basename=$(basename "$1")
+	filename="${basename%.*}"
+	extension="${basename##*.}"
+
+	ffmpeg -i $1 -codec:v copy -af pan="mono: c0=FL" $filename-mono.$extension
+}
