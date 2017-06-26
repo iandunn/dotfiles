@@ -26,6 +26,39 @@ source $DOTFILES_DIR/bin/wp-cli-completion.bash
 #todo source bash-completion, but need to setup path per environment. dont leak root paths
 	# maybe more proper to go in .bash_profile that .bashrc
 
+# todo describe
+function wordcamp-diff() {
+	exit
+	# not done yet
+
+	local args=($@)
+	local rest=(${args[@]:1:${#args[@]}})
+	local WP_CONTENT="/Users/ian/vhosts/virtual-machines/vvv-personal/www/wordcamp.dev/public_html/wp-content"
+
+	local GIT_DIRS=(
+		"mu-plugins"
+		"mu-plugins-private/wporg-mu-plugins"
+		"plugins-meta"
+		"themes-meta"
+		"wp-super-cache-plugins"
+	)
+
+	local SVN_DIRS=(
+		"plugins-external"
+		"themes-external"
+	)
+
+	for i in "${GIT_DIRS[@]}"
+	do :
+		git -C $WP_CONTENT/$i stat
+	done
+
+	for i in "${SVN_DIRS[@]}"
+	do :
+		svn stat "$WP_CONTENT/$i" |prune-svn-stat
+	done
+}
+
 # Bump svn:externals in the current directory
 #
 # $1 - The plugin/theme slug
