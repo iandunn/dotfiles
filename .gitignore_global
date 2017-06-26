@@ -7,3 +7,6 @@ sandbox-functionality/
 node_modules
 npm-debug.log
 *.map
+build
+*.diff
+*.patch
