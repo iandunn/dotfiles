@@ -15,6 +15,7 @@
 
 [diff]
 	tool = dw
+	noprefix = true
 	#external = '/Applications/DeltaWalker.app/Contents/MacOS/git-diff'
 
 [difftool]
