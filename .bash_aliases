@@ -1,5 +1,5 @@
 ## Core utilities
-alias ls='ls -a --color'
+alias ls='ls -aG'
 alias ll='ls -lh'
 alias nano='nano -wc'
 alias less='less -SN'
