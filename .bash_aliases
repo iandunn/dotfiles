@@ -75,6 +75,7 @@ case $(hostname) in
 
 		alias git-svn-rebase='git stash && git svn rebase --log-window-size=100000 && git stash pop'
 		alias git-svn-push='git stash && git svn dcommit --interactive && git stash pop'
+			// todo log window size during push too?
 	;;
 
 	"vvv" )

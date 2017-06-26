@@ -71,6 +71,8 @@ defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 # Make notification banners show up for longer than the default
 defaults write com.apple.notificationcenterui bannerTime 6
 
+# Disable keyboard backlighting
+# TODO
 
 
 ###

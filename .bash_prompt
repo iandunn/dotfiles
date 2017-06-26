@@ -84,6 +84,8 @@ function git_status {
 		# todo if on individual commit, show the rev -- https://stackoverflow.com/questions/11168141/find-which-commit-is-currently-checked-out-in-git
 		# todo if tag, getting a "-bash: //: Is a directory" error
 
+		# todo need to support submodules like publish-iandunn-2017 -- "HEAD detached at c170c1c"
+
 		if [[ "$ref" == "" ]]; then
 			$ref="(no branch)"
 		fi
