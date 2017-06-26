@@ -17,6 +17,11 @@ case $(hostname) in
 		hostname="macenzie"
 	;;
 
+	"flanders" | "flanders.local" )
+		color_user_host="\e[38;5;27m" # light blue
+		hostname="flanders"
+	;;
+
 	"vvv" )
 		color_user_host="\e[38;5;166m" # orange
 		hostname="vvv"
