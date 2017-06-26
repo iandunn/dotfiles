@@ -20,6 +20,7 @@ case $(hostname) in
 esac
 
 source $DOTFILES_DIR/bin/git-completion.bash
+source $DOTFILES_DIR/bin/hub-completion.bash
 source $DOTFILES_DIR/bin/wp-cli-completion.bash
 
 #todo source bash-completion, but need to setup path per environment. dont leak root paths
