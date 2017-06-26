@@ -45,7 +45,11 @@
 
 [status]
 	short = true
+
 [commit]
-	gpgsign = true
+	# todo breaks `git svn fetch` b/c tries to sign other people's commits --- gpgsign = true
+	# is there a way to set this per repo? or set it manually from cli?
+	# if from cli, maybe setup an alias, like git civ (for ci verified), cis (ci signed), etc
+
 [gpg]
 	program = gpg2
