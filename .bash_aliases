@@ -48,16 +48,15 @@ alias svn-stat-pruned="svn stat |prune-svn-stat"
 
 ## Host-specific aliases
 case $(hostname) in
-	"macenzie" | "macenzie.local" )
-		alias ls='ls -a -G'
-		alias vhosts='cd /Users/ian/vhosts/'
-		alias wpver='find /Users/ian/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
-		alias vvv='cd /Users/ian/vhosts/virtual-machines/vvv-personal/www/'
+	"macenzie" | "macenzie.local" | "macenzie" | "flanders.local")
+		alias vhosts='cd /Users/iandunn/vhosts/'
+		alias wpver='find /Users/iandunn/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
+		alias vvv='cd /Users/iandunn/vhosts/virtual-machines/vvv-personal/www/'
 		alias vvv-up='vvv && vagrant up && vagrant ssh'
 		alias wcorg='vvv && cd wordcamp.dev/public_html/wp-content'
-		alias pv='cd /Users/ian/vhosts/virtual-machines/primary-vagrant/user-data/sites'
+		alias pv='cd /Users/iandunn/vhosts/virtual-machines/primary-vagrant/user-data/sites'
 		alias pv-up='pv && vagrant up && vagrant ssh'
-		alias wme='cd /Users/ian/vhosts/virtual-machines/vvv-wme/www/wordpress-meta-environment'
+		alias wme='cd /Users/iandunn/vhosts/virtual-machines/vvv-wme/www/wordpress-meta-environment'
 		alias wme-up='wme && vagrant up && vagrant ssh'
 
 		# When unplug external webcam (like when traveling), then plug back in, it's not recognized until restart service
