@@ -9,6 +9,7 @@ DOTFILES_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 # Environmental variables
 export EDITOR="nano"
 export SVN_EDITOR="nano -w"
+export NVM_DIR="$HOME/.nvm"
 
 # todo maybe use \nano or /usr/bin/nano to avoid the -w and force line wrapping during git/svn commits
 
@@ -22,6 +23,7 @@ esac
 source $DOTFILES_DIR/bin/git-completion.bash
 source $DOTFILES_DIR/bin/hub-completion.bash
 source $DOTFILES_DIR/bin/wp-cli-completion.bash
+source "/usr/local/opt/nvm/nvm.sh"
 
 #todo source bash-completion, but need to setup path per environment. dont leak root paths
 	# maybe more proper to go in .bash_profile that .bashrc
