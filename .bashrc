@@ -15,6 +15,10 @@ export NVM_DIR="$HOME/.nvm"
 
 # Host-specific environmental variables
 case $(hostname) in
+	"macenzie" | "macenzie.local" | "macenzie" | "flanders.local" )
+		export PATH="$HOME/bin:$PATH"
+	;;
+
 	"iandunn.name" | "n2"* )
 		export PATH="$HOME/bin:$HOME/opt/bin:$PATH:/usr/local/sbin:/usr/sbin:/sbin"
 	;;
