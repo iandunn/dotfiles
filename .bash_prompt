@@ -168,7 +168,7 @@ function vcs_prompt {
 }
 
 function set_prompt {
-	export PS1="\n${color_user_host}\u${color_reset} @ ${color_user_host}$hostname${color_reset} in ${color_folder}\w${color_reset} \
+	export PS1="\n\[$(iterm2_prompt_mark)\]${color_user_host}\u${color_reset} @ ${color_user_host}$hostname${color_reset} in ${color_folder}\w${color_reset} \
 	$(vcs_prompt) \
 	\n> "
 }
