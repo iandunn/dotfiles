@@ -16,6 +16,9 @@ defaults write -g AppleShowAllFiles -bool true
 # Show the ~/Library folder
 chflags nohidden ~/Library
 
+# Show the full path in the title bar
+defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
+
 # Disable the warning when changing a file extension
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 
