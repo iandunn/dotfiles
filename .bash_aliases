@@ -12,6 +12,7 @@ alias tar='tar --exclude-vcs'
 	# todo --exclude-vcs doesn't work on osx
 alias locate='locate -i'
 # todo works but throws usage notice - alias tail='tail -n40'
+alias watch='watch -d'
 alias ..="cd .."
 alias ...="cd .. && cd .."
 alias ....="cd .. && cd .. && cd .."
