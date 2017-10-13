@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# TODO: Browse through http://defaults-write.com for more
+
+
 ###
 ### Finder
 ###
@@ -10,7 +13,7 @@ defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 # Show hidden files by default
 defaults write com.apple.finder AppleShowAllFiles -bool true
 
-# Show hidden files in the Open dialog
+# Show hidden files in the Open dialog (not working)
 defaults write -g AppleShowAllFiles -bool true
 
 # Show the ~/Library folder
@@ -28,6 +31,8 @@ defaults write com.apple.finder EmptyTrashSecurely -bool true
 # Reduce transparency of the Finder sidebar
 defaults write com.apple.universalaccess reduceTransparency -boolean true
 
+# Show full path in title bar
+defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
 
 
 ###
