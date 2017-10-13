@@ -43,7 +43,7 @@ defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
 defaults write com.apple.dock autohide -bool true
 
 # Increase the dock appear delay to prevent it from getting in the way when trying to hover on scroll bars
-defaults write com.apple.dock autohide-delay -float 5000
+defaults write com.apple.dock autohide-delay -float 2500
 
 # Keep the obnoxious 5px Dock gap on the secondary monitor so it's less noticeable
 defaults write com.apple.Dock orientation -string right
