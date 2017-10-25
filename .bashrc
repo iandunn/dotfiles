@@ -15,8 +15,9 @@ export NVM_DIR="$HOME/.nvm"
 
 # Host-specific environmental variables
 case $(hostname) in
-	"macenzie" | "macenzie.local" | "macenzie" | "flanders.local" )
+	"macenzie" | "macenzie.local" | "flanders" | "flanders.local" )
 		export PATH="$HOME/bin:$PATH"
+		export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.dev/public_html/tests/phpunit"
 	;;
 
 	"iandunn.name" | "n2"* )
@@ -152,3 +153,6 @@ function qtmono {
 
 	ffmpeg -i $1 -codec:v copy -af pan="mono: c0=FL" $filename-mono.$extension
 }
+
+# todo git checkout HEAD @ date
+# git checkout `git rev-list -n 1 --before="2017-01-16 17:00" master`
