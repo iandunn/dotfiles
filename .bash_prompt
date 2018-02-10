@@ -91,6 +91,10 @@ function git_status {
 
 		# todo need to support submodules like publish-iandunn-2017 -- "HEAD detached at c170c1c"
 
+		# todo during rebase getting:
+		# fatal: No names found, cannot describe anything.
+		# -bash: =(no branch): command not found
+
 		if [[ "$ref" == "" ]]; then
 			$ref="(no branch)"
 		fi
@@ -168,7 +172,14 @@ function vcs_prompt {
 }
 
 function set_prompt {
-	export PS1="\n\[$(iterm2_prompt_mark)\]${color_user_host}\u${color_reset} @ ${color_user_host}$hostname${color_reset} in ${color_folder}\w${color_reset} \
+	# Set marks at each prompt to enable jumping between previous commands
+	command_mark=""
+	if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
+		# Note: This requires installing the shell integration from the iTerm2 menu.
+		command_mark="$(iterm2_prompt_mark)"
+	fi
+
+	export PS1="\n${command_mark}${color_user_host}\u${color_reset} @ ${color_user_host}$hostname${color_reset} in ${color_folder}\w${color_reset} \
 	$(vcs_prompt) \
 	\n> "
 }
