@@ -7,11 +7,6 @@ color_branch="\e[38;5;14m"  # light blue
 color_folder="\e[38;5;19m"  # dark blue
 
 case $(hostname) in
-	"norah" )
-		color_user_host="\e[38;5;242m" # grey
-		hostname="norah"
-	;;
-
 	"macenzie" | "macenzie.local" )
 		color_user_host="\e[38;5;137m" # tan
 		hostname="macenzie"
@@ -32,14 +27,9 @@ case $(hostname) in
 		hostname="iandunn.name"
 	;;
 
-	"wordcamp1.lax.wordpress.org" )
-		color_user_host="\e[38;5;242m" # grey
-		hostname="wordcamp.org"
-	;;
-
-	"iandunn.dev.wordpress.org" )
+	"iandunn.dev.ord.wordpress.org" )
 		color_user_host="\e[38;5;94m"  # brown
-		hostname="iandunn.dev.wordpress.org"
+		hostname="iandunn.dev.ord.wordpress.org"
 	;;
 
 	"iandunn.dev.dfw.wordpress.com" )
@@ -53,7 +43,7 @@ case $(hostname) in
 	;;
 
 	* )
-		color_user_host="\033[m"
+		color_user_host="\e[38;5;242m" # grey
 		hostname=$(hostname)
 	;;
 esac
