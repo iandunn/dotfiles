@@ -1,5 +1,5 @@
 ## Core utilities
-alias ls='ls -aG'
+alias ls='ls -a --color'
 alias ll='ls -lh'
 alias nano='nano -wc'
 alias less='less -SN'
@@ -35,6 +35,7 @@ Total:         %{time_total}
 # todo works manually but not as alias
 # todo also grep for begining of sentance, to avoid false matches
 # alias svn-add-untracked="svn add $(svn status | grep [^?] | awk '{print $2}')"
+# also do something like alias rm-svn-untracked="rm -f $(svn status | grep [^?] | awk '{print $2}')"
 
 # todo works manually but not as alias
 #alias svn-revert-clean="svn revert -R . && rm -rf $(svn status | grep ? | awk '{print $2}')"
@@ -44,21 +45,25 @@ Total:         %{time_total}
 alias prune-svn-stat="grep -v 'X   ' |grep -v 'Performing status on ex' |grep -v -e '^$'"
 # todo convert this to a single regex
 alias svn-stat-pruned="svn stat |prune-svn-stat"
+# todo: "alias svn-stat-deep" which will include externals in subdirectiories. probably needs to be a function rather than an alias
 
 # todo setup https://stackoverflow.com/a/3885594/450127
 
 ## Host-specific aliases
 case $(hostname) in
 	"macenzie" | "macenzie.local" | "macenzie" | "flanders.local")
+		alias ls='ls -aG'
 		alias vhosts='cd /Users/iandunn/vhosts/'
 		alias wpver='find /Users/iandunn/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
 		alias vvv='cd /Users/iandunn/vhosts/virtual-machines/vvv-personal/www/'
 		alias vvv-up='vvv && vagrant up && vagrant ssh'
-		alias wcorg='vvv && cd wordcamp.dev/public_html/wp-content'
+		alias wcorg='vhosts && cd localhost/wordcamp.test/public_html/wp-content'
 		alias pv='cd /Users/iandunn/vhosts/virtual-machines/primary-vagrant/user-data/sites'
 		alias pv-up='pv && vagrant up && vagrant ssh'
 		alias wme='cd /Users/iandunn/vhosts/virtual-machines/vvv-wme/www/wordpress-meta-environment'
 		alias wme-up='wme && vagrant up && vagrant ssh'
+		alias calypso='cd /Users/iandunn/vhosts/localhost/calypso.localhost'
+		alias updatedb='sudo /usr/libexec/locate.updatedb'
 
 		# When unplug external webcam (like when traveling), then plug back in, it's not recognized until restart service
 		alias fix-camera='sudo killall VDCAssistant'
@@ -76,6 +81,8 @@ case $(hostname) in
 		alias git-svn-rebase='git stash && git svn rebase --log-window-size=100000 && git stash pop'
 		alias git-svn-push='git stash && git svn dcommit --interactive && git stash pop'
 			// todo log window size during push too?
+
+		alias push-deploy='git push && deployer deploy'
 	;;
 
 	"vvv" )
