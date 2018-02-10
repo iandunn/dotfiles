@@ -1,7 +1,18 @@
 #!/bin/bash
 
-# TODO: Browse through http://defaults-write.com for more
-
+# TODO
+#
+# Browse through http://defaults-write.com for more
+# Disable keyboard backlighting
+# will need to sync these changes w/ local uncommitted mods from Mackenzie
+# Ctrl-left/right to switch desktops: make it faster
+# only show menu bar on secondary screen, not primary
+# Speed up character reapeat in terminal
+# Turn on character repeat in regular apps
+# Turn of fracking autocorrect
+#  Make sure the password is required to wake from sleep or from the screen saver.
+# Other security best practices that you can automate?
+# disable Spotlight Suggestions
 
 ###
 ### Finder
@@ -71,16 +82,12 @@ defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1
 # Limit Time Machine space, because it shares the disk with other things
 sudo defaults write /Library/Preferences/com.apple.TimeMachine MaxSize 750000
 
-# todo disable Spotlight Suggestions
 
 # Full keyboard mode
 defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 
 # Make notification banners show up for longer than the default
 defaults write com.apple.notificationcenterui bannerTime 6
-
-# Disable keyboard backlighting
-# TODO
 
 
 ###
