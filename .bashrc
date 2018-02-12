@@ -157,3 +157,28 @@ function qtmono {
 
 # todo git checkout HEAD @ date
 # git checkout `git rev-list -n 1 --before="2017-01-16 17:00" master`
+
+# Deploy the site that correspond to the current directory
+function deploy {
+	# detect server based on current folder. if can't, bail
+	current_folder=$(pwd)
+	printf "\n"
+
+	case "$current_folder" in
+		*wordcamp.test* )
+			ssh wordcamp.org 'deploy-wordcamp.sh'
+		;;
+
+		*wp15.wordpress.test* )
+			ssh -t wp15.wordpress.net 'svn up ~/wp15.wordpress.net'
+		;;
+
+		*iandunn.localhost* | *silencedmajority.test* )
+			deployer deploy
+		;;
+
+		* )
+			printf "Couldn't detect site to deploy.\n"
+		;;
+	esac
+}

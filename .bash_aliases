@@ -51,7 +51,7 @@ alias svn-stat-pruned="svn stat |prune-svn-stat"
 
 ## Host-specific aliases
 case $(hostname) in
-	"macenzie" | "macenzie.local" | "macenzie" | "flanders.local")
+	"macenzie" | "macenzie.local" | "macenzie" | "flanders.local" )
 		alias ls='ls -aG'
 		alias vhosts='cd /Users/iandunn/vhosts/'
 		alias wpver='find /Users/iandunn/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
@@ -68,19 +68,12 @@ case $(hostname) in
 		# When unplug external webcam (like when traveling), then plug back in, it's not recognized until restart service
 		alias fix-camera='sudo killall VDCAssistant'
 
-		# On its own, this will ask for a password for private repositories, and the password characters will be
-		# shown on the screen instead of being masked. To avoid that, setup something like this wrapper on the
-		# server:
-		#
-		# https://gist.github.com/iandunn/0d33e0abc769dd3a8c4814a80a686dd9#
-		alias deploy="ssh wordcamp.org 'deploy '"
-
 		#todo this fails with `deploy-wordcamp bin`, even though `deploy bin` works on production
 		#todo eventually make this into a function that accepts params like `deploy {site} {path}` but no point right now since wordcamp is the only one doing it like this
 
 		alias git-svn-rebase='git stash && git svn rebase --log-window-size=100000 && git stash pop'
 		alias git-svn-push='git stash && git svn dcommit --interactive && git stash pop'
-			// todo log window size during push too?
+			# todo log window size during push too?
 
 		alias push-deploy='git push && deployer deploy'
 	;;
