@@ -138,7 +138,7 @@ function svn-bump-ext-commit {
 	eval "svn ci --depth empty -m '$message'"
 
 	printf "\nDeploying...\n"
-	eval "deploy wp-content"
+	eval "deploy"
 }
 
 
@@ -157,10 +157,10 @@ function qtmono {
 
 # todo git checkout HEAD @ date
 # git checkout `git rev-list -n 1 --before="2017-01-16 17:00" master`
+# probably better to make this a git alias instead of a bash alias
 
-# Deploy the site that correspond to the current directory
+# Deploy the site that corresponds to the current directory
 function deploy {
-	# detect server based on current folder. if can't, bail
 	current_folder=$(pwd)
 	printf "\n"
 
