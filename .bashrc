@@ -182,3 +182,10 @@ function deploy {
 		;;
 	esac
 }
+
+# Wrapper for phpmd to avoid having to specify report type and config file.
+#
+# $1 - The file/folder to analyize
+function phpmd {
+	/usr/local/bin/phpmd $1 text ~/vhosts/localhost/wordcamp.test/phpmd.xml.dist
+}
