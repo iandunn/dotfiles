@@ -160,10 +160,31 @@ function qtmono {
 # probably better to make this a git alias instead of a bash alias
 
 # Deploy the site that corresponds to the current directory
+# $1 For w.org, the role to deploy. Otherwise unused.
 function deploy {
 	current_folder=$(pwd)
 	printf "\n"
 
+	# w.org sandbox
+	if [[ 'iandunn.dev.ord.wordpress.org' = $(hostname) ]]; then
+		case "$current_folder" in
+	                *wordcamp* )
+				deploy-wordcamp.sh
+			;;
+
+			*wporg* )
+				deploy-dotorg.sh $1
+			;;
+
+			* )
+				echo "Couldn't detect site to deploy."
+			;;
+		esac;
+
+		return
+	fi
+
+	# local sandbox
 	case "$current_folder" in
 		*wordcamp.test* )
 			ssh wordcamp.org 'deploy-wordcamp.sh'
