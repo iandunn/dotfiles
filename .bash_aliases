@@ -22,6 +22,7 @@ alias ....="cd .. && cd .. && cd .."
 ## Miscellaneous
 alias patch='patch --no-backup-if-mismatch'
 alias trim-whitespace="sed -i '' -e's/[[:space:]]*$//'"
+alias phpcbf='phpcbf -v'
 
 alias curl-time='curl -w "
 DNS Lookup:    %{time_namelookup}
