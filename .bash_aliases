@@ -49,7 +49,10 @@ alias prune-svn-stat="grep -v 'X   ' |grep -v 'Performing status on ex' |grep -v
 alias svn-stat-pruned="svn stat |prune-svn-stat"
 # todo: "alias svn-stat-deep" which will include externals in subdirectiories. probably needs to be a function rather than an alias
 
-# todo setup https://stackoverflow.com/a/3885594/450127
+# todo setup https://stackoverflow.com/a/3885594/450127 so `svn ci` also prints the diff like git does
+
+alias git-svn-rebase='git stash && git svn rebase --log-window-size=100000 && git stash pop'
+alias git-svn-push='git stash && git svn dcommit --interactive && git stash pop'
 
 ## Host-specific aliases
 case $(hostname) in
@@ -68,13 +71,6 @@ case $(hostname) in
 
 		# When unplug external webcam (like when traveling), then plug back in, it's not recognized until restart service
 		alias fix-camera='sudo killall VDCAssistant'
-
-		#todo this fails with `deploy-wordcamp bin`, even though `deploy bin` works on production
-		#todo eventually make this into a function that accepts params like `deploy {site} {path}` but no point right now since wordcamp is the only one doing it like this
-
-		alias git-svn-rebase='git stash && git svn rebase --log-window-size=100000 && git stash pop'
-		alias git-svn-push='git stash && git svn dcommit --interactive && git stash pop'
-			# todo log window size during push too?
 
 		alias push-deploy='git push && deployer deploy'
 	;;
