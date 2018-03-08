@@ -12,6 +12,7 @@
 	stat     = status
 	statlong = status --long
 	diffc    = diff --cached
+	svnpush  = svn dcommit --interactive
 
 [diff]
 	tool = dw
