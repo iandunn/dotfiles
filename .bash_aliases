@@ -1,6 +1,6 @@
 ## Core utilities
 # ls --group-directories-first requires `coreutils` from Homebrew on OS X b/c native `ls` doesn't support sorting folders first
-alias ls='gls --all --group-directories-first --color'
+alias ls='ls --all --group-directories-first --color'
 alias ll='ls -lh'
 alias nano='nano -wc'
 alias less='less -SN'
@@ -57,6 +57,7 @@ alias git-svn-push='git stash && git svn dcommit --interactive && git stash pop'
 ## Host-specific aliases
 case $(hostname) in
 	"macenzie" | "macenzie.local" | "macenzie" | "flanders.local" )
+		alias ls='gls --all --group-directories-first --color'
 		alias vhosts='cd /Users/iandunn/vhosts/'
 		alias wpver='find /Users/iandunn/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
 		alias vvv='cd /Users/iandunn/vhosts/virtual-machines/vvv-personal/www/'
