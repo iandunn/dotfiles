@@ -54,3 +54,6 @@
 
 [gpg]
 	program = gpg2
+
+[svn]
+	rmdir = true
