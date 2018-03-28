@@ -12,6 +12,8 @@
 	stat     = status
 	statlong = status --long
 	diffc    = diff --cached
+	svnrebase = !git stash && git svn rebase --log-window-size=100000 && git stash pop
+
 
 [diff]
 	tool = dw
