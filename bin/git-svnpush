@@ -1,0 +1,26 @@
+#!/bin/bash
+
+commits=$( /usr/bin/git log HEAD...git-svn )
+current_folder=$(pwd)
+
+# Don't do anything if there aren't any commits to push.
+if [[ ${#commits} = 0 ]]; then
+	printf "\nNothing to push.\ncd -"
+	exit
+fi
+
+# Run pre-commit hooks or any other site-specific code.
+case "$current_folder" in
+	*wordcamp.test* )
+		sh .git/hooks/pre-svn-dcommit
+
+		if [[ $? != 0 ]]; then
+			exit $?
+		fi
+	;;
+esac
+
+# Have to stash to avoid getting an error (i forget what).
+git stash
+git svn dcommit --interactive
+git stash pop

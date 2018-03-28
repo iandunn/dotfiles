@@ -54,7 +54,6 @@ alias svn-stat-pruned="svn stat |prune-svn-stat"
 # todo setup https://stackoverflow.com/a/3885594/450127 so `svn ci` also prints the diff like git does
 
 alias git-svn-rebase='git stash && git svn rebase --log-window-size=100000 && git stash pop'
-alias git-svn-push='git stash && git svn dcommit --interactive && git stash pop'
 
 ## Host-specific aliases
 case $(hostname) in
