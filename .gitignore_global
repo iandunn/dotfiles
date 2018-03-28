@@ -11,3 +11,4 @@ build
 *.diff
 *.patch
 local-config.php
+debug.log
