@@ -1,11 +1,11 @@
 #!/bin/bash
 
 commits=$( /usr/bin/git log HEAD...git-svn )
-current_folder=$(pwd)
+current_folder=$( pwd )
 
 # Don't do anything if there aren't any commits to push.
 if [[ ${#commits} = 0 ]]; then
-	printf "\nNothing to push.\ncd -"
+	printf "\nNothing to push.\n"
 	exit
 fi
 
