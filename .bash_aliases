@@ -9,6 +9,7 @@ alias du='du -h'
 alias grep='grep -i'
 alias rm='rm -i'
 alias diff='diff -u'
+alias which='which -a'
 alias tar='tar --exclude-vcs'
 	# todo --exclude-vcs doesn't work on osx
 alias locate='locate -i'
@@ -17,6 +18,7 @@ alias watch='watch -d'
 alias ..="cd .."
 alias ...="cd .. && cd .."
 alias ....="cd .. && cd .. && cd .."
+alias .....="cd .. && cd .. && cd .. && cd .."
 
 
 ## Miscellaneous
@@ -69,6 +71,7 @@ case $(hostname) in
 		alias wme-up='wme && vagrant up && vagrant ssh'
 		alias calypso='cd /Users/iandunn/vhosts/localhost/calypso.localhost'
 		alias updatedb='sudo /usr/libexec/locate.updatedb'
+		alias behat='/Users/iandunn/vhosts/tools/wp-cli/vendor/behat/behat/bin/behat'
 
 		# When unplug external webcam (like when traveling), then plug back in, it's not recognized until restart service
 		alias fix-camera='sudo killall VDCAssistant'
