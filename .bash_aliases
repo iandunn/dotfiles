@@ -25,6 +25,9 @@ alias .....="cd .. && cd .. && cd .. && cd .."
 alias patch='patch --no-backup-if-mismatch'
 alias trim-whitespace="sed -i '' -e's/[[:space:]]*$//'"
 alias phpcbf='phpcbf -v'
+alias phpcs-changed-git='phpcs -a $(git diff master --name-only) $(git diff --cached)'
+alias phpcs-changed-svn='phpcs -a $(svn stat | grep "\(M \|A \)" | grep -v "external item" | cut -c8-)'
+# todo can combine ^^^ into just `phpcs-changed` ?
 
 alias curl-time='curl -w "
 DNS Lookup:    %{time_namelookup}
@@ -47,7 +50,7 @@ Total:         %{time_total}
 
 # remove noise from externals
 alias prune-svn-stat="grep -v 'X   ' |grep -v 'Performing status on ex' |grep -v -e '^$'"
-# todo convert this to a single regex
+# todo convert this to a single regex -- '^[^?X]' ?
 alias svn-stat-pruned="svn stat |prune-svn-stat"
 # todo: "alias svn-stat-deep" which will include externals in subdirectiories. probably needs to be a function rather than an alias
 

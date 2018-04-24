@@ -113,6 +113,8 @@ function git_status {
 		# git-svn meta.svn.wordpress.org:master
 		# Git github.com:master is clean - how to handle multiple remotes?
 	# add paths too? sometimes that's helpful, like with github.com
+
+	# todo if there's a git-svn remote and a native git remote, only the git-svn one is shown
 }
 
 function svn_status {
