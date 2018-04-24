@@ -168,11 +168,11 @@ function deploy {
 	# w.org sandbox
 	if [[ 'iandunn.dev.ord.wordpress.org' = $(hostname) ]]; then
 		case "$current_folder" in
-	                *wordcamp* )
+			*wordcamp* )
 				deploy-wordcamp.sh
 			;;
 
-			*wporg* )
+			*wporg* | *api* )
 				deploy-dotorg.sh $1
 			;;
 
@@ -190,9 +190,17 @@ function deploy {
 			ssh wordcamp.org 'deploy-wordcamp.sh'
 		;;
 
+		*i18n-tools* )
+			ssh wordpress.org 'deploy-dotorg.sh wporg'
+		;;
+
 		*wp15.wordpress.test* )
 			ssh -t wp15.wordpress.net 'svn up ~/wp15.wordpress.net'
 		;;
+
+                *wordpressfoundation.test* )
+                        ssh -t wordpressfoundation.org 'svn up ~/public_html/content/plugins/wpf-stripe'
+                ;;
 
 		*iandunn.localhost* | *silencedmajority.test* )
 			deployer deploy
