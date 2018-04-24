@@ -1,26 +1,51 @@
 #!/bin/bash
 
-commits=$( /usr/bin/git log HEAD...git-svn )
-current_folder=$( pwd )
+function main {
+	commits=$( /usr/bin/git log HEAD...git-svn )
+	current_folder=$( pwd )
 
-# Don't do anything if there aren't any commits to push.
-if [[ ${#commits} = 0 ]]; then
-	printf "\nNothing to push.\n"
-	exit
-fi
+	# Don't do anything if there aren't any commits to push.
+	if [[ ${#commits} = 0 ]]; then
+		printf "\nNothing to push.\n"
+		exit
+	fi
 
-# Run pre-commit hooks or any other site-specific code.
-case "$current_folder" in
-	*wordcamp.test* )
-		sh .git/hooks/pre-svn-dcommit
+	# Run pre-commit hooks or any other site-specific code.
+	case "$current_folder" in
+		*wordcamp.test* )
+			script=$(get_hooks_folder)/pre-svn-dcommit
 
-		if [[ $? != 0 ]]; then
-			exit $?
+			if [ -f $script ]; then
+				sh $script
+
+				if [[ $? != 0 ]]; then
+					exit $?
+				fi
+			fi
+		;;
+	esac
+
+	# Have to stash to avoid getting an error (i forget what).
+	git stash
+	git svn dcommit --interactive
+	git stash pop
+}
+
+# Search up the directory tree for the .git/hooks directory
+function get_hooks_folder {
+	local folder=$PWD
+	local path=false
+
+	while [[ '/' != $folder ]]; do
+		if [[ -d $folder/.git/hooks ]]; then
+			path=$folder/.git/hooks
+			break
 		fi
-	;;
-esac
 
-# Have to stash to avoid getting an error (i forget what).
-git stash
-git svn dcommit --interactive
-git stash pop
+		folder=$( dirname $folder )
+	done
+
+	echo "$path"
+}
+
+main
