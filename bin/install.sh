@@ -13,14 +13,14 @@ if [ -d $HOME/dotfiles ]; then
 else
 	printf "\nEnter directory where dotfiles have been cloned: "
 	read DOTFILES_DIR
-fi
 
-# Replace `~` with $HOME, because symlinks need absolute paths.
-DOTFILES_DIR=${DOTFILES_DIR//\~/$HOME}
+	# Replace `~` with $HOME, because symlinks need absolute paths.
+	DOTFILES_DIR=${DOTFILES_DIR//\~/$HOME}
 
-if [ ! -d $DOTFILES_DIR ]; then
-	printf "\nError: \`$DOTFILES_DIR\` does not exist. Aborting.\n\n"
-	exit
+	if [ ! -d $DOTFILES_DIR ]; then
+		printf "\nError: \`$DOTFILES_DIR\` does not exist. Aborting.\n\n"
+		exit
+	fi
 fi
 
 # Overwrite existing files, because the defaults are unlikely to be useful or important.
