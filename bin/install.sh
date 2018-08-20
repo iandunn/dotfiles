@@ -9,7 +9,7 @@
 printf "\nDirectory where dotfiles have been cloned: "
 read DOTFILES_DIR
 
-# Replace `~` with $HOME, because symlinks need abolute paths
+# Replace `~` with $HOME, because symlinks need abolute paths.
 DOTFILES_DIR=${DOTFILES_DIR//\~/$HOME}
 
 if [ ! -d $DOTFILES_DIR ]; then
@@ -17,7 +17,7 @@ if [ ! -d $DOTFILES_DIR ]; then
 	exit
 fi
 
-# Overwrite existing files, because the defaults are unlikely to be useful or important
+# Overwrite existing files, because the defaults are unlikely to be useful or important.
 ln -sf $DOTFILES_DIR/.bash_aliases	$HOME/.bash_aliases
 ln -sf $DOTFILES_DIR/.bash_prompt	$HOME/.bash_prompt
 ln -sf $DOTFILES_DIR/.gitconfig		$HOME/.gitconfig
@@ -30,7 +30,7 @@ cp $DOTFILES_DIR/.subversion/config	$HOME/.subversion/config
 
 
 
-# Append to existing files, to avoid overwriting possibly useful/important system defaults
+# Append to existing files, to avoid overwriting possibly useful/important system defaults.
 if [ -f $HOME/.bashrc ]; then
 	if [ ! -L $HOME/.bashrc ]; then
 		if [ ! -L $HOME/.bashrc && ! grep "$DOTFILES_DIR/.bash_profile" $HOME/.bashrc ]; then
