@@ -23,6 +23,7 @@ ln -sf $DOTFILES_DIR/.bash_prompt	$HOME/.bash_prompt
 ln -sf $DOTFILES_DIR/.gitconfig		$HOME/.gitconfig
 ln -sf $DOTFILES_DIR/.gitignore_global	$HOME/.gitignore_global
 ln -sf $DOTFILES_DIR/.inputrc		$HOME/.inputrc
+ln -sf $DOTFILES_DIR/.nanorc		$HOME/.nanorc
 
 # Subversion and SSH configs can't be symlinked :(
 cp $DOTFILES_DIR/.subversion/config	$HOME/.subversion/config
