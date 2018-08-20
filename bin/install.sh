@@ -38,10 +38,10 @@ cp $DOTFILES_DIR/.subversion/config	$HOME/.subversion/config
 
 # Append to existing files, to avoid overwriting possibly useful/important system defaults.
 if [ -f $HOME/.bashrc ]; then
-	if [ ! -L $HOME/.bashrc ]; then
-		if [ ! -L $HOME/.bashrc && ! grep "$DOTFILES_DIR/.bash_profile" $HOME/.bashrc ]; then
-			printf "\nsource $DOTFILES_DIR/.bashrc\n" >> $HOME/.bashrc
-		fi
+	COMMAND="source $DOTFILES_DIR/.bashrc"
+
+	if [ ! -L $HOME/.bashrc ] && ! grep -q "$COMMAND" "$HOME/.bashrc"; then
+		printf "\nsource $DOTFILES_DIR/.bashrc\n" >> $HOME/.bashrc
 	fi
 else
 	ln -s $DOTFILES_DIR/.bashrc $HOME/.bashrc
@@ -49,8 +49,10 @@ fi
 
 # todo make this DRY w/ block above
 if [ -f $HOME/.bash_profile ]; then
-	if [ ! -L $HOME/.bash_profile && ! grep "$DOTFILES_DIR/.bash_profile" $HOME/.bash_profile ]; then
-        	printf "\nsource $DOTFILES_DIR/.bash_profile\n" >> $HOME/.bash_profile
+	COMMAND="source $DOTFILES_DIR/.bash_profile"
+
+	if [ ! -L $HOME/.bash_profile ] && ! grep -q "$COMMAND" "$HOME/.bash_profile"; then
+		printf "\n$COMMAND\n" >> $HOME/.bash_profile
 	fi
 else
         ln -s $DOTFILES_DIR/.bash_profile $HOME/.bash_profile
