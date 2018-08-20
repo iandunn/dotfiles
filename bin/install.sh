@@ -15,7 +15,7 @@ else
 	read DOTFILES_DIR
 fi
 
-# Replace `~` with $HOME, because symlinks need abolute paths.
+# Replace `~` with $HOME, because symlinks need absolute paths.
 DOTFILES_DIR=${DOTFILES_DIR//\~/$HOME}
 
 if [ ! -d $DOTFILES_DIR ]; then
