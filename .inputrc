@@ -7,8 +7,5 @@ set show-all-if-ambiguous on
 # Immediately add a trailing slash when autocompleting symlinks to directories
 set mark-symlinked-directories on
 
-# Immediately show all possible completions
-set show-all-if-ambiguous on
-
 # If there are more than n possible completions for a word, ask to show them all
 set completion-query-items 200
