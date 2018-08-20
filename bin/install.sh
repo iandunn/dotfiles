@@ -6,8 +6,14 @@
 # Some things, like SSH, phpcs, and phpmd aren't installed, because they're only used on a few machines.
 #
 
-printf "\nDirectory where dotfiles have been cloned: "
-read DOTFILES_DIR
+
+if [ -d $HOME/dotfiles ]; then
+	printf "\nInstalling from $HOME/dotfiles\n"
+	DOTFILES_DIR=$HOME/dotfiles
+else
+	printf "\nEnter directory where dotfiles have been cloned: "
+	read DOTFILES_DIR
+fi
 
 # Replace `~` with $HOME, because symlinks need abolute paths.
 DOTFILES_DIR=${DOTFILES_DIR//\~/$HOME}
