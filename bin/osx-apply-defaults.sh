@@ -142,6 +142,8 @@ defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 # Make notification banners show up for longer than the default
 defaults write com.apple.notificationcenterui bannerTime 6
 
+# Disable mouse acceleration, to improve aiming in games. Default value is 0.875.
+defaults write .GlobalPreferences com.apple.mouse.scaling -1
 
 ###
 ### Restart any services that were affected
