@@ -1,5 +1,22 @@
 #!/bin/bash
 
+## Host-specific aliases
+case $(sysctl hw.model) in
+	*"iMac"* )
+		DEVICE_TYPE="desktop"
+	;;
+
+	*"MacBook"* )
+		DEVICE_TYPE="laptop"
+	;;
+
+	* )
+		echo "Device type could not be determined, aborting."
+		exit 1
+	;;
+esac
+
+
 # TODO
 #
 # Browse through http://defaults-write.com for more
@@ -10,7 +27,6 @@
 # Speed up character reapeat in terminal
 # Turn on character repeat in regular apps
 # Turn of fracking autocorrect
-#  Make sure the password is required to wake from sleep or from the screen saver.
 # Other security best practices that you can automate?
 # disable Spotlight Suggestions
 
@@ -58,6 +74,43 @@ defaults write com.apple.dock autohide-delay -float 2500
 
 # Keep the obnoxious 5px Dock gap on the secondary monitor so it's less noticeable
 defaults write com.apple.Dock orientation -string right
+
+
+###
+### Screen Saver / Energy / Lock time
+###
+
+# Use secure/energy saving settings while travelling, and more convenient settings at home
+if [ 'desktop' == $DEVICE_TYPE ]; then
+	SCREEN_SAVER_IDLE_TIME=900
+	SCREEN_SAVER_LOCK_DELAY=60
+else
+	SCREEN_SAVER_IDLE_TIME=300
+	SCREEN_SAVER_LOCK_DELAY=10
+fi
+
+# Set screen saver time.
+#
+# Arrogant and short-sighted designers at Apple only allow picking set values from dropdown in the UI, instead of
+# entering desired value via input field.
+defaults write com.apple.screensaver idleTime $SCREEN_SAVER_IDLE_TIME
+
+# Turn the monitor off when idle.
+#
+# Let the screen saver run for a bit first, though, since I like seeing my iTunes album covers
+if [ 'laptop' == $DEVICE_TYPE ]; then
+	sudo pmset -b displaysleep 5
+	sudo pmset -b disksleep 5
+	sudo pmset -b sleep 10
+fi
+sudo pmset -c displaysleep 20
+sudo pmset -c disksleep 20
+sudo pmset -c sleep 30
+
+# Require password to unlock, with an optional grace period
+defaults write com.apple.screensaver askForPassword -int 1
+defaults write com.apple.screensaver askForPasswordDelay -int $SCREEN_SAVER_LOCK_DELAY
+
 
 
 ###
