@@ -22,7 +22,7 @@ case $(hostname) in
 		hostname="vvv"
 	;;
 
-	"n2"* )
+	"durin" )
 		color_user_host="\e[38;5;64m"  # lime green
 		hostname="iandunn.name"
 	;;

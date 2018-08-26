@@ -21,10 +21,6 @@ case $(hostname) in
 		export NVM_DIR="$HOME/.nvm"
 		source "/usr/local/opt/nvm/nvm.sh"
 	;;
-
-	"iandunn.name" | "n2"* )
-		export PATH="$HOME/bin:$HOME/opt/bin:$PATH:/usr/local/sbin:/usr/sbin:/sbin"
-	;;
 esac
 
 source $DOTFILES_DIR/bin/git-completion.bash

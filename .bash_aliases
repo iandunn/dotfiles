@@ -87,8 +87,9 @@ case $(hostname) in
 	;;
 
 	# iandunn.name cluster
-	"iandunn.name" | "n2"* )
-		alias wp='~/bin/wp'
+	"durin" )
+		# Need to periodically update this to match what phpfpm is using
+		alias php='/usr/local/php70/bin/php'
 	;;
 
 	"norah" )
