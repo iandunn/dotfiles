@@ -86,12 +86,6 @@ case $(hostname) in
 		alias phpcs='phpcs -a'
 	;;
 
-	# iandunn.name cluster
-	"durin" )
-		# Need to periodically update this to match what phpfpm is using
-		alias php='/usr/local/php70/bin/php'
-	;;
-
 	"norah" )
 		alias reset-resolution='xrandr  --output LVDS1  --mode 1366x768'
 		alias suspend='dbus-send --system --print-reply --dest="org.freedesktop.login1" /org/freedesktop/login1 org.freedesktop.login1.Manager.Suspend boolean:true'

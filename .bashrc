@@ -21,6 +21,11 @@ case $(hostname) in
 		export NVM_DIR="$HOME/.nvm"
 		source "/usr/local/opt/nvm/nvm.sh"
 	;;
+
+	"durin" )
+		# Need to periodically update this to match php-fpm's version
+		export PATH=/usr/local/php70/bin:$PATH
+	;;
 esac
 
 source $DOTFILES_DIR/bin/git-completion.bash
