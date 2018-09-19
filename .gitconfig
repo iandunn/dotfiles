@@ -8,7 +8,7 @@
 
 [alias]
 	co       = checkout
-	ci       = commit --verbose
+	ci       = commit
 	stat     = status
 	statlong = status --long
 	diffc    = diff --cached
