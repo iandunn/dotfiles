@@ -13,7 +13,7 @@
 	statlong = status --long
 	diffc    = diff --cached
 	svnrebase = !git stash && git svn rebase --log-window-size=100000 && git stash pop
-
+	stashshow = "!git stash show -p stash@{\"$1\"} #"
 
 [diff]
 	tool = dw
