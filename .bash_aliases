@@ -93,7 +93,8 @@ case $(hostname) in
 		alias pbpaste='xsel --clipboard --output'
 	;;
 
-	"iandunn.dev.wordpress.org" )
-		alias deploy='deploy-dotorg.sh'
+	"iandunn.dev.wordpress.org" | "iandunn.dev.ord.wordpress.org" )
+		alias svnupall='svnup-all.sh'
+		alias svnup-all='svnup-all.sh'
 	;;
 esac
