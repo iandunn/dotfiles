@@ -41,6 +41,9 @@ First byte:    %{time_starttransfer}
 Total:         %{time_total}
 "'
 
+# Version Control
+alias pullup='git pull && svn up'
+
 # todo works manually but not as alias
 # todo also grep for begining of sentance, to avoid false matches
 # alias svn-add-untracked="svn add $(svn status | grep [^?] | awk '{print $2}')"
