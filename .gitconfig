@@ -14,6 +14,7 @@
 	diffc    = diff --cached
 	svnrebase = !git stash && git svn rebase --log-window-size=100000 && git stash pop
 	stashshow = "!git stash show -p stash@{\"$1\"} #"
+	svnrebasemirror = !git checkout master && git pull origin master && git svn rebase && git push origin master
 
 [diff]
 	tool = dw
