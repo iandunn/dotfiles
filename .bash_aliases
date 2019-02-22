@@ -81,7 +81,7 @@ case $(hostname) in
 		# When unplug external webcam (like when traveling), then plug back in, it's not recognized until restart service
 		alias fix-camera='sudo killall VDCAssistant'
 
-		alias push-deploy='git push && deployer deploy'
+		alias push-deploy='git push && deploy'
 	;;
 
 	"vvv" )
