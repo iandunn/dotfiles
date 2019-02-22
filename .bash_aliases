@@ -25,9 +25,11 @@ alias .....="cd .. && cd .. && cd .. && cd .."
 alias patch='patch --no-backup-if-mismatch'
 alias trim-whitespace="sed -i '' -e's/[[:space:]]*$//'"
 alias phpcbf='phpcbf -v'
-alias phpcs-changed-git='phpcs -a $(git diff master --name-only) $(git diff --cached)'
+alias phpcs='phpcs -a'
+alias phpcs-changed-git='phpcs -a $(git diff master --name-only) $(git diff --cached --name-only)'
 alias phpcs-changed-svn='phpcs -a $(svn stat | grep "\(M \|A \)" | grep -v "external item" | cut -c8-)'
 # todo can combine ^^^ into just `phpcs-changed` ?
+alias phpcs-changed-lines='DIFF_BASE=master DEV_LIB_ONLY=phpsyntax,phpcs /Users/iandunn/vhosts/tools/xwp-wp-dev-lib/pre-commit'
 
 alias curl-time='curl -w "
 DNS Lookup:    %{time_namelookup}
@@ -83,7 +85,6 @@ case $(hostname) in
 		alias vvv='cd /srv/www/'
 		alias codeception='php /srv/tools/codecept.phar --config=.'
 		alias makepot='php /srv/www/wp-develop.dev/tools/i18n/makepot.php'
-		alias phpcs='phpcs -a'
 	;;
 
 	"norah" )
