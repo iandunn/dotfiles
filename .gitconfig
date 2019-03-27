@@ -9,6 +9,7 @@
 [alias]
 	co       = checkout
 	ci       = commit
+	cherp	 = cherry-pick
 	stat     = status
 	statlong = status --long
 	diffc    = diff --cached
