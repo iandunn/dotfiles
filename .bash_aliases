@@ -63,7 +63,7 @@ alias svn-stat-pruned="svn stat |prune-svn-stat"
 
 ## Host-specific aliases
 case $(hostname) in
-	"macenzie" | "macenzie.local" | "flanders" | "flanders.local" )
+	"willow" | "willow.local" | "flanders" | "flanders.local" )
 		alias ls='gls --all --group-directories-first --color'
 		alias vhosts='cd /Users/iandunn/vhosts/'
 		alias wpver='find /Users/iandunn/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'

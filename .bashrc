@@ -14,7 +14,7 @@ export SVN_EDITOR="nano -w"
 
 # Host-specific environmental variables
 case $(hostname) in
-	"macenzie" | "macenzie.local" | "flanders" | "flanders.local" )
+	"willow" | "willow.local" | "flanders" | "flanders.local" )
 		export PATH="$HOME/bin:$DOTFILES_DIR/bin:$PATH"
 		export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.dev/public_html/tests/phpunit"
 		# export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
