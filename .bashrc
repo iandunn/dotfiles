@@ -16,10 +16,11 @@ export SVN_EDITOR="nano -w"
 case $(hostname) in
 	"willow" | "willow.local" | "flanders" | "flanders.local" )
 		export PATH="$HOME/bin:$DOTFILES_DIR/bin:$PATH"
-		export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.dev/public_html/tests/phpunit"
+		export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
 		# export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
 		export NVM_DIR="$HOME/.nvm"
 		source "/usr/local/opt/nvm/nvm.sh"
+		export GPG_TTY=$(tty)
 	;;
 
 	"durin" )
