@@ -202,12 +202,20 @@ function deploy {
 			ssh -t wp15.wordpress.net 'svn up ~/wp15.wordpress.net'
 		;;
 
-                *wordpressfoundation.test* )
-                        ssh -t wordpressfoundation.org 'svn up ~/public_html/content/plugins/wpf-stripe'
-                ;;
+		*wordpressfoundation.test* )
+			ssh -t wordpressfoundation.org 'svn up ~/public_html/'
+		;;
 
-		*iandunn.localhost* | *silencedmajority.test* )
-			deployer deploy
+		*/iandunn.localhost* )
+			bash /Users/iandunn/vhosts/localhost/iandunn.localhost/bin/deploy.sh
+		;;
+
+		*regolith.iandunn.localhost* )
+			bash /Users/iandunn/vhosts/localhost/regolith.iandunn.localhost/bin/deploy.sh
+		;;
+
+		*silencedmajority.test* )
+			bash /Users/iandunn/vhosts/localhost/silencedmajority.test/bin/deploy.sh
 		;;
 
 		* )
