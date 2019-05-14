@@ -176,7 +176,7 @@ function deploy {
 				deploy-wordcamp.sh
 			;;
 
-			*wporg* | *api* )
+			*wporg* | *api* | *buddypress* )
 				deploy-dotorg.sh $1
 			;;
 
