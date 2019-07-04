@@ -14,6 +14,7 @@
 	statlong = status --long
 	diffc    = diff --cached
 	svnrebase = !git stash && git svn rebase --log-window-size=100000 && git stash pop
+		# todo don't do ^ if there's already something in stash, b/c when have conflicts it gets all messed up. er, or is it because left in stash after fix conflict? i think it's the latter
 	stashshow = "!git stash show -p stash@{\"$1\"} #"
 	svnrebasemirror = !git checkout master && git pull origin master && git svn rebase && git push origin master
 
@@ -44,6 +45,9 @@
 [push]
 	default = current
 
+[pull]
+	rebase = true
+
 [color]
 	ui = true
 
@@ -60,4 +64,6 @@
 	rmdir = true
 
 	# `true` would break `git svn fetch` by trying to sign other people's commits. Is there a way around that? Does it even matter?
-	gpgsign = false
+#	gpgsign = false
+# see if ^ breaks git svn rebase && git push for wordcamp
+# huh, disabling it doesn't seem to have any effect. it doesn't even try to sign git svn commits
