@@ -79,6 +79,11 @@ function git_status {
 		# todo if on individual commit, show the rev -- https://stackoverflow.com/questions/11168141/find-which-commit-is-currently-checked-out-in-git
 		# todo if tag, getting a "-bash: //: Is a directory" error
 
+		# if on remote branch, show that
+		# > git statlong
+		# HEAD detached at origin/select2-registration-form
+		# nothing to commit, working tree clean
+
 		# todo need to support submodules like publish-iandunn-2017 -- "HEAD detached at c170c1c"
 
 		# todo during rebase getting:

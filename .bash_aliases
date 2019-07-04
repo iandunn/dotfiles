@@ -20,6 +20,9 @@ alias ...="cd .. && cd .."
 alias ....="cd .. && cd .. && cd .."
 alias .....="cd .. && cd .. && cd .. && cd .."
 
+alias devdown="sudo nginx -s quit && brew services stop php@7.2 && brew services stop mailhog && brew services stop mysql && brew services list"
+alias devup="sudo nginx && brew services start php@7.2 && brew services start mailhog && brew services start mysql && brew services list"
+#todo move ^ to appropriate section below
 
 ## Miscellaneous
 alias patch='patch --no-backup-if-mismatch'
@@ -41,6 +44,8 @@ First byte:    %{time_starttransfer}
 Total:         %{time_total}
 "'
 
+alias dcomp='docker-compose'
+
 # Version Control
 alias pullup='git pull && svn up'
 
@@ -61,6 +66,8 @@ alias svn-stat-pruned="svn stat |prune-svn-stat"
 
 # todo setup https://stackoverflow.com/a/3885594/450127 so `svn ci` also prints the diff like git does
 
+alias syncsvn='php /Users/iandunn/vhosts/localhost/wordcamp.test/public_html/bin/php/multiple-use/miscellaneous/sync-svn-with-git.php'
+
 ## Host-specific aliases
 case $(hostname) in
 	"willow" | "willow.local" | "flanders" | "flanders.local" )
@@ -77,11 +84,13 @@ case $(hostname) in
 		alias calypso='cd /Users/iandunn/vhosts/localhost/calypso.localhost'
 		alias updatedb='sudo /usr/libexec/locate.updatedb'
 		alias behat='/Users/iandunn/vhosts/tools/wp-cli/vendor/behat/behat/bin/behat'
+		alias web-ext-run='web-ext run --firefox=/Applications/FirefoxDeveloperEdition.app/Contents/MacOS/firefox-bin --firefox-profile=dev-edition-default'
 
 		# When unplug external webcam (like when traveling), then plug back in, it's not recognized until restart service
 		alias fix-camera='sudo killall VDCAssistant'
 
 		alias push-deploy='git push && deploy'
+		alias pushdeploy='push-deploy'
 	;;
 
 	"vvv" )
