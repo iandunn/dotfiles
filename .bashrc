@@ -230,3 +230,24 @@ function deploy {
 function phpmd {
 	/usr/local/bin/phpmd $1 text ~/vhosts/localhost/wordcamp.test/phpmd.xml.dist
 }
+
+# Run composer commands from subfolder without prompt
+#
+# When running `composer update`, etc, it obnoxiously complains that you're not in the root folder, and makes you
+# confirm that you want to execute the commands based on the `composer.json` in the root. That only exists for
+# back-compat due to a (IMO) poor design decision. See https://github.com/composer/composer/issues/6426.
+#
+# This function works around that inconvenience so that you're not prompted if you're in a known project.
+function composer {
+	current_folder=$(pwd)
+
+	case "$current_folder" in
+		*wordcamp.test* )
+			/usr/local/bin/composer "$@" -d /Users/iandunn/vhosts/localhost/wordcamp.test/
+		;;
+
+		* )
+			/usr/local/bin/composer "$@"
+		;;
+	esac
+}
