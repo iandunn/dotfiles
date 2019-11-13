@@ -9,6 +9,7 @@
 [alias]
 	co       = checkout
 	ci       = commit
+	cinv	 = commit --no-verify
 	cherp	 = cherry-pick
 	stat     = status
 	statlong = status --long
@@ -21,13 +22,13 @@
 [diff]
 	tool = dw
 	noprefix = true
-	#external = '/Applications/DeltaWalker.app/Contents/MacOS/git-diff'
+	#external = '/Applications/DeltaWalker.app/Contents/Resources/git-diff'
 
 [difftool]
 	prompt = false
 
 [difftool "dw"]
-	cmd = '/Applications/DeltaWalker.app/Contents/MacOS/git-diff' "$LOCAL" "$REMOTE"
+	cmd = '/Applications/DeltaWalker.app/Contents/Resources/git-diff' "$LOCAL" "$REMOTE"
 	# remote doesn't show up
 
 [branch]
@@ -37,7 +38,7 @@
 	tool = deltawalker
 
 [mergetool "deltawalker"]
-	cmd = '/Applications/DeltaWalker.app/Contents/MacOS/git-merge' "$LOCAL" "$REMOTE" "$BASE" "$MERGED"
+	cmd = '/Applications/DeltaWalker.app/Contents/Resources/git-merge' "$LOCAL" "$REMOTE" "$BASE" "$MERGED"
 
 [core]
 	excludesfile = ~/.gitignore_global
