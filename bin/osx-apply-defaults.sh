@@ -58,9 +58,6 @@ defaults write com.apple.finder EmptyTrashSecurely -bool true
 # Reduce transparency of the Finder sidebar
 defaults write com.apple.universalaccess reduceTransparency -boolean true
 
-# Show full path in title bar
-defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
-
 
 ###
 ### Dock
@@ -133,8 +130,8 @@ defaults write -g ApplePressAndHoldEnabled -bool false
 defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1
 
 # Limit Time Machine space, because it shares the disk with other things
-sudo defaults write /Library/Preferences/com.apple.TimeMachine MaxSize 750000
-
+#sudo defaults write /Library/Preferences/com.apple.TimeMachine MaxSize 850000
+# want more for flanders, less for macenzie. this is just a bash script, so just check the hostname
 
 # Full keyboard mode
 defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
@@ -144,6 +141,10 @@ defaults write com.apple.notificationcenterui bannerTime 6
 
 # Disable mouse acceleration, to improve aiming in games. Default value is 0.875.
 defaults write .GlobalPreferences com.apple.mouse.scaling -1
+
+# https://github.com/electron/electron/issues/13164#issuecomment-435735605
+defaults write -g NSRequiresAquaSystemAppearance -bool Yes
+# todo need to logout to see if ^ worked
 
 ###
 ### Restart any services that were affected
