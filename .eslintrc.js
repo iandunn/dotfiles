@@ -9,6 +9,8 @@
  * equals in assignment should be aligned          - needs a plugin: https://github.com/eslint/eslint/issues/11025
  * `from` in `import` statements should be aligned - needs a plugin: https://github.com/eslint/eslint/issues/11025
  *
+ * require named exports instead of default
+ *
  * indent things like
  * { mode &&
  * <GridToolbar
@@ -24,6 +26,8 @@
  *
  * switch to snake_case? more readable and consistent w/ php. `camel_case` already turned off for rest api, but could convert code to snake and set rule to enforce snake.
  */
+
+const jsxCommentPattern = '{\s?\/\*';
 
 module.exports = {
 	extends : 'plugin:@wordpress/eslint-plugin/recommended',
@@ -45,6 +49,9 @@ module.exports = {
 		 * still free to choose to define the variable after the early returns.
 		 */
 		'@wordpress/no-unused-vars-before-return' : [ 'off' ],
+
+		// Wrapping single params with quotes hurts readability.
+		'arrow-parens' : [ 'error', 'as-needed' ],
 
 		/*
 		 * Instead of turning this off altogether, we should safelist the parameters that are coming in from
@@ -107,6 +114,7 @@ module.exports = {
 			'ignoreUrls'             : true,
 			'ignoreStrings'          : true,
 			'ignoreTemplateLiterals' : true,
+			'ignorePattern'          : jsxCommentPattern,
 
 			/*
 			 * I really only want to turn this off for `t\odo` comments, because it's annoying to have it on for
@@ -171,6 +179,15 @@ module.exports = {
 		 * `try/catch`, etc blocks. There's no way to specify that, so just disable it entirely.
 		 */
 		'padded-blocks' : 'off',
+
+		// The consistency helps readability, but it's still bad to quote for none of the ones in the block need it.
+		'quote-props' : [ 'error', 'consistent-as-needed' ],
+
+		/*
+		 * Allow the `'` character because it's commonly used in text, and I've never seen it cause a problem.
+		 * Entities inside words -- e.g., doesn&amps;t -- hurt readability.
+		 */
+		'react/no-unescaped-entities' : [ 'error', { 'forbid' : [ '>', '"', '}' ] } ],
 
 		/*
 		 * A short description often makes a function easier to understand, and also provides a nice visual
