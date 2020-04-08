@@ -1,3 +1,8 @@
+# todo try to find a way to clear the screen inbetween `git add -p` prompts. 
+# it's too hard to tell how the current hunk has been split because the previous prompt is so easy to miss
+# https://www.reddit.com/r/git/comments/6mll23/is_it_possible_to_clear_the_screen_for_each_hunk/
+# workaround for now is to just hit <return> if it's not obvious, because that'll spit out the help menu followed by the hunk
+
 [user]
 	name  = Ian Dunn
 	email = ian@iandunn.name
@@ -11,8 +16,13 @@
 	ci       = commit
 	cinv	 = commit --no-verify
 	cherp	 = cherry-pick
+	logm     = log --no-abbrev-commit --format=medium
+	pullas	 = pull --autostash
+	reba	 = rebase --abort
+	rebc	 = rebase --continue
 	stat     = status
 	statlong = status --long
+	showm    = show --no-abbrev-commit --format=medium
 	diffc    = diff --cached
 	svnrebase = !git stash && git svn rebase --log-window-size=100000 && git stash pop
 		# todo don't do ^ if there's already something in stash, b/c when have conflicts it gets all messed up. er, or is it because left in stash after fix conflict? i think it's the latter
@@ -34,6 +44,10 @@
 [branch]
 	autosetuprebase = always
 
+[format]
+	# Want this for `log`, but not `show`. Doesn't seem like there's a way to do that, and I use `log` much more than `show`, so just created `showm` alias as workaround.
+	pretty = oneline
+
 [merge]
 	tool = deltawalker
 
@@ -48,6 +62,9 @@
 
 [pull]
 	rebase = true
+
+[rebase]
+	abbreviateCommands = true
 
 [color]
 	ui = true
