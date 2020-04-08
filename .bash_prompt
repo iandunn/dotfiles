@@ -1,5 +1,17 @@
 #!/bin/bash
 
+#
+# Bash is fundamentally awful, but this probably needs to be written in Bash instead of a modern
+# scripting language for performance. Don't want to load PHP on top of everything else.
+# Could look into Fish though.
+#
+
+# todo-optimize
+# maybe add timers to git and svn portions, and if one of them takes more than X ms, prompt that you should run `git gc` or `svn cleanup --include-externals`
+#   https://git-scm.com/docs/git-gc - look at diff arguments
+# prompt first though b/c might lose some stuff
+
+
 color_reset="\033[m"
 color_dirty="\033[1;31m"    # red
 color_clean="\033[1;32m"    # green
@@ -48,78 +60,62 @@ case $(hostname) in
 	;;
 esac
 
-function in_git_repo {
-	# Return true if we're in a Git repo
-	if [[ $(git rev-parse --is-inside-work-tree 2> /dev/null) == "true" ]]; then
-
-		# Return false if we're inside the VVV container, but not at the root and not in a separate leaf-level repo
-		if [[ $(git rev-parse --show-toplevel 2> /dev/null) == "/Users/ian/vhosts/virtual-machines/vvv-personal" ]]; then
-			if [[ $(pwd) != "/Users/ian/vhosts/virtual-machines/vvv-personal" ]]; then
-				return 1
-			fi
-		fi
-
-		return 0
-	fi
-
-	return 1
-}
-
+# Parsing `git status --long` isn't as elegant as using porcelan commands, etc, but it's much faster. That's
+# critical because larger repos can make every prompt painfully slow.
 function git_status {
-	$(in_git_repo)
-	if [[ "$?" != 0 ]]; then
-		exit
+	status=$(git status --long 2>&1)
+
+	# todo-enhance break these into modular functions
+
+	# Bail if not a Git repo.
+	if [[ $status == *"not a git repository"* ]]; then
+		return
 	fi
 
-	# Get the current branch/tag
-	ref="$(git symbolic-ref HEAD 2> /dev/null | sed -e 's/refs\/heads\///')"
-	if [[ "$ref" == "" ]]; then
-		ref="$(git describe --tags)"
+	root_folder=$(git rev-parse --show-toplevel)
+	set -- $status
 
-		# todo if on individual commit, show the rev -- https://stackoverflow.com/questions/11168141/find-which-commit-is-currently-checked-out-in-git
-		# todo if tag, getting a "-bash: //: Is a directory" error
+	# Figure out where we are / what we're doing.
+	if [[ $status == *"On branch"* ]]; then
+		location=${3}
 
-		# if on remote branch, show that
-		# > git statlong
-		# HEAD detached at origin/select2-registration-form
-		# nothing to commit, working tree clean
+	elif [[ $status == *"HEAD detached at"* ]]; then
+		location=${4}
 
-		# todo need to support submodules like publish-iandunn-2017 -- "HEAD detached at c170c1c"
+	elif [[ $status == *"rebase in progress"* || $status == *"currently rebasing"* ]]; then
+		location="rebasing onto ${6}"
 
-		# todo during rebase getting:
-		# fatal: No names found, cannot describe anything.
-		# -bash: =(no branch): command not found
-
-		if [[ "$ref" == "" ]]; then
-			$ref="(no branch)"
-		fi
-	fi
-
-	branch="${color_branch}$ref${color_reset}"
-
-	# Determine if clean or dirty
-	state=$(git status --long 2> /dev/null | tail -n1)
-	if [[ $state == *"working directory clean"* || $state == *"working tree clean"* ]]; then
-		state="${color_clean}clean${color_reset}"
 	else
-		state="${color_dirty}dirty${color_reset}"
+		location="[unknown]"
 	fi
 
-	if [[ -d "$(git rev-parse --show-toplevel)/.git/svn" ]]; then
-		flavor="git-svn"
-	else
-		flavor="Git"
-	fi
+	# todo-enhance add stash and bisecting as extras, but doesn't replace location
+	# anything else?
 
-	echo -n "$flavor $branch is $state"
-
-	# todo maybe add remote, like
+	# todo-enhance maybe add remote, like
 		# git-svn wordcamp.svn.wordpress.org:master
 		# git-svn meta.svn.wordpress.org:master
 		# Git github.com:master is clean - how to handle multiple remotes?
 	# add paths too? sometimes that's helpful, like with github.com
 
-	# todo if there's a git-svn remote and a native git remote, only the git-svn one is shown
+	branch="${color_branch}${location}${color_reset}"
+
+	# Determine if clean or dirty.
+	if [[ $status == *"working directory clean"* || $status == *"working tree clean"* ]]; then
+		state="${color_clean}clean${color_reset}"
+	else
+		state="${color_dirty}dirty${color_reset}"
+	fi
+
+	# Determine Git vs git-svn.
+	if [[ -d "$root_folder/.git/svn" ]]; then
+		flavor="git-svn"
+	else
+		flavor="Git"
+	fi
+	# todo-bug if there's a git-svn remote and a native git remote, only the git-svn one is shown. should show both.
+
+	echo -n "$flavor $branch is $state"
 }
 
 function svn_status {
