@@ -119,6 +119,18 @@ function git_status {
 }
 
 function svn_status {
+	local counter=$SECONDS;
+
+	# todo-optimize
+	# This is still slow on large repos like wp-develop
+	# `svn info` may be a little slow, but it's `svn stat` that is really awful
+	# Running `svn cleanup --include-externals` automatically helps a lot, but may eventually want to do more
+	# Maybe there's a way to determine clean/dirty without running `svn stat`? Like checking files in the `.svn` folder, etc
+	# maybe can cache some of it in env variables? prob not 'cause status can change so often, but worth considering
+	# search for other people's svn bash_prompt's and look at how they do it
+	# could also detect when in wp-develop and add `--depth=intermediates` arg and a warning that it didn't search the whole depth
+	# could also post question on stackoverflow for help
+
 	SVN_INFO=$(svn info 2> /dev/null)
 
 	if [[ -z $SVN_INFO ]]; then
@@ -133,12 +145,9 @@ function svn_status {
 	branch="${color_branch}$branch${color_reset}"
 
 	# Determine if clean or dirty
-	# todo svn stat is the slowest part. any way to optimize this?
-	# maybe can cache some of it in env variables? prob not 'cause status can change so often, but worth considering
-	# search for other people's svn bash_prompt's and look at how they do it
-	# could also post question on stackoverflow for help
-	# todo this will report clean if an external is modified, which could lead to missed errors. too slow to include externals though? maybe just warn that it's only internal repo that's clean?
-	if [[ $(svn stat --ignore-externals | grep -v 'X       ' | grep -v '    X   ' ) ]]; then
+	# Can add `--ignore-externals` to speed this up, but then it will miss modifications there.
+	# Seems fast enough now that running cleanup automatically.
+	if [[ $(svn stat | grep -v 'X       ' | grep -v '    X   ' | grep -v 'external item' ) ]]; then
 		state="${color_dirty}dirty${color_reset}"
 	else
 		state="${color_clean}clean${color_reset}"
@@ -147,6 +156,11 @@ function svn_status {
 	# todo show whether repo is public or private? to help avoid accidentally commiting private to public
 
 	echo -n "SVN $branch is $state"
+
+	if [[ $((SECONDS-counter)) -gt 1 ]]; then
+		echo "\n${color_dirty}[SVN is slow, cleaning up...]${color_reset}"
+		$(svn cleanup --include-externals 2>&1)
+	fi
 }
 
 function vcs_prompt {
