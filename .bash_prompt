@@ -92,9 +92,17 @@ function git_status {
 		location="[unknown]"
 	fi
 
-	# todo-enhance add stash and bisecting as extras, but doesn't replace location
-	# anything else?
+	# Bisecting?
+	bisecting=""
+	if [[ $status == *"currently bisecting"* ]]; then
+		bisecting=" (bisecting)";
+	fi
 
+	# Got stashes?
+	stashes=""
+	if [[ -f "$root_folder/.git/logs/refs/stash" ]]; then
+		stashes=" (stashes)"
+	fi
 
 	branch="${color_branch}${location}${color_reset}"
 
@@ -113,7 +121,7 @@ function git_status {
 	fi
 	# todo-bug if there's a git-svn remote and a native git remote, only the git-svn one is shown. should show both.
 
-	echo -n "$flavor $branch is $state"
+	echo -n "$flavor $branch is $state$bisecting$stashes"
 }
 
 function svn_status {
