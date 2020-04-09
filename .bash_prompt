@@ -6,12 +6,6 @@
 # Could look into Fish though.
 #
 
-# todo-optimize
-# maybe add timers to git and svn portions, and if one of them takes more than X ms, prompt that you should run `git gc` or `svn cleanup --include-externals`
-#   https://git-scm.com/docs/git-gc - look at diff arguments
-# prompt first though b/c might lose some stuff
-
-
 color_reset="\033[m"
 color_dirty="\033[1;31m"    # red
 color_clean="\033[1;32m"    # green
@@ -62,13 +56,22 @@ esac
 
 # Parsing `git status --long` isn't as elegant as using porcelan commands, etc, but it's much faster. That's
 # critical because larger repos can make every prompt painfully slow.
+#
+# If ever feel like this is slow, then you could do something similar to `svn_status`, but with `git gc`. Probably
+# prompt first, though because you don't wanna lose anything in reflog that might be needed soon.
 function git_status {
 	status=$(git status --long 2>&1)
 
 	# todo-enhance break these into modular functions
 
+	# todo-enhance maybe add remote, like
+	# git-svn wordcamp.svn.wordpress.org:master
+	# git-svn meta.svn.wordpress.org:master
+	# Git github.com:master is clean - how to handle multiple remotes?
+	# add paths too? sometimes that's helpful, like with github.com
+
 	# Bail if not a Git repo.
-	if [[ $status == *"not a git repository"* ]]; then
+	if [[ $status == *"not a git repository"* || $status == *"must be run in a work tree"* ]]; then
 		return
 	fi
 
@@ -92,11 +95,6 @@ function git_status {
 	# todo-enhance add stash and bisecting as extras, but doesn't replace location
 	# anything else?
 
-	# todo-enhance maybe add remote, like
-		# git-svn wordcamp.svn.wordpress.org:master
-		# git-svn meta.svn.wordpress.org:master
-		# Git github.com:master is clean - how to handle multiple remotes?
-	# add paths too? sometimes that's helpful, like with github.com
 
 	branch="${color_branch}${location}${color_reset}"
 
