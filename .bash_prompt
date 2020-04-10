@@ -90,18 +90,25 @@ function git_status {
 
 	else
 		location="[unknown]"
-	fi
 
-	# Bisecting?
-	bisecting=""
-	if [[ $status == *"currently bisecting"* ]]; then
-		bisecting=" (bisecting)";
 	fi
 
 	# Got stashes?
 	stashes=""
 	if [[ -f "$root_folder/.git/logs/refs/stash" ]]; then
 		stashes=" (stashes)"
+	fi
+
+	# Conflicts?
+	conflicts=""
+	if [[ $status == *"fix conflicts"* ]]; then
+		conflicts=" (conflicts)"
+	fi
+
+	# Bisecting?
+	bisecting=""
+	if [[ $status == *"currently bisecting"* ]]; then
+		bisecting=" (bisecting)";
 	fi
 
 	branch="${color_branch}${location}${color_reset}"
@@ -121,7 +128,7 @@ function git_status {
 	fi
 	# todo-bug if there's a git-svn remote and a native git remote, only the git-svn one is shown. should show both.
 
-	echo -n "$flavor $branch is $state$bisecting$stashes"
+	echo -n "$flavor $branch is $state$stashes$conflicts$bisecting"
 }
 
 function svn_status {
