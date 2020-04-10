@@ -76,21 +76,35 @@ function git_status {
 	fi
 
 	root_folder=$(git rev-parse --show-toplevel)
+
+	# For some inexplicable fracking reason, this syntax is how you tell Bash that you want to explode a string
+	# into an array, so that you can reference the individual words.
 	set -- $status
 
 	# Figure out where we are / what we're doing.
-	if [[ $status == *"On branch"* ]]; then
-		location=${3}
-
-	elif [[ $status == *"HEAD detached at"* ]]; then
+	if [[ $status == *"HEAD detached at"* ]]; then
 		location=${4}
 
 	elif [[ $status == *"rebase in progress"* || $status == *"currently rebasing"* ]]; then
 		location="rebasing onto ${6}"
 
+	elif [[ $status == *"currently cherry-picking"* ]]; then
+		# todo-bug remove the `.` at the end of the word
+		location="cherry-picking ${9}"
+
+	# This has to come after above, because there are situations where you're cherry-picking but still on branch
+	# (e.g., fixing conflicts).
+	elif [[ $status == *"On branch"* ]]; then
+		location=${3}
+
 	else
 		location="[unknown]"
+		# todo get here when "head detached _FROM_ X" instead of "detached _AT_ X"
+		# would it be accurate to just add that to the one above, or would that be misleading, by making you think you're at X, when you're not
 
+		# @IanDunn: This depends on your Git version. git status got smarter around Git 2.0, and then again a bit later: besides examining HEAD itself, git status looks into the reflog entries for HEAD. These tell Git whether you just recently ran a git checkout that detached HEAD, and it's still there at the commit you specified; or whether you did the git checkout, then moved HEAD around some more. The at <name> means "still there" and the from <name> means "was there, got moved since then". – torek 11 mins ago
+		# Different Git vintages produce slightly different messages here. The really old ones never bother to look at the reflog entries at all, and just say "detached", without any more detail.
+		# https://stackoverflow.com/questions/44738188/diagnose-a-misterious-detached-head-in-git/44739639?noredirect=1#comment108149704_44739639
 	fi
 
 	# Got stashes?
