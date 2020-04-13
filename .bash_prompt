@@ -71,7 +71,7 @@ function git_status {
 	# add paths too? sometimes that's helpful, like with github.com
 
 	# Bail if not a Git repo.
-	if [[ $status == *"not a git repository"* || $status == *"must be run in a work tree"* ]]; then
+	if [[ $status == *"Not a git repository"* || $status == *"not a git repository"* || $status == *"must be run in a work tree"* ]]; then
 		return
 	fi
 
