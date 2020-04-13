@@ -150,6 +150,7 @@ function svn_status {
 
 	# todo-optimize
 	# This is still slow on large repos like wp-develop
+	# even on smaller ones like wordcamp.org
 	# `svn info` may be a little slow, but it's `svn stat` that is really awful
 	# Running `svn cleanup --include-externals` automatically helps a lot, but may eventually want to do more
 	# Maybe there's a way to determine clean/dirty without running `svn stat`? Like checking files in the `.svn` folder, etc
@@ -184,9 +185,9 @@ function svn_status {
 
 	echo -n "SVN $branch is $state"
 
-	if [[ $((SECONDS-counter)) -gt 1 ]]; then
-		echo "\n${color_dirty}[SVN is slow, cleaning up...]${color_reset}"
-		$(svn cleanup --include-externals 2>&1)
+	if [[ $((SECONDS-counter)) -gt 2 ]]; then
+		echo "\n${color_dirty}[SVN is slow, launching async cleanup...]${color_reset}"
+		bash -c "svn cleanup --include-externals >/dev/null 2>/dev/null &"
 	fi
 }
 
