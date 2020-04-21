@@ -62,6 +62,10 @@
 	# Want this for `log`, but not `show`. Doesn't seem like there's a way to do that, and I use `log` much more than `show`, so just created `showm` alias as workaround.
 	pretty = oneline
 
+[log]
+	# The full hash is unnecessary in most contexts, and clutters the screen.
+	abbrevCommit = true
+
 [merge]
 	tool = deltawalker
 
