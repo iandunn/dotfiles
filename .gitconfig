@@ -16,6 +16,9 @@
 	ci       = commit
 	cinv	 = commit --no-verify
 	cherp	 = cherry-pick
+	logdef   = log ...production
+		# make ^ automatically pick the default branch for git, and `git-svn` ref for git-svn
+		# see comments around `phpcs-changed-git` for notes on getting default
 	logm     = log --no-abbrev-commit --format=medium
 	pullas	 = pull --autostash
 	reba	 = rebase --abort
