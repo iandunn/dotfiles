@@ -24,6 +24,7 @@
 	# push = todo a bash function that checks if the current folder is wordcamp.test. if it is, then show a prompt asking if want to run pre-commit githooks. defaults to no (b/c working on branch). can answer yes if ready to run over entire branch for pr, or before pushing to production branch
 	reba	 = rebase --abort
 	rebc	 = rebase --continue
+	rebi     = rebase -i production # todo get default branch, since prod is only for wordcamp repo
 	stat     = status
 	statlong = status --long
 	showm    = show --no-abbrev-commit --format=medium  # Appending `m` for `medium` because can't overwrite default `show` command :( -- see https://stackoverflow.com/questions/3538774/is-it-possible-to-override-git-command-by-git-alias
