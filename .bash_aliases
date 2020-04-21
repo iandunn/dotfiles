@@ -46,8 +46,13 @@ Total:         %{time_total}
 
 alias dcomp='docker-compose'
 
+#
 # Version Control
-alias pullup='git pull && svn up'
+#
+
+# Git is a bit more forgiving than SVN, so running SVN first leads to fewer conflicts.
+alias pullup='svn up && git pull'
+	# todo if w.org sandbox, `svnup`
 
 # todo works manually but not as alias
 # todo also grep for begining of sentance, to avoid false matches
