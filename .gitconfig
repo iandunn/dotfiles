@@ -74,6 +74,7 @@
 
 [status]
 	short = true
+	showStash = true
 
 [commit]
 	gpgsign = true
