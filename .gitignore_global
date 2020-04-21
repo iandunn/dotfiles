@@ -7,7 +7,7 @@ sandbox-functionality/
 node_modules
 npm-debug.log
 *.map
-build
+# build -- don't want to have to add these all the time b/c of watch tasks, but do want to commit them to the repo when production uses them. not sure how to handle that yet
 *.diff
 *.patch
 local-config.php

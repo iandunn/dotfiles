@@ -29,10 +29,13 @@ alias patch='patch --no-backup-if-mismatch'
 alias trim-whitespace="sed -i '' -e's/[[:space:]]*$//'"
 alias phpcbf='phpcbf -v'
 alias phpcs='phpcs -a'
-alias phpcs-changed-git='phpcs -a $(git diff master --name-only) $(git diff --cached --name-only)'
+alias phpcs-changed-git='phpcs -a $(git diff production --name-only) $(git diff --cached --name-only)'
+	# todo ^ should use default branch, not hardcode "master". doesn't work w/ "production" , "develop" etc
+	# none from https://stackoverflow.com/questions/28666357/git-how-to-get-default-branch work in 5ftF repo, maybe have to track remote or something
 alias phpcs-changed-svn='phpcs -a $(svn stat | grep "\(M \|A \)" | grep -v "external item" | cut -c8-)'
 # todo can combine ^^^ into just `phpcs-changed` ?
 alias phpcs-changed-lines='DIFF_BASE=master DEV_LIB_ONLY=phpsyntax,phpcs /Users/iandunn/vhosts/tools/xwp-wp-dev-lib/pre-commit'
+	# todo also shouldn't hardcode branch ^
 
 alias curl-time='curl -w "
 DNS Lookup:    %{time_namelookup}
@@ -55,6 +58,7 @@ alias pullup='svn up && git pull'
 	# todo if w.org sandbox, `svnup`
 
 # todo works manually but not as alias
+	# maybe something like this, but need to remove the `rm` stuff: svn st $DIR |awk '/^!/ { print "svn rm -q "$2; } /^[?]/ { print "svn add -q "$2; }' | sh
 # todo also grep for begining of sentance, to avoid false matches
 # alias svn-add-untracked="svn add $(svn status | grep [^?] | awk '{print $2}')"
 # also do something like alias rm-svn-untracked="rm -f $(svn status | grep [^?] | awk '{print $2}')"

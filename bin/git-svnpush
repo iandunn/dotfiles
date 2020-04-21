@@ -28,6 +28,7 @@ function main {
 	# Have to stash to avoid getting an error (i forget what).
 	git stash
 	git svn dcommit --interactive
+		# todo only the short commit msg is shown. Want to add something like `--format=medium`, but that's not supported.
 	git stash pop
 }
 

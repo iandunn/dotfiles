@@ -21,11 +21,12 @@
 		# see comments around `phpcs-changed-git` for notes on getting default
 	logm     = log --no-abbrev-commit --format=medium
 	pullas	 = pull --autostash
+	# push = todo a bash function that checks if the current folder is wordcamp.test. if it is, then show a prompt asking if want to run pre-commit githooks. defaults to no (b/c working on branch). can answer yes if ready to run over entire branch for pr, or before pushing to production branch
 	reba	 = rebase --abort
 	rebc	 = rebase --continue
 	stat     = status
 	statlong = status --long
-	showm    = show --no-abbrev-commit --format=medium
+	showm    = show --no-abbrev-commit --format=medium  # Appending `m` for `medium` because can't overwrite default `show` command :( -- see https://stackoverflow.com/questions/3538774/is-it-possible-to-override-git-command-by-git-alias
 	diffc    = diff --cached
 	svnrebase = !git stash && git svn rebase --log-window-size=100000 && git stash pop
 		# todo don't do ^ if there's already something in stash, b/c when have conflicts it gets all messed up. er, or is it because left in stash after fix conflict? i think it's the latter
@@ -68,6 +69,8 @@
 
 [rebase]
 	abbreviateCommands = true
+	#autostash = true
+		# seems like would be convenience, but could be dangerous. need to research/test first
 
 [color]
 	ui = true
