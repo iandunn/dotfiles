@@ -172,13 +172,26 @@ function svn_status {
 	fi
 	branch="${color_branch}$branch${color_reset}"
 
-	# Determine if clean or dirty
-	# Can add `--ignore-externals` to speed this up, but then it will miss modifications there.
-	# Seems fast enough now that running cleanup automatically.
-	if [[ $(svn stat | grep -v 'X       ' | grep -v '    X   ' | grep -v 'external item' ) ]]; then
-		state="${color_dirty}dirty${color_reset}"
+	# `svn stat` is slow because the repo is so big.
+	slow_folders=(
+		"/Users/iandunn/vhosts/localhost/wordcamp.test/public_html/wp-content"
+		"/Users/iandunn/vhosts/localhost/wordcamp.test/public_html/wp-content/plugins"
+		"/Users/iandunn/vhosts/localhost/wp-develop.test/public_html"
+		"/Users/iandunn/vhosts/localhost/wp-develop.test/public_html/src"
+	)
+
+	# Only check for an exact match, since subfolders are fast enough to test.
+	# Could instead add `--ignore-externals` instead, to speed it up, but then it will miss modifications there.
+	# todo maybe combine ^ with this, so say something like "[] is [clean/dirty], but externals are too to check, so check those manually" (but more concise)
+	if [[ " ${slow_folders[@]} " =~ " $(pwd) " ]]; then
+	    state="[too slow to check]"
 	else
-		state="${color_clean}clean${color_reset}"
+		# Determine if clean or dirty
+		if [[ $(svn stat | grep -v 'X       ' | grep -v '    X   ' | grep -v 'external item' ) ]]; then
+			state="${color_dirty}dirty${color_reset}"
+		else
+			state="${color_clean}clean${color_reset}"
+		fi
 	fi
 
 	# todo show whether repo is public or private? to help avoid accidentally commiting private to public
