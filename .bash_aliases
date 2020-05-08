@@ -27,12 +27,14 @@ alias patch='patch --no-backup-if-mismatch'
 alias trim-whitespace="sed -i '' -e's/[[:space:]]*$//'"
 alias phpcbf='phpcbf -v'
 alias phpcs='phpcs -a'
-alias phpcs-changed-git='phpcs -a $(git diff production --name-only) $(git diff --cached --name-only)'
+alias phpcs-git-files='phpcs -a $(git diff production --name-only) $(git diff --cached --name-only)'
 	# todo ^ should use default branch, not hardcode "master". doesn't work w/ "production" , "develop" etc
 	# none from https://stackoverflow.com/questions/28666357/git-how-to-get-default-branch work in 5ftF repo, maybe have to track remote or something
-alias phpcs-changed-svn='phpcs -a $(svn stat | grep "\(M \|A \)" | grep -v "external item" | cut -c8-)'
+#alias phpcs-git-lines='DIFF_BASE=production DEV_LIB_ONLY=phpsyntax,phpcs ~/vhosts/tools/xwp-wp-dev-lib/pre-commit'
+	# todo ^ also needs to get default branch instead of hardcoding
+alias phpcs-svn-files='phpcs -a $(svn stat | grep "\(M \|A \)" | grep -v "external item" | cut -c8-)'
 # todo can combine ^^^ into just `phpcs-changed` ?
-alias phpcs-changed-lines='DIFF_BASE=master DEV_LIB_ONLY=phpsyntax,phpcs /Users/iandunn/vhosts/tools/xwp-wp-dev-lib/pre-commit'
+alias phpcs-changed-lines='DIFF_BASE=production DEV_LIB_ONLY=phpsyntax,phpcs /Users/iandunn/vhosts/tools/xwp-wp-dev-lib/pre-commit'
 	# todo also shouldn't hardcode branch ^
 
 alias cleanbuild='npm ci && npm run build'
