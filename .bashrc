@@ -10,7 +10,7 @@ DOTFILES_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 export EDITOR="nano"
 export SVN_EDITOR="nano -w"
 export PATH="$PATH:$DOTFILES_DIR/bin"
-
+export BASH_SILENCE_DEPRECATION_WARNING=1
 
 # todo maybe use \nano or /usr/bin/nano to avoid the -w and force line wrapping during git/svn commits
 
