@@ -60,7 +60,7 @@ esac
 # If ever feel like this is slow, then you could do something similar to `svn_status`, but with `git gc`. Probably
 # prompt first, though because you don't wanna lose anything in reflog that might be needed soon.
 function git_status {
-	status=$(git status --long 2>&1)
+	status=$(git status --long --verbose --branch --show-stash 2>&1)
 
 	# todo-enhance break these into modular functions
 
