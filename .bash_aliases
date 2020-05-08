@@ -37,6 +37,8 @@ alias phpcs-changed-svn='phpcs -a $(svn stat | grep "\(M \|A \)" | grep -v "exte
 alias phpcs-changed-lines='DIFF_BASE=master DEV_LIB_ONLY=phpsyntax,phpcs /Users/iandunn/vhosts/tools/xwp-wp-dev-lib/pre-commit'
 	# todo also shouldn't hardcode branch ^
 
+alias cleanbuild='npm ci && npm run build'
+
 alias curl-time='curl -w "
 DNS Lookup:    %{time_namelookup}
 TCP connect:   %{time_connect}
@@ -48,6 +50,9 @@ Total:         %{time_total}
 "'
 
 alias dcomp='docker-compose'
+
+# It crashed more than it should, and when it does, it can't be re-opened until this file is deleted.
+alias gorramit_firefox='rm -f ~/Library/Application Support/Firefox/Profiles/**/.parentlock'
 
 #
 # Version Control
