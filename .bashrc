@@ -22,6 +22,8 @@ case $(hostname) in
 		# export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
 		export NVM_DIR="$HOME/.nvm"
 		source "/usr/local/opt/nvm/nvm.sh"
+		source /usr/local/etc/profile.d/z.sh
+			# todo isntall on w.org sandbox too? if so will be in diff directory
 		export GPG_TTY=$(tty)
 	;;
 
