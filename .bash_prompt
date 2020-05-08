@@ -75,6 +75,11 @@ function git_status {
 		return
 	fi
 
+	# todo maybe do somehting similar to svn_status, because git can get real slow too on big repos, like gutenberg
+	# seems to show up more with tab completion on branches, and checking out, etc, though, rather than status
+	# if still noticable on status, could time it and run `git gc`, maybe with the `--aggressive` option
+		# no, --aggressive is takes 10 fracking minutes. but could maybe echo "ran gc, but you may want to run gc --aggressive if its still slow. that will take several minutes"
+
 	root_folder=$(git rev-parse --show-toplevel)
 
 	# For some inexplicable fracking reason, this syntax is how you tell Bash that you want to explode a string
@@ -101,10 +106,25 @@ function git_status {
 		location="[unknown]"
 		# todo get here when "head detached _FROM_ X" instead of "detached _AT_ X"
 		# would it be accurate to just add that to the one above, or would that be misleading, by making you think you're at X, when you're not
+			# that would be misleading, b/c you're not at X, you're at a totoally diffierent commit. X is just the one you were previiously at before running the last git command
+			# maybe show "detached at {the hash of HEAD, which will be 1 forward of X}"
 
-		# @IanDunn: This depends on your Git version. git status got smarter around Git 2.0, and then again a bit later: besides examining HEAD itself, git status looks into the reflog entries for HEAD. These tell Git whether you just recently ran a git checkout that detached HEAD, and it's still there at the commit you specified; or whether you did the git checkout, then moved HEAD around some more. The at <name> means "still there" and the from <name> means "was there, got moved since then". – torek 11 mins ago
+		# @IanDunn: This depends on your Git version. git status got smarter around Git 2.0, and then again a bit later: besides examining HEAD itself, git status looks into the reflog entries for HEAD.
+		# These tell Git whether you just recently ran a git checkout that detached HEAD, and it's still there at the commit you specified; or whether you did the git checkout, then moved HEAD around some more.
+		# The at <name> means "still there" and the from <name> means "was there, got moved since then". – torek 11 mins ago
+		#
 		# Different Git vintages produce slightly different messages here. The really old ones never bother to look at the reflog entries at all, and just say "detached", without any more detail.
 		# https://stackoverflow.com/questions/44738188/diagnose-a-misterious-detached-head-in-git/44739639?noredirect=1#comment108149704_44739639
+
+
+		# when "detached _FROM_ is because you checked out a tag, though, it should should the tag name
+			# sometimes it does say "deatached at v8.0.0", maybe depends on how you check it out, or what you were on previously?
+			#
+			# git describe --tags
+			# git describe --exact-match --tags $(git log -n1 --pretty='%h')
+			# https://stackoverflow.com/a/3405221/450127
+			#
+
 	fi
 
 	# Got stashes?
@@ -176,6 +196,7 @@ function svn_status {
 	slow_folders=(
 		"/Users/iandunn/vhosts/localhost/wordcamp.test/public_html/wp-content"
 		"/Users/iandunn/vhosts/localhost/wordcamp.test/public_html/wp-content/plugins"
+		"/Users/iandunn/vhosts/localhost/wordcamp.test/public_html/wp-content/plugins/gutenberg"
 		"/Users/iandunn/vhosts/localhost/wp-develop.test/public_html"
 		"/Users/iandunn/vhosts/localhost/wp-develop.test/public_html/src"
 	)
