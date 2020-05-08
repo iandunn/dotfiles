@@ -10,8 +10,6 @@ alias grep='grep -i'
 alias rm='rm -i'
 alias diff='diff -u'
 alias which='which -a'
-alias tar='tar --exclude-vcs'
-	# todo --exclude-vcs doesn't work on osx
 alias locate='locate -i'
 # todo works but throws usage notice - alias tail='tail -n40'
 alias watch='watch -d'
@@ -84,6 +82,9 @@ alias syncsvn='php /Users/iandunn/vhosts/localhost/wordcamp.test/public_html/bin
 
 ## Host-specific aliases
 case $(hostname) in
+	# alias tar='tar --exclude-vcs'
+		# todo add ^ to all non-OSX hosts
+
 	"willow" | "willow.local" | "flanders" | "flanders.local" )
 		alias ls='gls --all --group-directories-first --color'
 		alias vhosts='cd /Users/iandunn/vhosts/'
