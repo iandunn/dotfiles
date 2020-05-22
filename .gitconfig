@@ -12,6 +12,7 @@
 	helper = osxkeychain
 
 [alias]
+	ap       = add -p
 	co       = checkout
 	ci       = commit
 	cinv	 = commit --no-verify
@@ -43,7 +44,13 @@
 	# i squash everything down to that first few commits, but their dates are months in the past, so viewing the commit history doesn't make sense
 	# you see older commits appearing before newer commits
 	#
-	# this is a step towards that, but only applies to HEAD. look for way to automate for all modified commits
+	# this is a step towards that, but only applies to HEAD. look for way to automate for all modified commits:
+	# git rebase -i production
+	# replace `pick` with `edit` for all commits
+	# for each
+	#   git newdate
+	#   git rebase --continue
+	# there's probably a better way, though
 	newdate = commit --amend --date=now --no-edit
 
 [diff]
