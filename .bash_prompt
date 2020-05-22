@@ -11,6 +11,7 @@ color_dirty="\033[1;31m"    # red
 color_clean="\033[1;32m"    # green
 color_branch="\e[38;5;14m"  # light blue
 color_folder="\e[38;5;19m"  # dark blue
+color_warning="\e[38;5;166m" # orange
 
 case $(hostname) in
 	"willow" | "willow.local" )
@@ -205,7 +206,7 @@ function svn_status {
 	# Could instead add `--ignore-externals` instead, to speed it up, but then it will miss modifications there.
 	# todo maybe combine ^ with this, so say something like "[] is [clean/dirty], but externals are too to check, so check those manually" (but more concise)
 	if [[ " ${slow_folders[@]} " =~ " $(pwd) " ]]; then
-	    state="[too slow to check]"
+	    state="${color_warning}[too slow to check]${color_reset}"
 	else
 		# Determine if clean or dirty
 		if [[ $(svn stat | grep -v 'X       ' | grep -v '    X   ' | grep -v 'external item' ) ]]; then
