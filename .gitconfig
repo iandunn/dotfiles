@@ -13,8 +13,10 @@
 
 [alias]
 	ap       = add -p
+	amshow	 = am --show-current-patch   # Useful for understanding the context when resolving merge conflicts.
 	co       = checkout
 	ci       = commit
+	cia      = commit --amend
 	cinv	 = commit --no-verify
 	cherp	 = cherry-pick
 	logdef   = log ...production
@@ -43,6 +45,9 @@
 	# otherwise i create a commit in a branch, the feature gets de-prioritized, then i come back a few months later and continue working
 	# i squash everything down to that first few commits, but their dates are months in the past, so viewing the commit history doesn't make sense
 	# you see older commits appearing before newer commits
+	#
+	# could try a `post-rewrite` hook. is there a way to make it apply to all repos, like how gitignore_global does?
+	#	worst case could put hook in dotfiles/bin or whatever, and add symnlikn anywhere you wanna use it
 	#
 	# this is a step towards that, but only applies to HEAD. look for way to automate for all modified commits:
 	# git rebase -i production
@@ -79,6 +84,7 @@
 [merge]
 	tool = deltawalker
 
+# Note: PHPStorm's diff tool seems better for resolving merge conflicts. Need Git plugin enabled.
 [mergetool "deltawalker"]
 	cmd = '/Applications/DeltaWalker.app/Contents/Resources/git-merge' "$LOCAL" "$REMOTE" "$BASE" "$MERGED"
 
