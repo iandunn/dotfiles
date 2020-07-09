@@ -18,6 +18,9 @@ alias ...="cd .. && cd .."
 alias ....="cd .. && cd .. && cd .."
 alias .....="cd .. && cd .. && cd .. && cd .."
 
+# z doesn't always add folders for some reason, but this lets you manually do it easily when you encounter one that should exist and doesn't
+alias zadd='z --add $(pwd)'
+
 alias devdown="sudo nginx -s quit && brew services stop php@7.2 && brew services stop mailhog && brew services stop mysql && brew services list"
 alias devup="sudo nginx && brew services start php@7.2 && brew services start mailhog && brew services start mysql && brew services list"
 #todo move ^ to appropriate section below
@@ -37,7 +40,12 @@ alias phpcs-svn-files='phpcs -a $(svn stat | grep "\(M \|A \)" | grep -v "extern
 alias phpcs-changed-lines='DIFF_BASE=production DEV_LIB_ONLY=phpsyntax,phpcs /Users/iandunn/vhosts/tools/xwp-wp-dev-lib/pre-commit'
 	# todo also shouldn't hardcode branch ^
 
+# tweak the -n option, but this is really more here just to remind yourself that `nice` is available to throttle commands that hog a lot of resources
+alias slurp='nice -n 15 ~/vhosts/tools/wordpress-plugin-directory-slurper/update'
+
 alias cleanbuild='npm ci && npm run build'
+
+alias curl='curl --location'
 
 alias curl-time='curl -w "
 DNS Lookup:    %{time_namelookup}
