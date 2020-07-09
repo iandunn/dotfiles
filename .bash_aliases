@@ -43,6 +43,12 @@ alias phpcs-changed-lines='DIFF_BASE=production DEV_LIB_ONLY=phpsyntax,phpcs /Us
 # tweak the -n option, but this is really more here just to remind yourself that `nice` is available to throttle commands that hog a lot of resources
 alias slurp='nice -n 15 ~/vhosts/tools/wordpress-plugin-directory-slurper/update'
 
+# todo move these below w/ version control. clean up this file in general
+# cleans up externals within the pwd too
+alias svn-cleanup-deep="find . -name '.svn' | sed 's/.svn//' | xargs -I% svn cleanup %"
+# todo move ^ into vcs section below
+#same for others above it
+
 alias cleanbuild='npm ci && npm run build'
 
 alias curl='curl --location'
@@ -62,6 +68,12 @@ alias dcomp='docker-compose'
 # It crashed more than it should, and when it does, it can't be re-opened until this file is deleted.
 alias gorramit_firefox='rm -f ~/Library/Application Support/Firefox/Profiles/**/.parentlock'
 
+# To allow `svn up` without certificate errors
+# can't leave this running after svn up, though, b/c messes up .test cert verification in browser
+# look into that, doesn't make sense.
+alias forward-wporg-svn='sudo ssh -ND 8081 -p22 -L 443:dotorg.svn.wordpress.org:443 iandunn@proxy.automattic.com &'
+	# sometimes ^ doesn't work, just shows "stopped" right away? is it because of sudo combined with & ?
+
 #
 # Version Control
 #
@@ -69,6 +81,8 @@ alias gorramit_firefox='rm -f ~/Library/Application Support/Firefox/Profiles/**/
 # Git is a bit more forgiving than SVN, so running SVN first leads to fewer conflicts.
 alias pullup='svn up && git pull'
 	# todo if w.org sandbox, `svnup`
+	# add a `git checkout .` before git pull? that would avoid `cant pull with rebase, you have unstaged changes` errors. but might also discard uncommitted changes that i want to keep
+	# could maybe do git pull --autostash instead
 
 # todo works manually but not as alias
 	# maybe something like this, but need to remove the `rm` stuff: svn st $DIR |awk '/^!/ { print "svn rm -q "$2; } /^[?]/ { print "svn add -q "$2; }' | sh
