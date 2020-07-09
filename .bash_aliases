@@ -41,7 +41,7 @@ alias phpcs-changed-lines='DIFF_BASE=production DEV_LIB_ONLY=phpsyntax,phpcs /Us
 	# todo also shouldn't hardcode branch ^
 
 # tweak the -n option, but this is really more here just to remind yourself that `nice` is available to throttle commands that hog a lot of resources
-alias slurp='nice -n 15 ~/vhosts/tools/wordpress-plugin-directory-slurper/update'
+alias slurp='nice -n 19 ~/vhosts/tools/wordpress-plugin-directory-slurper/update'
 
 # todo move these below w/ version control. clean up this file in general
 # cleans up externals within the pwd too
