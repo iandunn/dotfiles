@@ -99,9 +99,9 @@ alias pullup='svn up && git pull'
 
 
 # remove noise from externals
-alias prune-svn-stat="grep -v 'X   ' |grep -v 'Performing status on ex' |grep -v -e '^$'"
-# todo convert this to a single regex -- '^[^?X]' ?
-alias svn-stat-pruned="svn stat |prune-svn-stat"
+# the full wording here is verbose, but rememver that bash does tab completion on aliases too
+alias svn-stat-pruned='svn status | grep ^[?MAD]'
+alias svn-stat-pruned-tracked='svn status | grep ^[MAD]'
 # todo: "alias svn-stat-deep" which will include externals in subdirectiories. probably needs to be a function rather than an alias
 
 alias svn-showhead='svn up --ignore-externals && svn diff -rPREV |less'
