@@ -18,6 +18,10 @@ alias ...="cd .. && cd .."
 alias ....="cd .. && cd .. && cd .."
 alias .....="cd .. && cd .. && cd .. && cd .."
 
+# This assumes you're in the directory you want to search
+alias findgrep='find . -type f ! -path '*/.svn/*' ! -path '*/.git/*' |xargs grep --ignore-case --line-number --no-messages'
+# also add build, vendor, etc folders to exclude?
+
 # z doesn't always add folders for some reason, but this lets you manually do it easily when you encounter one that should exist and doesn't
 alias zadd='z --add $(pwd)'
 
@@ -99,6 +103,8 @@ alias prune-svn-stat="grep -v 'X   ' |grep -v 'Performing status on ex' |grep -v
 # todo convert this to a single regex -- '^[^?X]' ?
 alias svn-stat-pruned="svn stat |prune-svn-stat"
 # todo: "alias svn-stat-deep" which will include externals in subdirectiories. probably needs to be a function rather than an alias
+
+alias svn-showhead='svn up --ignore-externals && svn diff -rPREV |less'
 
 # todo setup https://stackoverflow.com/a/3885594/450127 so `svn ci` also prints the diff like git does
 
