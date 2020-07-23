@@ -1,4 +1,4 @@
-# TODO figure out why symlinks don't work for this. Until then, have to manually copy this to ~/.subversion/servers after making changes
+# Note: This has to be hard-linked, because ssh doesn't support symlinks.
 
 [groups]
 wordpress-org = *.wordpress.org

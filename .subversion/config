@@ -1,4 +1,4 @@
-# TODO figure out why symlinks don't work for this. Until then, have to manually copy this to ~/.subversion/config after making changes
+# Note: This has to be hard-linked, because ssh doesn't support symlinks.
 
 [miscellany]
 global-ignores = .idea .git* .DS_Store debug.log local-config.php sandbox-functionality sandbox-functionality.php node_modules *.map *.diff *.patch

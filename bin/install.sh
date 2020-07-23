@@ -31,8 +31,10 @@ ln -sf $DOTFILES_DIR/.gitignore_global	$HOME/.gitignore_global
 ln -sf $DOTFILES_DIR/.inputrc		$HOME/.inputrc
 ln -sf $DOTFILES_DIR/.nanorc		$HOME/.nanorc
 
-# Subversion and SSH configs can't be symlinked :(
-cp $DOTFILES_DIR/.subversion/config	$HOME/.subversion/config
+# These have to be hard links, because Subversion and SSH configs don't support symlinks.
+ln -f $DOTFILES_DIR/.ssh/config		$HOME/.ssh/config
+ln -f $DOTFILES_DIR/.subversion/config	$HOME/.subversion/config
+ln -f $DOTFILES_DIR/.subversion/servers	$HOME/.subversion/servers
 
 
 
