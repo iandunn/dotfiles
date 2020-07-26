@@ -1,0 +1,33 @@
+"serverblacklist"
+{
+	"server"
+	{
+		"name"		"|SHOOTOUT|COOP|45 BOTS|DENVER CO|"
+		"date"		"1570990898"
+		"addr"		"64.111.26.40:27015"
+	}
+	"server"
+	{
+		"name"		"Midnight Monsters 128tick #2 Co-Op"
+		"date"		"1571347464"
+		"addr"		"142.93.31.241:27016"
+	}
+	"server"
+	{
+		"name"		"Midnight Monsters Hardcore Co-Op"
+		"date"		"1592886645"
+		"addr"		"13.77.153.196:27001"
+	}
+	"server"
+	{
+		"name"		"[AS] TheArmoredSaints.com #34 Mega-Bots Suicidal (Checkpoint On"
+		"date"		"1592886782"
+		"addr"		"74.91.120.44:27034"
+	}
+	"server"
+	{
+		"name"		"Insurgency Coop Server"
+		"date"		"1595229716"
+		"addr"		"208.94.240.123:27020"
+	}
+}
