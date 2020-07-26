@@ -1,0 +1,26 @@
+// Remove smoke grenades, because they're annoying.
+// Didn't find a good way to disable entirely, so just making cost/weight impossible.
+
+"#base" "default_occupy.theater"
+	// Right now you have to manually change ^ to whatever mode you're playing. Is there a better way to do this?
+
+"theater"
+{
+	"weapons"
+	{
+		"weapon_m18"
+		{
+			"weapon_cost"		"99"
+		}
+
+		"weapon_m203_smoke"
+		{
+			"weapon_weight"		"999"
+		}
+
+		"weapon_gp25_smoke"
+		{
+			"weapon_weight"		"999"
+		}
+	}
+}
