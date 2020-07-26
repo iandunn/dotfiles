@@ -19,7 +19,7 @@ alias ....="cd .. && cd .. && cd .."
 alias .....="cd .. && cd .. && cd .. && cd .."
 
 # This assumes you're in the directory you want to search
-alias findgrep='find . -type f ! -path '*/.svn/*' ! -path '*/.git/*' |xargs grep --ignore-case --line-number --no-messages'
+alias findgrep='find . -type f ! -path '*/.svn/*' ! -path '*/.git/*' -follow |xargs grep --ignore-case --line-number --no-messages'
 # also add build, vendor, etc folders to exclude?
 
 # z doesn't always add folders for some reason, but this lets you manually do it easily when you encounter one that should exist and doesn't
