@@ -2,8 +2,9 @@
 
 cd ~/Library/ApplicationSupport/Steam/steamapps/common/insurgency2/insurgency/cfg
 cp {server.cfg.example | default_server_occupy.cfg | etc} ~/dotfiles/{same name, minus "default", "example", etc}
-ln -s ~/dotfiles/insurgency/server.cfg server.cfg
-	repeat ^ for other config files
+	repeat ^ for other default files you want to modify
+run bash: `for file in ~/dotfiles/insurgency/cfg/*; do ln -sf $file $(basename $file) ; done`
+repeat same for `scripts/` folder
 
 to apply:
 	`exec {filename without extension}` in console
