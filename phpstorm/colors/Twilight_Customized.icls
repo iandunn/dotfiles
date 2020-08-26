@@ -16,6 +16,7 @@
     <option name="ScrollBar.Mac.hoverThumbColor" value="" />
     <option name="ScrollBar.Mac.thumbColor" value="" />
     <option name="ScrollBar.Mac.trackColor" value="141414" />
+    <option name="ScrollBar.Mac.hoverTrackColor" value="141414" />
     <option name="WHITESPACES" value="4e4e4e" />
   </colors>
   <attributes>
