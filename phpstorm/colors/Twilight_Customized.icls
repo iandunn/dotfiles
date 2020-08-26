@@ -14,9 +14,9 @@
     <option name="SELECTED_INDENT_GUIDE" value="4e4e4e" />
     <option name="SELECTION_BACKGROUND" value="7b7e81" />
     <option name="ScrollBar.Mac.hoverThumbColor" value="" />
+    <option name="ScrollBar.Mac.hoverTrackColor" value="141414" />
     <option name="ScrollBar.Mac.thumbColor" value="" />
     <option name="ScrollBar.Mac.trackColor" value="141414" />
-    <option name="ScrollBar.Mac.hoverTrackColor" value="141414" />
     <option name="WHITESPACES" value="4e4e4e" />
   </colors>
   <attributes>
@@ -1532,7 +1532,8 @@
     </option>
     <option name="SEARCH_RESULT_ATTRIBUTES">
       <value>
-        <option name="BACKGROUND" value="4f4f82" />
+        <option name="FOREGROUND" value="ffffff" />
+        <option name="BACKGROUND" value="ff9d00" />
       </value>
     </option>
     <option name="SLIM_BAD_CHARACTER">
@@ -1606,7 +1607,8 @@
     </option>
     <option name="TEXT_SEARCH_RESULT_ATTRIBUTES">
       <value>
-        <option name="BACKGROUND" value="5f5f00" />
+        <option name="FOREGROUND" value="0" />
+        <option name="BACKGROUND" value="ffffff" />
         <option name="ERROR_STRIPE_COLOR" value="ff00" />
       </value>
     </option>
@@ -1642,13 +1644,14 @@
     </option>
     <option name="WRITE_IDENTIFIER_UNDER_CARET_ATTRIBUTES">
       <value>
-        <option name="BACKGROUND" value="472c47" />
+        <option name="BACKGROUND" value="3c3c57" />
         <option name="ERROR_STRIPE_COLOR" value="ffcdff" />
       </value>
     </option>
     <option name="WRITE_SEARCH_RESULT_ATTRIBUTES">
       <value>
-        <option name="BACKGROUND" value="623062" />
+        <option name="FOREGROUND" value="ffffff" />
+        <option name="BACKGROUND" value="ff8900" />
       </value>
     </option>
     <option name="XML_ATTRIBUTE_NAME">
