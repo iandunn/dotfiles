@@ -10,7 +10,7 @@ color_reset="\033[m"
 color_dirty="\033[1;31m"    # red
 color_clean="\033[1;32m"    # green
 color_branch="\e[38;5;14m"  # light blue
-color_folder="\e[38;5;19m"  # dark blue
+color_folder="\e[38;5;27m"   # light blue
 color_warning="\e[38;5;166m" # orange
 
 case $(hostname) in

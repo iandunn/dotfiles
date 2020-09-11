@@ -31,6 +31,7 @@
 	reba	 = rebase --abort
 	rebc	 = rebase --continue
 	rebi     = rebase -i production # todo get default branch, since prod is only for wordcamp repo
+	rebio    = rebase -i origin
 
 	reshh	 = reset --hard HEAD
 	stat     = status
