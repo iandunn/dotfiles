@@ -195,11 +195,11 @@ function svn_status {
 
 	# `svn stat` is slow because the repo is so big.
 	slow_folders=(
-		"/Users/iandunn/vhosts/localhost/wordcamp.test/public_html/wp-content"
-		"/Users/iandunn/vhosts/localhost/wordcamp.test/public_html/wp-content/plugins"
-		"/Users/iandunn/vhosts/localhost/wordcamp.test/public_html/wp-content/plugins/gutenberg"
-		"/Users/iandunn/vhosts/localhost/wp-develop.test/public_html"
-		"/Users/iandunn/vhosts/localhost/wp-develop.test/public_html/src"
+		"$HOME/vhosts/localhost/wordcamp.test/public_html/wp-content"
+		"$HOME/vhosts/localhost/wordcamp.test/public_html/wp-content/plugins"
+		"$HOME/vhosts/localhost/wordcamp.test/public_html/wp-content/plugins/gutenberg"
+		"$HOME/vhosts/localhost/wp-develop.test/public_html"
+		"$HOME/vhosts/localhost/wp-develop.test/public_html/src"
 	)
 
 	# Only check for an exact match, since subfolders are fast enough to test.
