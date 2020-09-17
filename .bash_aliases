@@ -78,6 +78,9 @@ alias gorramit_firefox='rm -f ~/Library/Application Support/Firefox/Profiles/**/
 alias forward-wporg-svn='sudo ssh -ND 8081 -p22 -L 443:dotorg.svn.wordpress.org:443 iandunn@proxy.automattic.com &'
 	# sometimes ^ doesn't work, just shows "stopped" right away? is it because of sudo combined with & ?
 
+
+alias skipinstall='WP_TESTS_SKIP_INSTALL=1'
+
 #
 # Version Control
 #
