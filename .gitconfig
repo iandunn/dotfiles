@@ -43,6 +43,9 @@
 	stashshow = "!git stash show -p stash@{\"$1\"} #"
 	svnrebasemirror = !git checkout master && git pull origin master && git svn rebase && git push origin master
 
+	# rename this to just `branch` if git every starts allowing aliases to override commands
+	tracking = branch -vv
+
 	# ideally want this to automatically run on every commit whenever it's modified in any way.
 	# e.g., want the date of the commit to be the _modified_ date, not the _created_ date
 	# otherwise i create a commit in a branch, the feature gets de-prioritized, then i come back a few months later and continue working
