@@ -3,7 +3,8 @@
 alias ls='ls --all --group-directories-first --color'
 alias ll='ls -lh'
 alias nano='nano -wc'
-alias less='less -SN'
+alias less='less -S'
+alias lessn='less -N'
 alias df='df -h'
 alias du='du -h'
 alias grep='grep -i'
@@ -17,6 +18,8 @@ alias ..="cd .."
 alias ...="cd .. && cd .."
 alias ....="cd .. && cd .. && cd .."
 alias .....="cd .. && cd .. && cd .. && cd .."
+
+alias date='gdate'
 
 # This assumes you're in the directory you want to search
 alias findgrep='find . -type f ! -path '*/.svn/*' ! -path '*/.git/*' -follow |xargs grep --ignore-case --line-number --no-messages'
