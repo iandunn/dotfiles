@@ -10,6 +10,7 @@ alias du='du -h'
 alias grep='grep -i'
 alias rm='rm -i'
 alias diff='diff -u'
+alias stat='stat -x'
 alias which='which -a'
 alias locate='locate -i'
 # todo works but throws usage notice - alias tail='tail -n40'
@@ -28,8 +29,8 @@ alias findgrep='find . -type f ! -path '*/.svn/*' ! -path '*/.git/*' -follow |xa
 # z doesn't always add folders for some reason, but this lets you manually do it easily when you encounter one that should exist and doesn't
 alias zadd='z --add $(pwd)'
 
-alias devdown="sudo nginx -s quit && brew services stop php@7.2 && brew services stop mailhog && brew services stop mysql && brew services list"
-alias devup="sudo nginx && brew services start php@7.2 && brew services start mailhog && brew services start mysql && brew services list"
+alias devdown="sudo brew services stop nginx && brew services stop php@7.2 && brew services stop mailhog && brew services stop mysql && brew services list"
+alias devup="sudo brew services start nginx && brew services start php@7.2 && brew services start mailhog && brew services start mysql && brew services list"
 #todo move ^ to appropriate section below
 
 ## Miscellaneous
@@ -136,6 +137,10 @@ case $(hostname) in
 		alias updatedb='sudo /usr/libexec/locate.updatedb'
 		alias behat='/Users/iandunn/vhosts/tools/wp-cli/vendor/behat/behat/bin/behat'
 		alias web-ext-run='web-ext run --firefox=/Applications/FirefoxDeveloperEdition.app/Contents/MacOS/firefox-bin --firefox-profile=dev-edition-default'
+
+		alias date='gdate' # use GNU date instead of BSD date for consistency across machines
+		alias timeutc='gdate --utc --date="@$1"'
+		alias timelocal='gdate --date='@''
 
 		# When unplug external webcam (like when traveling), then plug back in, it's not recognized until restart service
 		alias fix-camera='sudo killall VDCAssistant'
