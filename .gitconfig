@@ -15,6 +15,7 @@
 	ap       = add -p
 	amshow	 = am --show-current-patch   # Useful for understanding the context when resolving merge conflicts.
 	co       = checkout
+	cos      = !sh -c \"git branch -a | grep -v remotes | grep $1 | head -n 1 | xargs git checkout\"
 	ci       = commit
 	cia      = commit --amend
 	cinv	 = commit --no-verify
