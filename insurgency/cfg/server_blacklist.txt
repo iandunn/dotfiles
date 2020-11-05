@@ -30,4 +30,16 @@
 		"date"		"1595229716"
 		"addr"		"208.94.240.123:27020"
 	}
+	"server"
+	{
+		"name"		"El Barrio de Gato Mistico"
+		"date"		"1603237316"
+		"addr"		"104.223.92.100:21515"
+	}
+	"server"
+	{
+		"name"		"ULTRA | Call of Duty | 128 Tick"
+		"date"		"1604589507"
+		"addr"		"104.36.110.177:27016"
+	}
 }
