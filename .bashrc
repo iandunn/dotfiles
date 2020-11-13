@@ -179,6 +179,13 @@ function deploy {
 			;;
 
 			*wporg* | *api* | *buddypress* )
+				echo "Updating root files from local SVN..."
+				svn up $WPORGPATH --depth=files
+
+				printf "\nExporting latest root files from core.svn.wordpress.org...\n"
+				sh $WPORGPATH/bin/update-wordpress-root-files.sh
+				printf "\n"
+
 				deploy-dotorg.sh $1
 			;;
 
