@@ -33,6 +33,8 @@
 	rebc	 = rebase --continue
 	rebi     = rebase -i production # todo get default branch, since prod is only for wordcamp repo
 	rebio    = rebase -i origin
+	rebisvn  = rebase -i git-svn
+	pullreb  = !git co production && git pull && git co - && git rebase production
 
 	reshh	 = reset --hard HEAD
 	stat     = status
