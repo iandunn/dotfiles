@@ -42,4 +42,1270 @@
 		"date"		"1604589507"
 		"addr"		"104.36.110.177:27016"
 	}
+	"server"
+	{
+		"name"		"[TR] LEGION - www.legionbilisim.com [DDoS Protect]"
+		"date"		"1604966104"
+		"addr"		"185.247.138.206:27016"
+	}
+	"server"
+	{
+		"name"		"[GER] [PUSH-ONLY] THE ATLANTISHQ LOW POP (2)"
+		"date"		"1604966107"
+		"addr"		"144.76.115.232:27026"
+	}
+	"server"
+	{
+		"name"		"M A S T E R C H I E F  | WW2 COMBAT"
+		"date"		"1604966111"
+		"addr"		"139.99.6.248:27016"
+	}
+	"server"
+	{
+		"name"		"[TR] TITAN | PUSH | STATS"
+		"date"		"1604966113"
+		"addr"		"185.171.25.75:27030"
+	}
+	"server"
+	{
+		"name"		"[TR] ROOKIE INTERNATIONAL INSURGENCY SERVER"
+		"date"		"1604966116"
+		"addr"		"185.171.25.74:27017"
+	}
+	"server"
+	{
+		"name"		"[TR] Kaybedenler Kulubu | PUSH"
+		"date"		"1604966120"
+		"addr"		"185.171.25.72:27022"
+	}
+	"server"
+	{
+		"name"		"RU * DelMaza * Old Players * 128 Tick"
+		"date"		"1604966122"
+		"addr"		"91.226.93.47:27015"
+	}
+	"server"
+	{
+		"name"		"* [茶社]  PVP01 新手练习｜PURE PUSH 进点奖励"
+		"date"		"1604966124"
+		"addr"		"110.42.9.165:20045"
+	}
+	"server"
+	{
+		"name"		"[NP]纯净萌新PVP服#8[128tick|击中标识]"
+		"date"		"1604966128"
+		"addr"		"43.248.186.147:27015"
+	}
+	"server"
+	{
+		"name"		"Denis and Kusaba Super Server [Moscow] [No Red Area] #4"
+		"date"		"1604966135"
+		"addr"		"37.230.228.95:27015"
+	}
+	"server"
+	{
+		"name"		"            RU | ProRussian server HARD | PvP #2|STATS"
+		"date"		"1604966137"
+		"addr"		"109.195.19.160:27017"
+	}
+	"server"
+	{
+		"name"		"[ANZ] discord.PACIFICGL.com #1 SUSTAINED | PES"
+		"date"		"1604966139"
+		"addr"		"139.99.130.177:27094"
+	}
+	"server"
+	{
+		"name"		"[NP]丧尸围城PVP#11[公测]"
+		"date"		"1604966142"
+		"addr"		"43.248.186.147:27030"
+	}
+	"server"
+	{
+		"name"		"[RKT] ROCKETEERS |RANK| #1 @mibbs.host"
+		"date"		"1604966146"
+		"addr"		"177.54.144.216:27027"
+	}
+	"server"
+	{
+		"name"		"Puffer Fish's PvP Nest 1 - Push Only|128 tick|Pure2|KF On"
+		"date"		"1604966148"
+		"addr"		"118.189.201.193:27016"
+	}
+	"server"
+	{
+		"name"		"NWI | Frankfurt #965978 | PvP Sustained"
+		"date"		"1604966168"
+		"addr"		"138.68.64.111:27110"
+	}
+	"server"
+	{
+		"name"		"-=[ManiacX]=- Push or Lose! | Stats | 128tick | International "
+		"date"		"1604966168"
+		"addr"		"185.107.96.202:27015"
+	}
+	"server"
+	{
+		"name"		"[TR] KAOTIK ENTERNASYONAL | FPS/BOOST, ONLYPUSH VE DAHA FAZLASI"
+		"date"		"1604966168"
+		"addr"		"185.171.25.71:27066"
+	}
+	"server"
+	{
+		"name"		"INSU MANIACS  [PRO server]  [128 tick]  [Moscow]"
+		"date"		"1604966168"
+		"addr"		"46.174.54.75:27015"
+	}
+	"server"
+	{
+		"name"		"RU | Whiskey Strike | WS | 128TICK"
+		"date"		"1604966168"
+		"addr"		"46.174.49.106:27015"
+	}
+	"server"
+	{
+		"name"		"M A S T E R C H I E F  | EXPANDED COMBAT"
+		"date"		"1604966168"
+		"addr"		"139.99.6.248:27015"
+	}
+	"server"
+	{
+		"name"		"﻿[TC]甜橙服务器#1"
+		"date"		"1604966168"
+		"addr"		"103.45.182.92:27015"
+	}
+	"server"
+	{
+		"name"		"[舰载猫]#1| pure | 128tick | push"
+		"date"		"1604966168"
+		"addr"		"129.28.158.55:27015"
+	}
+	"server"
+	{
+		"name"		" *  L O S E R S -=LOL=- O N L I N E  | PVP | NEW GUNS  * "
+		"date"		"1604966168"
+		"addr"		"139.99.2.62:27015"
+	}
+	"server"
+	{
+		"name"		"[SFW]TETRODOTOXIN[PvP|128tick]sv_pure 2 no killfeed"
+		"date"		"1604966168"
+		"addr"		"103.131.188.44:4300"
+	}
+	"server"
+	{
+		"name"		"NWI | Frankfurt #967502 | PvP Sustained"
+		"date"		"1604966168"
+		"addr"		"46.101.217.116:27100"
+	}
+	"server"
+	{
+		"name"		"No Rover Allowed"
+		"date"		"1604966168"
+		"addr"		"139.99.177.164:27015"
+	}
+	"server"
+	{
+		"name"		"[SFW]FLYINGFISHBALL MINISKIRT[PvP|128tick]sv_pure 2 killfeed on"
+		"date"		"1604966168"
+		"addr"		"103.131.188.44:4400"
+	}
+	"server"
+	{
+		"name"		"Die NACKTBAR #1 | EU | PVP Vanilla | www.SADACS.de"
+		"date"		"1604966178"
+		"addr"		"194.59.204.118:27015"
+	}
+	"server"
+	{
+		"name"		"Empathy - Sustained Combat"
+		"date"		"1604966178"
+		"addr"		"185.183.157.231:27016"
+	}
+	"server"
+	{
+		"name"		"[Nyaa][喵窝] 月芒物语 #6 [Pish][皮榭][PVP]"
+		"date"		"1604966178"
+		"addr"		"61.164.253.71:27115"
+	}
+	"server"
+	{
+		"name"		"  [EU] www.fastpath.fr | 24/7 #INS"
+		"date"		"1604966178"
+		"addr"		"164.132.202.2:27022"
+	}
+	"server"
+	{
+		"name"		"Die NACKTBAR #2 | EU | DOGS PVP Vanilla | www.dogs-clan.eu"
+		"date"		"1604966178"
+		"addr"		"37.120.161.8:29292"
+	}
+	"server"
+	{
+		"name"		"[RU-EN] International Gaming League - Push or Lose! | 128 tick"
+		"date"		"1604966178"
+		"addr"		"46.174.54.84:27015"
+	}
+	"server"
+	{
+		"name"		"  BR ||UNKNOWN 0000|| COD - [ 01 ]"
+		"date"		"1604966178"
+		"addr"		"177.54.144.216:27446"
+	}
+	"server"
+	{
+		"name"		"[PH] Public Slaughterhouse - Cebu"
+		"date"		"1604966178"
+		"addr"		"43.224.189.5:27016"
+	}
+	"server"
+	{
+		"name"		"XFGN #3 - Sustained Combat PVP | www.XFGamingNetwork.com"
+		"date"		"1604966178"
+		"addr"		"180.150.63.23:5055"
+	}
+	"server"
+	{
+		"name"		" * L O S E R S -=LOL=- O N L I N E \PVP2 NEW GUNS\NEW SKINS*"
+		"date"		"1604966178"
+		"addr"		"103.131.188.36:27016"
+	}
+	"server"
+	{
+		"name"		"[PRS] EU/PL Push Server 13 I prsclan.com.pl"
+		"date"		"1604966178"
+		"addr"		"109.173.131.231:27082"
+	}
+	"server"
+	{
+		"name"		"=]RC[= STRATEGO - Pure Insurgency | Stats | 128 tick"
+		"date"		"1604966178"
+		"addr"		"134.119.179.213:27025"
+	}
+	"server"
+	{
+		"name"		"Alpha's Salt Factory | Classic PvP Sustained | 128 Tick"
+		"date"		"1604966178"
+		"addr"		"136.243.148.103:7702"
+	}
+	"server"
+	{
+		"name"		"* [茶社]  PVP02 休闲养老｜PURE PUSH 纯净原版"
+		"date"		"1604966178"
+		"addr"		"110.42.9.165:20025"
+	}
+	"server"
+	{
+		"name"		"* [茶社]  PVP05 耻辱之日 | Day of Infamy 二战"
+		"date"		"1604966178"
+		"addr"		"110.42.9.165:30375"
+	}
+	"server"
+	{
+		"name"		"* [茶社]  PVP04 沙漠风暴 | Desert  Storm 现代"
+		"date"		"1604966178"
+		"addr"		"110.42.9.165:30325"
+	}
+	"server"
+	{
+		"name"		"[Nyaa][喵窝] 月芒物语 #5 [Pururut][普露露特][PVP]"
+		"date"		"1604966178"
+		"addr"		"183.131.157.103:27015"
+	}
+	"server"
+	{
+		"name"		"NWI | Sydney #959316 | PvP Sustained"
+		"date"		"1604966178"
+		"addr"		"128.199.166.9:27110"
+	}
+	"server"
+	{
+		"name"		"[ANZ] discord.PACIFICGL.com #3 MATCH | PES"
+		"date"		"1604966189"
+		"addr"		"139.99.130.177:27092"
+	}
+	"server"
+	{
+		"name"		"[BR.1] [45 ANGRY BOTS] [ALPHA]"
+		"date"		"1604966196"
+		"addr"		"191.182.0.43:27315"
+	}
+	"server"
+	{
+		"name"		"[AU] Rabid's Blue "
+		"date"		"1604966196"
+		"addr"		"108.61.227.128:27015"
+	}
+	"server"
+	{
+		"name"		"13SN NOOBS#3 B R U T A L COOP"
+		"date"		"1604966196"
+		"addr"		"115.70.233.6:27016"
+	}
+	"server"
+	{
+		"name"		"ZNoDGaming.com ins coop angrybot35"
+		"date"		"1604966196"
+		"addr"		"180.150.85.225:27045"
+	}
+	"server"
+	{
+		"name"		"[AU\NZ] ADFTEAM.COM GAMING by ClanHost.com.au"
+		"date"		"1604966196"
+		"addr"		"221.121.159.182:25020"
+	}
+	"server"
+	{
+		"name"		"13SN NOOBS#5 B R U T A L COOP"
+		"date"		"1604966196"
+		"addr"		"115.70.233.6:27018"
+	}
+	"server"
+	{
+		"name"		"13SN NOOBS#1 B R U T A L COOP"
+		"date"		"1604966196"
+		"addr"		"115.70.233.6:27015"
+	}
+	"server"
+	{
+		"name"		"[CZ/SK] Drungor.cz | Custom | Coop"
+		"date"		"1604966203"
+		"addr"		"213.192.5.71:27016"
+	}
+	"server"
+	{
+		"name"		"KHPA"
+		"date"		"1604966216"
+		"addr"		"78.62.10.221:27015"
+	}
+	"server"
+	{
+		"name"		"Avokado Insurgency Server"
+		"date"		"1604966216"
+		"addr"		"193.41.79.236:45778"
+	}
+	"server"
+	{
+		"name"		"[NP]moyu"
+		"date"		"1604966216"
+		"addr"		"47.100.90.215:27015"
+	}
+	"server"
+	{
+		"name"		"13SN NOOBS#999 B R U T A L COOP"
+		"date"		"1604966216"
+		"addr"		"115.70.233.6:27014"
+	}
+	"server"
+	{
+		"name"		"TF58's Modded Dedicated Server"
+		"date"		"1604966216"
+		"addr"		"129.211.80.176:27015"
+	}
+	"server"
+	{
+		"name"		"13SN NOOBS#666 B R U T A L COOP"
+		"date"		"1604966216"
+		"addr"		"115.70.233.6:27019"
+	}
+	"server"
+	{
+		"name"		"Headshot Baby One More Time"
+		"date"		"1604966216"
+		"addr"		"102.67.48.113:27015"
+	}
+	"server"
+	{
+		"name"		"13SN NOOBS#ZERO B R U T A L COOP"
+		"date"		"1604966216"
+		"addr"		"115.70.233.6:27012"
+	}
+	"server"
+	{
+		"name"		"game-02.daystrom.com.au"
+		"date"		"1604966216"
+		"addr"		"120.29.243.21:27015"
+	}
+	"server"
+	{
+		"name"		"Hungary/AutoCountBot/Player"
+		"date"		"1604966234"
+		"addr"		"37.17.170.155:27016"
+	}
+	"server"
+	{
+		"name"		"The Rainbow Unicorns"
+		"date"		"1604966234"
+		"addr"		"130.75.178.10:27011"
+	}
+	"server"
+	{
+		"name"		"[RU] SLES INSURGENCY SERVER"
+		"date"		"1604966234"
+		"addr"		"5.167.50.155:27015"
+	}
+	"server"
+	{
+		"name"		"[TW] Modern Warfare-128 TICK"
+		"date"		"1604966234"
+		"addr"		"59.102.149.151:27015"
+	}
+	"server"
+	{
+		"name"		"13SN NOOBS#4 B R U T A L COOP"
+		"date"		"1604966234"
+		"addr"		"115.70.233.6:27017"
+	}
+	"server"
+	{
+		"name"		"CAT"
+		"date"		"1604966239"
+		"addr"		"46.5.69.119:27015"
+	}
+	"server"
+	{
+		"name"		"#INS2U|Army of Five v1.4 [gameME Stats]"
+		"date"		"1604966256"
+		"addr"		"164.132.201.207:27115"
+	}
+	"server"
+	{
+		"name"		"[PRS] EU/PL I AoF-1.4 Mod I Server 12 I prsclan.com.pl"
+		"date"		"1604966256"
+		"addr"		"109.173.131.231:27515"
+	}
+	"server"
+	{
+		"name"		" COVID-19 FREE |insurgency.club|RU,Moscow"
+		"date"		"1604966256"
+		"addr"		"89.179.244.250:27015"
+	}
+	"server"
+	{
+		"name"		"[NP]叛乱核心合作服#2[6.0][困难|20ppl|SRNX]"
+		"date"		"1604966264"
+		"addr"		"43.248.188.198:27015"
+	}
+	"server"
+	{
+		"name"		"-=AMERICA LATINA BRASIL=-[Missao Quase Impossivel] 01"
+		"date"		"1604966264"
+		"addr"		"177.103.195.170:27030"
+	}
+	"server"
+	{
+		"name"		" [GGA] GermanGamerAllianz - PvP - Custom(NON-BATTLEYE)"
+		"date"		"1604966271"
+		"addr"		"176.9.10.34:27350"
+	}
+	"server"
+	{
+		"name"		"=F|A= Bot Frenzy #2 |CUSTOM|HARDCORE|"
+		"date"		"1604966271"
+		"addr"		"178.63.72.133:27020"
+	}
+	"server"
+	{
+		"name"		"            RU | Pro Russian Server | COOP #2 [VIP]"
+		"date"		"1604966271"
+		"addr"		"109.195.19.160:28015"
+	}
+	"server"
+	{
+		"name"		"            RU | ProRussian server COOP #1| FSB vs ISIS"
+		"date"		"1604966271"
+		"addr"		"109.195.19.160:27019"
+	}
+	"server"
+	{
+		"name"		"[CN] STF 收钱盈利服 [SRNX]"
+		"date"		"1604966271"
+		"addr"		"101.206.13.109:27016"
+	}
+	"server"
+	{
+		"name"		"FISHPOND|ONLY SNIPERS|进来对狙"
+		"date"		"1604966271"
+		"addr"		"81.68.80.235:10086"
+	}
+	"server"
+	{
+		"name"		"* [茶社] PVE11 丧尸暴动#2 [胜率:10%] 空袭指挥官"
+		"date"		"1604966271"
+		"addr"		"110.42.9.165:30125"
+	}
+	"server"
+	{
+		"name"		"* [茶社] PVE09 中东维和#2 [胜率:24%] 空袭指挥官"
+		"date"		"1604966271"
+		"addr"		"110.42.9.165:30105"
+	}
+	"server"
+	{
+		"name"		"* [茶社] PVE10 丧尸暴动#1 [胜率:10%] 火焰喷射器"
+		"date"		"1604966271"
+		"addr"		"110.42.9.165:30115"
+	}
+	"server"
+	{
+		"name"		"* [茶社] PVE12 爆炸爽服 [胜率:04%] 空袭指挥官"
+		"date"		"1604966271"
+		"addr"		"110.42.9.165:30155"
+	}
+	"server"
+	{
+		"name"		"KOR Madbots Coop Server"
+		"date"		"1604966271"
+		"addr"		"122.42.193.122:27019"
+	}
+	"server"
+	{
+		"name"		"[SOC] Gaming [MEDICS|ARMORY]"
+		"date"		"1604966271"
+		"addr"		"103.246.250.121:27015"
+	}
+	"server"
+	{
+		"name"		"[REDeye] 1st Rifles Battalion. RECRUITING. Vanilla. #1"
+		"date"		"1604966271"
+		"addr"		"103.229.187.57:27015"
+	}
+	"server"
+	{
+		"name"		"BLOOD BATH COOP : INFINITE AMMO + INSTANT RESPAWN"
+		"date"		"1604966271"
+		"addr"		"82.64.223.69:27015"
+	}
+	"server"
+	{
+		"name"		"[NP]女装·搞事·娱乐合作服#4"
+		"date"		"1604966271"
+		"addr"		"43.248.188.198:27013"
+	}
+	"server"
+	{
+		"name"		"[Arcturus]Homo X|硬核突击|难度可调|QQ群:311276933"
+		"date"		"1604966283"
+		"addr"		"47.94.159.239:27019"
+	}
+	"server"
+	{
+		"name"		"[Test]ACST Insurgency Club"
+		"date"		"1604966283"
+		"addr"		"39.100.16.1:27015"
+	}
+	"server"
+	{
+		"name"		"410 Bus' server"
+		"date"		"1604966289"
+		"addr"		"195.47.219.91:27015"
+	}
+	"server"
+	{
+		"name"		"XXX Insurgency Server"
+		"date"		"1604966289"
+		"addr"		"185.231.153.31:27015"
+	}
+	"server"
+	{
+		"name"		"[UA] GameHosting |WWW.SERV-HOST.ORG| Public"
+		"date"		"1604966289"
+		"addr"		"91.211.117.88:27700"
+	}
+	"server"
+	{
+		"name"		"* [茶社]  PVP10 团队死亡竞赛｜TeamDeathMatch"
+		"date"		"1604966289"
+		"addr"		"110.42.9.165:20095"
+	}
+	"server"
+	{
+		"name"		"* [茶社] PVE04 大军械库#1 [胜率:12%] 火焰喷射器"
+		"date"		"1604966289"
+		"addr"		"110.42.9.165:30055"
+	}
+	"server"
+	{
+		"name"		"* [茶社] PVE05 大军械库#2 [胜率:19%] 空袭指挥官"
+		"date"		"1604966289"
+		"addr"		"110.42.9.165:30065"
+	}
+	"server"
+	{
+		"name"		"FISHPOND|PVE"
+		"date"		"1604966289"
+		"addr"		"81.68.80.235:4399"
+	}
+	"server"
+	{
+		"name"		"[PRS] EU/PL Competitive Server 9 I 128TR"
+		"date"		"1604966304"
+		"addr"		"109.173.131.231:27081"
+	}
+	"server"
+	{
+		"name"		"420 | Awesome COMP Server | 128 Tick"
+		"date"		"1604966304"
+		"addr"		"142.93.102.59:27015"
+	}
+	"server"
+	{
+		"name"		"[DE] Insurgency | COMPETITIVE | hatkeininter.net"
+		"date"		"1604966304"
+		"addr"		"144.76.167.162:27016"
+	}
+	"server"
+	{
+		"name"		"NWI | Frankfurt #964769 | Unranked Competitive"
+		"date"		"1604966304"
+		"addr"		"138.68.90.210:27110"
+	}
+	"server"
+	{
+		"name"		"[ETM] Hardcore Coop Server #2|Checkpoint Only|Killfeed On|Flash"
+		"date"		"1604966304"
+		"addr"		"118.189.201.193:27029"
+	}
+	"server"
+	{
+		"name"		"NWI | Singapore #959299 | Unranked Competitive"
+		"date"		"1604966307"
+		"addr"		"159.65.15.205:27100"
+	}
+	"server"
+	{
+		"name"		"KOROLA ONE"
+		"date"		"1604966313"
+		"addr"		"94.237.84.216:27015"
+	}
+	"server"
+	{
+		"name"		"NWI | Sydney #959298 | Unranked Competitive"
+		"date"		"1604966313"
+		"addr"		"103.253.145.191:27100"
+	}
+	"server"
+	{
+		"name"		"NWI | Sydney #966938 | Conquer"
+		"date"		"1604966319"
+		"addr"		"128.199.150.221:27110"
+	}
+	"server"
+	{
+		"name"		"[DE] Insurgency | COOP | hatkeininter.net"
+		"date"		"1604966330"
+		"addr"		"144.76.167.162:27015"
+	}
+	"server"
+	{
+		"name"		"SFSG Insurgency"
+		"date"		"1604966330"
+		"addr"		"37.28.158.68:27015"
+	}
+	"server"
+	{
+		"name"		"YPM-INSURGENCY - Normal coop #2 | Finland"
+		"date"		"1604966330"
+		"addr"		"194.100.206.66:27016"
+	}
+	"server"
+	{
+		"name"		"YPM-INSURGENCY - Brutal coop #2 | Finland"
+		"date"		"1604966330"
+		"addr"		"194.100.206.66:27025"
+	}
+	"server"
+	{
+		"name"		"YPM-INSURGENCY - Unforgiving coop #1 | Finland"
+		"date"		"1604966330"
+		"addr"		"194.100.206.66:27017"
+	}
+	"server"
+	{
+		"name"		"NWI | Singapore #966906 | Coop"
+		"date"		"1604966330"
+		"addr"		"139.59.108.149:27100"
+	}
+	"server"
+	{
+		"name"		"[ CN ]  DOT's Private Server 1 [PVE]"
+		"date"		"1604966330"
+		"addr"		"180.152.22.177:27038"
+	}
+	"server"
+	{
+		"name"		"QCloud-Shanghai PVE noob"
+		"date"		"1604966330"
+		"addr"		"122.51.144.71:27015"
+	}
+	"server"
+	{
+		"name"		"23333_萌妹服"
+		"date"		"1604966330"
+		"addr"		"122.51.39.45:27015"
+	}
+	"server"
+	{
+		"name"		"233大佬练手服[初次进服失败请重进]"
+		"date"		"1604966330"
+		"addr"		"47.101.132.129:27015"
+	}
+	"server"
+	{
+		"name"		"-=AMERICA LATINA BRASIL=-[Coop Checkpoint]"
+		"date"		"1604966330"
+		"addr"		"177.103.195.170:27027"
+	}
+	"server"
+	{
+		"name"		"[AU] Sentral.Network (Srv1)"
+		"date"		"1604966330"
+		"addr"		"103.230.159.46:27015"
+	}
+	"server"
+	{
+		"name"		"XFGN #1 - Vanilla COOP | www.XFGamingNetwork.com"
+		"date"		"1604966330"
+		"addr"		"180.150.63.23:5053"
+	}
+	"server"
+	{
+		"name"		"Puffer Fish's CO-OP Nest 2 (Skynet)"
+		"date"		"1604966330"
+		"addr"		"118.189.201.193:27017"
+	}
+	"server"
+	{
+		"name"		"scot5's Bolt Only | Ultra Brutal"
+		"date"		"1604966330"
+		"addr"		"148.251.15.201:27016"
+	}
+	"server"
+	{
+		"name"		"NWI | Singapore #964551 | Conquer"
+		"date"		"1604966330"
+		"addr"		"139.59.108.149:27110"
+	}
+	"server"
+	{
+		"name"		"scot5's 10 Slot | Ultra Brutal"
+		"date"		"1604966330"
+		"addr"		"148.251.15.201:27015"
+	}
+	"server"
+	{
+		"name"		"Insurgency"
+		"date"		"1604966337"
+		"addr"		"95.82.183.35:27016"
+	}
+	"server"
+	{
+		"name"		"[CN] JZL| PURE PVE | NO FRIENDLYFIRE | GOD | UNLIMITED AMMO "
+		"date"		"1604966337"
+		"addr"		"54.169.122.12:27015"
+	}
+	"server"
+	{
+		"name"		"[AU] Sentral.Network (Srv2)"
+		"date"		"1604966337"
+		"addr"		"112.213.33.145:27015"
+	}
+	"server"
+	{
+		"name"		"23333_4th"
+		"date"		"1604966337"
+		"addr"		"193.112.85.34:27015"
+	}
+	"server"
+	{
+		"name"		"GamersNights.com - Uganda - Liquid Telecom - Insurgency"
+		"date"		"1604966337"
+		"addr"		"41.190.141.232:27015"
+	}
+	"server"
+	{
+		"name"		"* [茶社] PVE01 原版狩猎 [胜率:27%] Hunt"
+		"date"		"1604966344"
+		"addr"		"110.42.9.165:30025"
+	}
+	"server"
+	{
+		"name"		"WhataLie!"
+		"date"		"1604966344"
+		"addr"		"177.73.4.91:27015"
+	}
+	"server"
+	{
+		"name"		"[NP]常规合作服#5[难度：专家|击中标识]"
+		"date"		"1604966344"
+		"addr"		"43.248.186.147:27017"
+	}
+	"server"
+	{
+		"name"		"www.microcompa.es Coop"
+		"date"		"1604966344"
+		"addr"		"91.126.223.36:27015"
+	}
+	"server"
+	{
+		"name"		"=]RC[= STRATEGO - Classic | Stats | Public [COOP]"
+		"date"		"1604966344"
+		"addr"		"134.119.179.213:27115"
+	}
+	"server"
+	{
+		"name"		"Old People's Home Coop#1 by eSports Generation.de"
+		"date"		"1604966344"
+		"addr"		"109.230.239.135:27050"
+	}
+	"server"
+	{
+		"name"		"Biscuits HQ"
+		"date"		"1604966344"
+		"addr"		"188.165.249.166:27015"
+	}
+	"server"
+	{
+		"name"		"SFSG Insurgency"
+		"date"		"1604966344"
+		"addr"		"37.28.158.68:27016"
+	}
+	"server"
+	{
+		"name"		">>> ULTRA HARD | MAX BOTS | Dedicated 24/7 + Performance <<<"
+		"date"		"1604966352"
+		"addr"		"178.223.29.38:27015"
+	}
+	"server"
+	{
+		"name"		"YPM-INSURGENCY - Brutal coop #1 | Finland"
+		"date"		"1604966352"
+		"addr"		"194.100.206.66:27019"
+	}
+	"server"
+	{
+		"name"		"WELTRETTER"
+		"date"		"1604966352"
+		"addr"		"3.127.187.145:27015"
+	}
+	"server"
+	{
+		"name"		"[EU] VM | COOP [PRD]"
+		"date"		"1604966352"
+		"addr"		"178.62.254.193:27015"
+	}
+	"server"
+	{
+		"name"		"NWI | Frankfurt #967536 | Coop"
+		"date"		"1604966352"
+		"addr"		"207.154.198.71:27120"
+	}
+	"server"
+	{
+		"name"		"YPM-INSURGENCY - Normal coop #1 | Finland"
+		"date"		"1604966352"
+		"addr"		"194.100.206.66:27015"
+	}
+	"server"
+	{
+		"name"		"YPM-INSURGENCY - Unforgiving coop #2 | Finland"
+		"date"		"1604966352"
+		"addr"		"194.100.206.66:27018"
+	}
+	"server"
+	{
+		"name"		"WhataLie!2"
+		"date"		"1604966352"
+		"addr"		"177.73.4.104:27015"
+	}
+	"server"
+	{
+		"name"		"Atmosfera Cero |INS|"
+		"date"		"1604966355"
+		"addr"		"37.59.51.104:27015"
+	}
+	"server"
+	{
+		"name"		"[EU] Sentral.Network"
+		"date"		"1604966355"
+		"addr"		"116.203.234.189:27015"
+	}
+	"server"
+	{
+		"name"		" [GGA] GermanGamerAllianz - COOP"
+		"date"		"1604966361"
+		"addr"		"176.9.10.34:27300"
+	}
+	"server"
+	{
+		"name"		"S.A.T."
+		"date"		"1604966361"
+		"addr"		"185.255.92.67:27115"
+	}
+	"server"
+	{
+		"name"		"LinuxGSM"
+		"date"		"1604966361"
+		"addr"		"103.242.75.11:26100"
+	}
+	"server"
+	{
+		"name"		"[ CN ]  DOT's Private Server 2 [PVE]"
+		"date"		"1604966361"
+		"addr"		"180.152.22.177:27018"
+	}
+	"server"
+	{
+		"name"		"NWI | Frankfurt #967140 | Coop"
+		"date"		"1604966361"
+		"addr"		"207.154.223.126:27120"
+	}
+	"server"
+	{
+		"name"		"NWI | Sydney #959288 | Coop"
+		"date"		"1604966361"
+		"addr"		"103.253.145.191:27110"
+	}
+	"server"
+	{
+		"name"		"|ESP|-LocalRed-Dr.ES"
+		"date"		"1604966370"
+		"addr"		"195.135.50.52:27015"
+	}
+	"server"
+	{
+		"name"		"Smirnotick test server"
+		"date"		"1604966370"
+		"addr"		"193.70.81.116:27015"
+	}
+	"server"
+	{
+		"name"		"Gay Unicorns Elite Co-Op Server"
+		"date"		"1604966370"
+		"addr"		"155.4.34.225:27016"
+	}
+	"server"
+	{
+		"name"		"[Nyaa]Tsuki-susuki Insurgency #1 [Uni]"
+		"date"		"1604966370"
+		"addr"		"101.37.203.17:27015"
+	}
+	"server"
+	{
+		"name"		"[PRS] EU/PL Coop Elite Server 14 I prsclan.com.pl"
+		"date"		"1604966370"
+		"addr"		"109.173.131.231:27084"
+	}
+	"server"
+	{
+		"name"		"NWI | Frankfurt #967315 | Coop Elite"
+		"date"		"1604966370"
+		"addr"		"46.101.177.125:27100"
+	}
+	"server"
+	{
+		"name"		"=.KoG.= Elite Checkpoint | Brutal Bot Count [ENG SPEAKING ONLY]"
+		"date"		"1604966370"
+		"addr"		"159.69.62.139:27025"
+	}
+	"server"
+	{
+		"name"		"NWI | Sydney #965467 | Coop Elite"
+		"date"		"1604966370"
+		"addr"		"139.59.108.128:27100"
+	}
+	"server"
+	{
+		"name"		"|BR| ==== ZONA DE GUERRA ==== |COOP ELITE #1| ===="
+		"date"		"1604966370"
+		"addr"		"45.231.132.161:27105"
+	}
+	"server"
+	{
+		"name"		"[233] Summer | Push only | 128tick"
+		"date"		"1605055780"
+		"addr"		"106.42.81.33:37015"
+	}
+	"server"
+	{
+		"name"		"Empire Of Gamers"
+		"date"		"1605055783"
+		"addr"		"188.0.240.27:2727"
+	}
+	"server"
+	{
+		"name"		"[PL] Black Hawk Down #1 | Push | Occupy | gameME"
+		"date"		"1605055790"
+		"addr"		"188.165.17.19:27231"
+	}
+	"server"
+	{
+		"name"		"[GER] [PUSH-ONLY] THE ATLANTISHQ LOW POP (1)"
+		"date"		"1605055790"
+		"addr"		"144.76.115.232:27015"
+	}
+	"server"
+	{
+		"name"		"  BR ||UNKNOWN 0000|| COD - 128Hz [ 02 ]"
+		"date"		"1605055794"
+		"addr"		"18.228.152.227:27015"
+	}
+	"server"
+	{
+		"name"		"* [茶社]  PVP07 团队军备竞赛｜TeamArmsRace 2"
+		"date"		"1605055794"
+		"addr"		"110.42.9.165:20065"
+	}
+	"server"
+	{
+		"name"		"RU | NSK | Tactical operations 2"
+		"date"		"1605055799"
+		"addr"		"82.200.105.126:27018"
+	}
+	"server"
+	{
+		"name"		"NWI | Frankfurt #964621 | PvP Tactical"
+		"date"		"1605055799"
+		"addr"		"207.154.192.121:27110"
+	}
+	"server"
+	{
+		"name"		"Empathy - Ambush Only"
+		"date"		"1605055799"
+		"addr"		"185.183.157.231:27015"
+	}
+	"server"
+	{
+		"name"		"XFGN #4 - Tactical Operations PVP | www.XFGamingNetwork.com"
+		"date"		"1605055807"
+		"addr"		"180.150.63.23:5056"
+	}
+	"server"
+	{
+		"name"		"NWI | Sydney #959317 | PvP Tactical"
+		"date"		"1605055807"
+		"addr"		"139.59.108.137:27110"
+	}
+	"server"
+	{
+		"name"		"RU | NSK | Tactical operations"
+		"date"		"1605055807"
+		"addr"		"82.200.105.126:27017"
+	}
+	"server"
+	{
+		"name"		"Alpha's Salt Factory | Firefight Only | 128 Tick"
+		"date"		"1605055816"
+		"addr"		"136.243.148.103:7701"
+	}
+	"server"
+	{
+		"name"		" [GGA] GermanGamerAllianz - PvP - Tactical"
+		"date"		"1605055816"
+		"addr"		"176.9.10.34:27115"
+	}
+	"server"
+	{
+		"name"		"            RU | Pro Russian Server |TACTICAL| STATS"
+		"date"		"1605055816"
+		"addr"		"109.195.19.160:27023"
+	}
+	"server"
+	{
+		"name"		"UTS - Just Play^^ [Firefight] - NOT EZ"
+		"date"		"1605055816"
+		"addr"		"212.129.59.169:27015"
+	}
+	"server"
+	{
+		"name"		"[REDeye] Operators Mod #1"
+		"date"		"1605055816"
+		"addr"		"103.229.187.156:27015"
+	}
+	"server"
+	{
+		"name"		"Denis and Kusaba Super Server [Moscow] [FF ON] #1"
+		"date"		"1605139825"
+		"addr"		"37.230.210.157:27015"
+	}
+	"server"
+	{
+		"name"		"UKRAINE INSURGENCY ALPHA CLASSIC"
+		"date"		"1605139830"
+		"addr"		"31.131.16.27:27015"
+	}
+	"server"
+	{
+		"name"		"[NP]纯净萌新PVP服#10[击中标识]"
+		"date"		"1605139834"
+		"addr"		"43.248.188.198:27034"
+	}
+	"server"
+	{
+		"name"		"NWI | Frankfurt #967577 | PvP Sustained"
+		"date"		"1605139843"
+		"addr"		"207.154.198.71:27110"
+	}
+	"server"
+	{
+		"name"		"[SFW]TOPPERS SHORT-SHORTS[COOP HARDCORE|128tick]"
+		"date"		"1605139858"
+		"addr"		"103.131.188.44:4200"
+	}
+	"server"
+	{
+		"name"		"[CN]quanmintuhuangdi"
+		"date"		"1605139861"
+		"addr"		"47.114.41.120:27015"
+	}
+	"server"
+	{
+		"name"		"|BR| ==== ZONA DE GUERRA ==== |COOP ULTRA #1| ===="
+		"date"		"1605139874"
+		"addr"		"187.72.68.137:27104"
+	}
+	"server"
+	{
+		"name"		"[RU/ENG] InsaWar.com #1 Coop. Checkpoint [Russia]"
+		"date"		"1605139874"
+		"addr"		"79.137.239.246:27015"
+	}
+	"server"
+	{
+		"name"		"[RU/ENG] InsaWar.com #3 Coop. Checkpoint [Netherlands]"
+		"date"		"1605139874"
+		"addr"		"195.2.92.227:27015"
+	}
+	"server"
+	{
+		"name"		"=.KoG.= Hardcore | Brutal Botcount [ENG SPEAKING ONLY]"
+		"date"		"1605139874"
+		"addr"		"159.69.62.139:27015"
+	}
+	"server"
+	{
+		"name"		"|BR| ==== ZONA DE GUERRA ==== |COOP ULTRA #2| ===="
+		"date"		"1605139874"
+		"addr"		"187.72.68.137:27106"
+	}
+	"server"
+	{
+		"name"		"[RU/ENG] InsaWar.com #2 Coop. Checkpoint [Russia]"
+		"date"		"1605139874"
+		"addr"		"79.137.239.245:27015"
+	}
+	"server"
+	{
+		"name"		"            RU | Pro Russian Server | COOP #2 [Black Hawk Down]"
+		"date"		"1605139874"
+		"addr"		"109.195.19.160:27015"
+	}
+	"server"
+	{
+		"name"		"[CN]QUANMINYOUERYUAN"
+		"date"		"1605139881"
+		"addr"		"47.101.143.103:27015"
+	}
+	"server"
+	{
+		"name"		"NWI | Frankfurt #967971 | Coop Hardcore"
+		"date"		"1605139881"
+		"addr"		"206.81.27.238:27110"
+	}
+	"server"
+	{
+		"name"		"[SFW]TOPPERS HOTPANTS[COOP HARDCORE|128tick]"
+		"date"		"1605139881"
+		"addr"		"103.131.188.44:4100"
+	}
+	"server"
+	{
+		"name"		"Simple but straight Co-Op"
+		"date"		"1605139885"
+		"addr"		"148.251.184.109:27015"
+	}
+	"server"
+	{
+		"name"		"[ETM] Hardcore Coop Server #1|Checkpoint Only|Killfeed On"
+		"date"		"1605139885"
+		"addr"		"118.189.201.193:27030"
+	}
+	"server"
+	{
+		"name"		"Old Fe 777"
+		"date"		"1605139892"
+		"addr"		"106.14.40.69:27006"
+	}
+	"server"
+	{
+		"name"		"MASTERCHIEF #1 - SPARTANS ACADEMY"
+		"date"		"1605139892"
+		"addr"		"139.99.2.248:27015"
+	}
+	"server"
+	{
+		"name"		"MASTERCHIEF #2 - ZOMBIELAND"
+		"date"		"1605139892"
+		"addr"		"139.99.2.250:27015"
+	}
+	"server"
+	{
+		"name"		"MASTERCHIEF-LUA #3 - TACTICAL SQUAD"
+		"date"		"1605139892"
+		"addr"		"139.99.6.249:27015"
+	}
+	"server"
+	{
+		"name"		"|BR| ==== ZONA DE GUERRA ==== |PRIVADO|TREINO| ===="
+		"date"		"1605139898"
+		"addr"		"187.72.68.137:27101"
+	}
+	"server"
+	{
+		"name"		"|BR| ==== ZONA DE GUERRA ==== |COOP ELITE #2| ===="
+		"date"		"1605139898"
+		"addr"		"187.72.68.137:27103"
+	}
+	"server"
+	{
+		"name"		"|ESP|-LocalRed-Dra.Girls"
+		"date"		"1605139898"
+		"addr"		"195.135.50.52:27025"
+	}
+	"server"
+	{
+		"name"		"|BR| ==== ZONA DE GUERRA ==== |COOP ELITE #1| ===="
+		"date"		"1605139898"
+		"addr"		"187.72.68.137:27105"
+	}
+	"server"
+	{
+		"name"		"NWI | Singapore #964831 | Coop Elite"
+		"date"		"1605139898"
+		"addr"		"159.65.15.205:27110"
+	}
+	"server"
+	{
+		"name"		"NWI | Singapore #967788 | Coop"
+		"date"		"1605139903"
+		"addr"		"167.99.64.222:27100"
+	}
+	"server"
+	{
+		"name"		"NWI | Frankfurt #967828 | Coop"
+		"date"		"1605139909"
+		"addr"		"207.154.223.126:27110"
+	}
+	"server"
+	{
+		"name"		"﻿[贴吧] 羊汤烩面馆-原版PVE #2"
+		"date"		"1605139919"
+		"addr"		"106.42.81.33:27016"
+	}
+	"server"
+	{
+		"name"		"﻿自定义模式实验室"
+		"date"		"1605139929"
+		"addr"		"103.45.182.92:27016"
+	}
 }
