@@ -131,3 +131,7 @@
 #	gpgsign = false
 # see if ^ breaks git svn rebase && git push for wordcamp
 # huh, disabling it doesn't seem to have any effect. it doesn't even try to sign git svn commits
+
+[init]
+	# Some other options: production, stable, release, base, default, trunk, main, primary.
+	defaultBranch = develop
