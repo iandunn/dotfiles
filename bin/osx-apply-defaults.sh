@@ -146,6 +146,17 @@ defaults write .GlobalPreferences com.apple.mouse.scaling -1
 defaults write -g NSRequiresAquaSystemAppearance -bool Yes
 # todo need to logout to see if ^ worked
 
+# Change the login screen background
+# This can be an HEIC, JPG, or PNG. HEICs with multiple frames will just use the first? or is there a way to specify one?
+# WARNING: For this to take effect, you have to manually toggle "Preferences > Security > Show message when screen locked" b/c of https://superuser.com/a/364587/121091. Can change them back afterwards
+# Doesn't seem like you need to delete `lockscreen.png`, the `heic` takes precendence.
+# todo - get UUID dynamically
+# ln -sf "/System/Library/Desktop Pictures/Solid Colors/Stone.png" "/Library/Caches/Desktop Pictures/DC73FE49-1CB7-459B-AD9D-E9BA6173FCFB/lockscreen.png"
+# ln -sf "/Library/Desktop Pictures/Mojave Night.jpg" "/Library/Caches/Desktop Pictures/DC73FE49-1CB7-459B-AD9D-E9BA6173FCFB/lockscreen.jpg"
+ln -s "/System/Library/Desktop Pictures/Big Sur.heic" "/Library/Caches/Desktop Pictures/DC73FE49-1CB7-459B-AD9D-E9BA6173FCFB/lockscreen.heic"
+
+
+
 ###
 ### Restart any services that were affected
 ###
