@@ -237,7 +237,7 @@ function deploy {
 #
 # $1 - The file/folder to analyize
 function phpmd {
-	/usr/local/bin/phpmd $1 text ~/vhosts/localhost/wordcamp.test/phpmd.xml.dist
+	env phpmd $1 text ~/vhosts/localhost/wordcamp.test/phpmd.xml.dist
 }
 
 # Run composer commands from subfolder without prompt
@@ -252,11 +252,11 @@ function composer {
 
 	case "$current_folder" in
 		*wordcamp.test* )
-			/usr/local/bin/composer "$@" -d /Users/iandunn/vhosts/localhost/wordcamp.test/
+			env composer "$@" -d /Users/iandunn/vhosts/localhost/wordcamp.test/
 		;;
 
 		* )
-			/usr/local/bin/composer "$@"
+			env composer "$@"
 		;;
 	esac
 }
