@@ -1,9 +1,10 @@
 <scheme name="Twilight-Customized" version="142" parent_scheme="Default">
   <option name="FONT_SCALE" value="1.0" />
-  <option name="LINE_SPACING" value="1.0" />
+  <option name="LINE_SPACING" value="1.2" />
   <option name="EDITOR_FONT_SIZE" value="12" />
-  <option name="EDITOR_FONT_NAME" value="Menlo" />
+  <option name="EDITOR_FONT_NAME" value="Droid Sans Mono" />
   <colors>
+    <option name="ADDED_LINES_COLOR" value="" />
     <option name="CARET_COLOR" value="a7a7a7" />
     <option name="CARET_ROW_COLOR" value="292929" />
     <option name="CONSOLE_BACKGROUND_KEY" value="141414" />
@@ -11,6 +12,7 @@
     <option name="INDENT_GUIDE" value="4e4e4e" />
     <option name="LINE_NUMBERS_COLOR" value="f8f8f8" />
     <option name="METHOD_SEPARATORS_COLOR" value="" />
+    <option name="MODIFIED_LINES_COLOR" value="" />
     <option name="SELECTED_INDENT_GUIDE" value="4e4e4e" />
     <option name="SELECTION_BACKGROUND" value="7b7e81" />
     <option name="ScrollBar.Mac.hoverThumbColor" value="" />
@@ -18,6 +20,7 @@
     <option name="ScrollBar.Mac.thumbColor" value="" />
     <option name="ScrollBar.Mac.trackColor" value="141414" />
     <option name="WHITESPACES" value="4e4e4e" />
+    <option name="WHITESPACES_MODIFIED_LINES_COLOR" value="" />
   </colors>
   <attributes>
     <option name="BAD_CHARACTER">
@@ -36,6 +39,11 @@
     <option name="BASH.INTERNAL_COMMAND">
       <value>
         <option name="FOREGROUND" value="155195" />
+      </value>
+    </option>
+    <option name="BREADCRUMBS_DEFAULT">
+      <value>
+        <option name="FOREGROUND" value="7c7c7c" />
       </value>
     </option>
     <option name="BREAKPOINT_ATTRIBUTES">
@@ -463,7 +471,7 @@
     </option>
     <option name="DEFAULT_BLOCK_COMMENT">
       <value>
-        <option name="FOREGROUND" value="5f5a60" />
+        <option name="FOREGROUND" value="646464" />
         <option name="FONT_TYPE" value="2" />
       </value>
     </option>
@@ -479,7 +487,7 @@
     </option>
     <option name="DEFAULT_DOC_COMMENT">
       <value>
-        <option name="FOREGROUND" value="5f5a60" />
+        <option name="FOREGROUND" value="646464" />
         <option name="FONT_TYPE" value="2" />
       </value>
     </option>
@@ -549,12 +557,12 @@
     </option>
     <option name="DEFAULT_LABEL">
       <value>
-        <option name="FOREGROUND" value="9b703f" />
+        <option name="FOREGROUND" value="646464" />
       </value>
     </option>
     <option name="DEFAULT_LINE_COMMENT">
       <value>
-        <option name="FOREGROUND" value="5f5a60" />
+        <option name="FOREGROUND" value="646464" />
         <option name="FONT_TYPE" value="2" />
       </value>
     </option>
