@@ -178,7 +178,7 @@ function deploy {
 				deploy-wordcamp.sh
 			;;
 
-			*wporg* | *api* | *buddypress* )
+			*wporg* )
 				echo "Updating root files from local SVN..."
 				svn up $WPORGPATH --depth=files
 
@@ -188,6 +188,11 @@ function deploy {
 
 				deploy-dotorg.sh $1
 			;;
+
+			*api* | *buddypress* | *planet* )
+				deploy-dotorg.sh $1
+			;;
+
 
 			* )
 				echo "Couldn't detect site to deploy."
