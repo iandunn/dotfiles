@@ -19,6 +19,7 @@ esac
 
 # TODO
 #
+# set dock "Prefer tabs when opening documents” to "manually". otherwise opening new textedit window will grab a window from another desktop and pull it to the current one
 # Browse through http://defaults-write.com for more
 # Disable keyboard backlighting
 # will need to sync these changes w/ local uncommitted mods from Mackenzie
@@ -29,13 +30,22 @@ esac
 # Turn of fracking autocorrect
 # Other security best practices that you can automate?
 # disable Spotlight Suggestions
+# Prefs > Mission > When switching to an applicaiton, switch space... > disable
+# prefs > accessibi > display > reduce transparency
+# prefs > sec > advanced > required admin password for network-wide prefs
+# time machine ignored folders
+# default skin tone - maybe com.apple.EmojiPreferences
+# test out disabling desktop icons - defaults write com.apple.finder CreateDesktop false; killall Finder
+
+# sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.locate.plist
 
 ###
 ### Finder
 ###
 
-# Show all filename extensions
+# Show all filename extensions - not sure if both are necessary
 defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+defaults write com.apple.finder AppleShowAllFiles -boolean true
 
 # Show hidden files by default
 defaults write com.apple.finder AppleShowAllFiles -bool true
@@ -56,7 +66,8 @@ defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 defaults write com.apple.finder EmptyTrashSecurely -bool true
 
 # Reduce transparency of the Finder sidebar
-defaults write com.apple.universalaccess reduceTransparency -boolean true
+#defaults write com.apple.universalaccess reduceTransparency -boolean true
+#  get error: 2021-03-16 07:37:11.901 defaults[8022:3831499] Could not write domain com.apple.universalaccess; exiting
 
 
 ###
@@ -70,7 +81,11 @@ defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock autohide-delay -float 2500
 
 # Keep the obnoxious 5px Dock gap on the secondary monitor so it's less noticeable
-defaults write com.apple.Dock orientation -string right
+# defaults write com.apple.Dock orientation -string right
+# don't see this anymore, might not be needed
+
+# Show the window switcher on both monitors
+defaults write com.apple.Dock appswitcher-all-displays -bool true
 
 
 ###
@@ -162,3 +177,4 @@ ln -s "/System/Library/Desktop Pictures/Big Sur.heic" "/Library/Caches/Desktop P
 ###
 
 killall Dock
+killall Finder
