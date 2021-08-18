@@ -12,42 +12,34 @@
 	helper = osxkeychain
 
 [alias]
-	ap       = add -p
-	amshow	 = am --show-current-patch   # Useful for understanding the context when resolving merge conflicts.
-	co       = checkout
-	cos      = !sh -c \"git branch -a | grep -v remotes | grep $1 | head -n 1 | xargs git checkout\"
-	ci       = commit
-	cia      = commit --amend
-	cinv	 = commit --no-verify
-	cherp	 = cherry-pick
-	logdef   = log ...production
-		# make ^ automatically pick the default branch for git, and `git-svn` ref for git-svn
-		# see comments around `phpcs-changed-git` for notes on getting default
-	logorg   = log ...origin
-		# should compare current local branch to current remote branch. might works on production, might not work on untracked branches
-	logm     = log --no-abbrev-commit --format=medium
-	logsvn   = log ...git-svn
-	pullas	 = pull --autostash
-	# push = todo a bash function that checks if the current folder is wordcamp.test. if it is, then show a prompt asking if want to run pre-commit githooks. defaults to no (b/c working on branch). can answer yes if ready to run over entire branch for pr, or before pushing to production branch
-	reba	 = rebase --abort
-	rebc	 = rebase --continue
-	rebi     = rebase -i production # todo get default branch, since prod is only for wordcamp repo
-	rebio    = rebase -i origin
-	rebisvn  = rebase -i git-svn
-	pullreb  = !git co production && git pull && git co - && git rebase production
+	#
+	# add
+	#
+	ap = add -p
+		# todo add one with word-diff=color
 
-	reshh	 = reset --hard HEAD
-	stat     = status
-	statlong = status --long
-	showm    = show --no-abbrev-commit --format=medium  # Appending `m` for `medium` because can't overwrite default `show` command :( -- see https://stackoverflow.com/questions/3538774/is-it-possible-to-override-git-command-by-git-alias
-	diffc    = diff --cached
-	svnrebase = !git stash && git svn rebase --log-window-size=100000 && git stash pop
-		# todo don't do ^ if there's already something in stash, b/c when have conflicts it gets all messed up. er, or is it because left in stash after fix conflict? i think it's the latter
+	#
+	# checkout
+	#
+	co  = checkout
+	cos = !sh -c \"git branch -a | grep -v remotes | grep $1 | head -n 1 | xargs git checkout\"
+
+	#
+	# commit
+	#
+	ci   = commit
+	cia  = commit --amend
+	cinv = commit --no-verify
+	cim  = commit -m
+
+	#
+	# misc
+	#
+	cherp 	  = cherry-pick
+	reshh 	  = reset --hard HEAD
+	showm     = show --no-abbrev-commit --format=medium  # Appending `m` for `medium` because can't overwrite default `show` command :( -- see https://stackoverflow.com/questions/3538774/is-it-possible-to-override-git-command-by-git-alias
 	stashshow = "!git stash show -p stash@{\"$1\"} #"
-	svnrebasemirror = !git checkout master && git pull origin master && git svn rebase && git push origin master
-
-	# rename this to just `branch` if git every starts allowing aliases to override commands
-	tracking = branch -vv
+	amshow    = am --show-current-patch   # Useful for understanding the context when resolving merge conflicts.
 
 	# ideally want this to automatically run on every commit whenever it's modified in any way.
 	# e.g., want the date of the commit to be the _modified_ date, not the _created_ date
@@ -66,6 +58,95 @@
 	#   git rebase --continue
 	# there's probably a better way, though
 	newdate = commit --amend --date=now --no-edit
+
+	pullas = pull --autostash
+	# push = todo a bash function that checks if the current folder is wordcamp.test. if it is, then show a prompt asking if want to run pre-commit githooks.
+	# defaults to no (b/c working on branch). can answer yes if ready to run over entire branch for pr, or before pushing to production branch
+
+	#
+	# branch
+	#
+	defbranch = !git remote show origin | grep 'HEAD branch' | cut -d' ' -f5
+		# todo working now, use in commands below
+		# use `git-svn` ref for git-svn
+
+	rm-merged = !git branch -d $(git branch --merged=develop | grep -v develop) && git fetch --prune
+		# todo test -- https://medium.com/@FlorentDestrema/a-simple-way-to-clean-up-your-git-project-branches-283b87478fbc
+
+	# rename this to just `branch` if git every starts allowing aliases to override commands
+	tracking = branch -vv
+
+	# e.g., git track origin/28-elasticsearch
+	track = branch -u
+
+
+	#
+	# diff
+	#
+	diffc   = diff --cached
+	diffnob = !git diff |grep -v build
+
+	# in general, this is better for diffing a string of text, especially longer strings
+	# it's often better for seeing code changes too, but sometimes the standard line-by-line is better
+	diffw = diff --word-diff=color
+		# this doesn't show trailing whitespace. can you make it do that?
+	diffwc = diffw --cached
+
+	# this is sometimes better than `diffw`, but is often much worse
+	diffwr = diff --word-diff=color --word-diff-regex="[A-Za-z0-9. ]|[^[:space:]]"
+		# try this as the default for awhile
+		# if don't want it majorty of time, then change it to `worddiff` alias
+		#
+		# is there a way to get this git `add -p` ?
+
+#	diffs = ! GIT_EXTERNAL_DIFF=/usr/bin/diff GIT_DIFF_OPTS="-y -W 250" git diff 	# s for "split"
+		# not working
+#	diffs = !/usr/bin/diff -y -W 250
+
+	# note: for this to work, deltawalker has to be configured to follow symlinks
+	#difftool = difftool --dir-diff
+		# huh not working
+
+	#
+	# log
+	#
+	logdef = log ...production
+		# use `defbarnch` alias once working
+		# see comments around `phpcs-changed-git` for notes on getting default
+	logorg = log ...origin
+		# should compare current local branch to current remote branch. might works on production, might not work on untracked branches
+	logm   = log --no-abbrev-commit --format=medium
+	logsvn = log ...git-svn
+
+	#
+	# rebase
+	#
+	reba	 = rebase --abort
+	rebc	 = rebase --continue
+	rebi     = rebase -i production # todo get default branch, since prod is only for wordcamp repo
+	rebio    = rebase -i origin
+	rebisvn  = rebase -i git-svn
+	pullreb  = !git co production && git pull && git co - && git rebase production
+		# use `defbranch` once working
+		# also stash before, and pop after
+	svnrebase = !git stash && git svn rebase --log-window-size=100000 && git stash pop
+		# todo don't do ^ if there's already something in stash, b/c when have conflicts it gets all messed up. er, or is it because left in stash after fix conflict? i think it's the latter
+	svnrebasemirror = !git checkout master && git pull origin master && git svn rebase && git push origin master
+
+	# rebase current branch against given branch, and override any conflicts with the code in the current branch. note that "theirs" in this context refers to the current branch, which is the opposite of what it means in the context of a merge.
+	#rebtheirs = rebase -Xtheirs
+		# er, no, that resulted in lost changes
+		# maybe do `git rebase production`, then run `git co <file> --ours` for each conflict that comes up?
+		# that's less convenient, but didn't result in same lots of losses
+		# it did result in some minor losses], though, which still is a dealbreaker. need to udnerstand more and try in other contexts before start using it blindly
+
+	#
+	# status
+	#
+	stat     = status
+		# make ^ default to current directory only, then create alias for all files
+	statlong = status --long
+
 
 [diff]
 	tool = dw
