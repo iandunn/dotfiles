@@ -10,10 +10,19 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 
 ## before writing any code:
 - [ ] spent time thinking/reading about the problem, asking questions. make sure you really understand it
-- [ ] break it down and list out the requirements, both explicit and assumed. label the assumed ones, ask if they're actual requirements
+	- [ ] are you being asked to solve the root problem, or just a symptom of it?
+	- [ ] did they come to you with a problem, or a solution? if it's the latter, step back and ask what problem they're trying to solve
+- [ ] make sure it's worth it
+	- [ ] ask how important it is to the team/organization, and then weigh that against the opportunity cost.
+	- [ ] if it is worth doing, how should it be prioritized relative to other potential projects/tasks?
+- [ ] make sure you're the right one to solve it
+	- [ ] is a deeper systemic/process solution needed?
+	- [ ] is a technology solution the best way to solve this, or is it really a human problem?
 
-- [ ] consider several different solutions, weigh pros/cons. what's the minimal needed to achieve result, without adding tech debt?
-- [ ] pick the solution that seems best
+- [ ] if it's worth solving
+	- [ ] break it down and list out the requirements, both explicit and assumed. label the assumed ones, ask if they're actual requirements
+	- [ ] consider several different solutions, weigh pros/cons. what's the minimal needed to achieve result, without adding tech debt? will there be unintended consequences?
+	- [ ] pick the solution that seems best
 
 - [ ] break solution down into small steps that are easy to understand and implement
 - [ ] write out psuedocode for each step
