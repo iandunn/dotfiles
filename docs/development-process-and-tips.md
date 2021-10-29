@@ -1,11 +1,29 @@
 # general development process
 
-use when starting any new piece of code
+copy this to a new file when starting any new piece of code.
+as you move through it, rephrase general principles to contextualize them.
+	e.g., "get a quick, high level overview" could mean reading a proposal, looking at a mockup, etc
 
 don't need to follow dogmatically in real life,	but the guidelines help you approach it logically,
 and stay on track instead of doing it aimlessly, or getting tunnel vision deep in a rabbit hole
 
 note that this is for a small part of a project (e.g. a github issue). don't do waterfall approach for whole project, do agile.
+
+
+
+
+## TL;DR
+
+### understand
+- [ ] understand the problem. break it down problem into list of requirements
+- [ ] consider several approaches, choose the best
+- [ ] break solution down into list of small steps
+
+### code
+- [ ] write failing tests
+- [ ] write stubs that solve tests w/ hardcoded data
+- [ ] replace hardcoded w/ live data in small steps
+
 
 
 ## before writing any code:
@@ -49,20 +67,32 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 
 	- [ ] break problem down
 		explain it in your own words
-	    list out the requirements, both explicit and assumed. label the assumed ones, ask if they're actual requirements:
+	    list out the requirements, both explicit and assumed.
+	        label the assumed ones, ask if they're actual requirements, or mention to stakeholders that going with before start writing code for it
 			- [ ]
 			- [ ]
 			- [ ]
 			- [ ]
+
+	- [ ] are there too many to fix in a single reasonably-sized pr?
+			if so, find some kind of logical grouping and open pr for 1st group, merge, then start pr for 2nd
 
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 ### evaluate solutions
 
 - [ ] consider several different solutions, weigh pros/cons.
-		what's the minimal solution needed to achieve the result, without adding tech debt? will there be unintended consequences?
+		have others solved this before?	look for libraries/plugins/whatever
+			if trustworthy enough to run on production, then use that to save time
+			if not, then look at code to get ideas for how to build better version yourself
+
+		what's the minimal solution needed to achieve the result, without adding tech debt?
+			are there some requirements that could be modified or removed for a significant reduction in time/effort? if so, suggest they
+		will there be unintended consequences?
 		write psuedocode for any that have potential, or if need to in order to think through and evaluate it
 		if having trouble, try working backwards - https://www.youtube.com/watch?v=v34NqCbAA1c
+		if there are no good options, that may be because the design or requirements are flawed/unrealistic/etc
+			if so, tell them the problem(s), and suggest an alternative
 
 
 #### notes & psuedocode for potential ideas
@@ -109,30 +139,29 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 ## when ready to write code
 
 ### UI:
-- [ ] build UI first w/ hardcoded logic -- see https://blog.codinghorror.com/ui-first-software-development/
+- [ ] build _functional_ UI first w/ hardcoded logic (not pixel perfect) -- see https://blog.codinghorror.com/ui-first-software-development/
 - [ ] get review from any stakeholders, iterate based on feedback
 - [ ] if react, break into components (ala "thinking in react")
 - [ ] watch the browser via browsersync as you write code.
-- [ ] get working w/ hardcoded before moving to `calc()`, live data, etc
-- [ ] ...
+- [ ] get working w/ hardcoded values before moving to `calc()`, live data, etc
+- [ ] implement the business logic
+- [ ] circle back and make UI pixel-perfect
 
 
 ### business logic:
 - [ ] copy psuedocode to live file as comments in a new (modular) function
-- [ ] can it be structured as a model/pure function? if so:
-	- [ ] write unit test that fails
-	- [ ] make unit test pass w/ hardcoded data and shortcuts
-	- [ ] replace hardcoded with real logic, but step by step. don't skip steps. watch tests during each test
-	- [ ] once working, refactor to be cleaner if needed (and worth it). don't be a perfectionist, though, just get it good enough. there are many more problems to solve.
-- [] if not, (what would good process be? maybe try to apply same principals? give examples)
+- [ ] create empty stubs for all functions, have them call each other w/ hardcoded example arguments. try to make things models/pure functions where possible
+- [ ] write 1 failing test for all models
+- [ ] hardcode example return values for all models, so tests pass
+- [ ] replace hardcoded lines with real logic, one at a time. don't skip steps. watch tests during each test
+- [ ] once working, refactor to be cleaner if needed, and worth it. don't be a perfectionist, just get it good enough. there are many more problems to solve.
+
+( for things that can't be automatically tested, what would a good process be? maybe try to apply same principals? give examples )
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 ## when spending too much time on something / down a rabbit hole
-
-* do you have a clear understanding of the problem and the solution?
-	* if not, go back to the general process and clarify both of those
 
 * is this an essential thing, or a nice-to-have thing?
 	* is it user-facing or just "pure" code to make yourself happy?
@@ -140,11 +169,20 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 		* if not important then look for shortcuts, or just don't do it.
 		* if it's essential, then take a (task-negative) break, then catch up on comms and do other stuff the rest of the day. come back to it tomorrow when your brain is fresh
 
+* do you have a clear understanding of the problem and the solution?
+	* if not, go back to the general process and clarify both of those
+
+* take a break
+	* rest for a bit, collect your thoughts, let your subconscious do some processing, let the frustration fade
+	* then come back fresh
+
+* would it help to start fresh with a different approach?
+	don't look at it as throwing away the code you've written, look at it as building a second version with the knowledge you gained building the prototype
+
 * if you're working on X, and notice problem Y
 	* is Y blocking X?
 		* if no: don't stop X and start Y, just write down a quick note or gh issue for Y with a quick brain dump, and go back to X
 		* if yes: write a brain dump of where you are with X, then another dump of what you know about Y. then start the general process for Y, finish it, and circle back to X
-
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------
@@ -158,3 +196,7 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 	* the concepts still apply though
 	* if designing the UI, understand what user needs to do, consider different UIs to achieve that
 	* if using someone else's design, "understand the problem" looks like getting very familiar w/ details of design, thinking of different ways to implement
+
+* the "before writing any code" section has a lot of stuff that is more project management territory, like prioritizing.
+	maybe move it there, but leave a reference to it?
+	or maybe keep b/c you typically do all that anyway. it'd _ideally_ be done by a PM, but you don't usually have one, so it's on you
