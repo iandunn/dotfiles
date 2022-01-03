@@ -2,6 +2,8 @@
 # ls --group-directories-first requires `coreutils` from Homebrew on OS X b/c native `ls` doesn't support sorting folders first
 alias ls='ls --all --group-directories-first --color'
 alias ll='ls -lh'
+alias lstime='ll --time-style=full-iso'
+alias lltime='lstime'
 alias nano='nano -wc'
 alias less='less -S'
 alias lessn='less -N'
@@ -48,6 +50,8 @@ alias phpcs-svn-files='phpcs -a $(svn stat | grep "\(M \|A \)" | grep -v "extern
 alias phpcs-changed-lines='DIFF_BASE=production DEV_LIB_ONLY=phpsyntax,phpcs /Users/iandunn/vhosts/tools/xwp-wp-dev-lib/pre-commit'
 	# todo also shouldn't hardcode branch ^
 
+alias wpef='wp eval-file'
+
 # tweak the -n option, but this is really more here just to remind yourself that `nice` is available to throttle commands that hog a lot of resources
 alias slurp='nice -n 19 ~/vhosts/tools/wordpress-plugin-directory-slurper/update'
 
@@ -58,6 +62,9 @@ alias svn-cleanup-deep="find . -name '.svn' | sed 's/.svn//' | xargs -I% svn cle
 #same for others above it
 
 alias cleanbuild='npm ci && npm run build'
+alias nr='npm run'
+
+alias cr='composer run'
 
 alias curl='curl --location'
 
