@@ -167,7 +167,12 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 	* is it user-facing or just "pure" code to make yourself happy?
     * is it long term architecture, or just short term throwaway?
 		* if not important then look for shortcuts, or just don't do it.
-		* if it's essential, then take a (task-negative) break, then catch up on comms and do other stuff the rest of the day. come back to it tomorrow when your brain is fresh
+		* if it's essential, then take a (task-negative) break, then catch up on comms and do other stuff the rest of the day.
+			come back to it tomorrow when your brain is fresh
+
+* are there too many remaining TODOs to keep track of mentally?
+	* if so, make a list of them, organize it in logical order, and do each one at a time.
+	focus on one at a time and don't get distracted. make notes on other things if have ideas, but then return to current task
 
 * do you have a clear understanding of the problem and the solution?
 	* if not, go back to the general process and clarify both of those
