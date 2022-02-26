@@ -1,0 +1,8 @@
+# editorconfig.org
+# extends /.editorconfig
+
+[*]
+indent_style = tab
+
+[*.md]
+trim_trailing_whitespace = true
