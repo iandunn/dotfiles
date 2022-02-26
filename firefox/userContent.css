@@ -1,0 +1,51 @@
+/*
+This must be symlinked to {profile directory}/chrome/userContent.css
+
+References:
+
+* userContent: http://kb.mozillazine.org/UserContent.css
+	* Don't want `@namespace`: https://www.reddit.com/r/FirefoxCSS/comments/cjlsei/comment/evpi2zv/?utm_source=reddit&utm_medium=web2x&context=3
+	* In about:config,
+		* Must set toolkit.legacyUserProfileCustomizations.stylesheets=true
+		* Maybe also also widget.non-native-theme.enabled = false , but not sure. try without and update this
+* Browser Toolbox inspects the browser UI: https://developer.mozilla.org/en-US/docs/Tools/Browser_Toolbox
+	* DevTools settings must have `remote debugging` and `enable browser chrome...` enabled for Browser Toolbox to work.
+	* `userContents.css` will work without those though.
+* https://superuser.com/questions/1706966/is-it-possible-to-edit-the-stylesheet-of-firefox-developer-tools/1706968#1706968
+* https://www.reddit.com/r/FirefoxCSS/comments/t1g8z9/cant_get_userchromecss_working_none_of_the_normal/
+
+*/
+
+
+/* Tab bar */
+@-moz-document url-prefix("about:devtools-toolbox") {
+	/* Not needed right now, but here in case needed in the future. Don't want to have to look up how to change tab bar. */
+}
+
+/* Tab contents */
+@-moz-document url-prefix("chrome://devtools/content/") {
+	/*
+	* The gap between computed-property-name-container and computed-property-value-container is too big, and forces
+	* the panel to take up more space than it needs to. When DevTools is docked to left/right, screen real estate is
+	* limited. This reduces the gap.
+	*
+	* @todo Move to Subgrid so the name/value elements all aligned based on the widest element. Don't need to support old browsers.
+	*/
+	.computed-property-view {
+		justify-content: space-between;
+		column-gap: 20px;
+	}
+
+		.computed-property-name-container {
+			width: auto !important;
+		}
+
+		.computed-property-value-container {
+			flex: 0 0 auto !important;
+			padding-right: 5px;
+		}
+
+			.computed-property-value {
+				padding-inline-start: 0 !important;
+			}
+}
