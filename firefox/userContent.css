@@ -28,24 +28,20 @@ References:
 	* The gap between computed-property-name-container and computed-property-value-container is too big, and forces
 	* the panel to take up more space than it needs to. When DevTools is docked to left/right, screen real estate is
 	* limited. This reduces the gap.
-	*
-	* @todo Move to Subgrid so the name/value elements all aligned based on the widest element. Don't need to support old browsers.
 	*/
-	.computed-property-view {
-		justify-content: space-between;
-		column-gap: 20px;
+	#computed-property-container {
+		display: grid;
+		grid-template-columns: auto auto;
+		column-gap: 5px; /* This is in addition to `computed-property-value { padding-inline-start }`. */
 	}
 
-		.computed-property-name-container {
-			width: auto !important;
+		.computed-property-view {
+			display: grid !important;
+			grid-template-columns: subgrid;
+			grid-column: 1 / 3;
 		}
 
-		.computed-property-value-container {
-			flex: 0 0 auto !important;
-			padding-right: 5px;
-		}
-
-			.computed-property-value {
-				padding-inline-start: 0 !important;
+			.computed-property-name-container {
+				width: auto !important;
 			}
 }
