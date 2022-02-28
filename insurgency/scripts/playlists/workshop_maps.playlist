@@ -1,0 +1,53 @@
+// er, this is really just needded to override forced_cvars ?
+	// but what you want for maps is just a `mapcycle_workshop.txt` file?
+
+"playlist"
+{
+	"name"					"Workshop Maps"
+	"description"			"Custom maps downloaded from the Steam workshop."
+	"category"				"solo"	 // Required: Menu category, should be "pvp", "coop", "solo" or "hidden"
+
+	// A list of maps that this playlist must be played on.
+	// If no maps are included, this playlist will have no map restrictions.
+	"allowed_maps"
+	{
+		// "mapname" "gamemode"
+		// eg: "station" "push"
+	}
+
+	// Enforced convars, these will be unchangable.
+	"forced_cvars"
+	{
+		// "CVAR"										"VALUE"
+
+		"ambush"	// Gamemode specific cvars
+		{
+			// "CVAR"									"VALUE"
+		}
+	}
+
+	//
+	// Solo menu specific info
+	//
+
+	// Solo mode specific recommended convars, applied but not enforced
+	"solo_cvars"
+	{
+		// "CVAR"										"VALUE"
+
+		"ambush"	// Gamemode specific cvars
+		{
+			// "CVAR"									"VALUE"
+		}
+	}
+
+	// Recommended mapcycle, this is the default cycle if they haven't loaded it before and resetting the mapcycle will use this.
+	"solo_mapcycle"
+	{
+		// "mapname" "gamemode"
+		// eg: "station" "push"
+
+		// huh, can't add a mapcycle_*.txt file here?
+	}
+
+}

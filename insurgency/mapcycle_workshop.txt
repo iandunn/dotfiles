@@ -1,0 +1,63 @@
+badlands_b1 checkpoint
+badlands_b1 hunt
+badlands_b1 outpost
+badlands_b1 conquer
+
+block_party_coop_ws checkpoint
+
+congress_coop checkpoint
+
+gizab_b1_coop checkpoint
+
+estates_b4 survival
+estates_b4 checkpoint
+estates_b4 hunt
+estates_b4 outpost
+estates_b4 conquer
+estates_b4 firefight
+estates_b4 occupy
+
+panama_canal checkpoint
+panama_canal hunt
+panama_canal outpost
+panama_canal conquer
+panama_canal ambush
+panama_canal elimination
+panama_canal firefight
+panama_canal infiltrate
+panama_canal occupy
+panama_canal push
+panama_canal skirmish
+panama_canal strike
+
+pripyat checkpoint
+
+point_blank checkpoint
+point_blank hunt
+point_blank outpost
+point_blank conquer
+point_blank ambush
+point_blank elimination
+point_blank firefight
+point_blank infiltrate
+point_blank occupy
+point_blank strike
+
+prophet_coop checkpoint
+prophet_coop conquer
+prophet_coop_b6 checkpoint
+prophet_coop_b6 conquer
+
+prospect checkpoint
+prospect hunt
+prospect outpost
+prospect conquer
+
+takbar checkpoint
+takbar ambush
+takbar firefight
+takbar push
+
+winter_rescue_ws checkpoint
+
+// add more from https://steamcommunity.com/id/ian_dunn/myworkshopfiles/?appid=222880&browsefilter=mysubscriptions

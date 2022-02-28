@@ -1,8 +1,15 @@
 // Remove smoke grenades, because they're annoying.
 // Didn't find a good way to disable entirely, so just making cost/weight impossible.
 
-"#base" "default_occupy.theater"
+"#base" "default_push.theater"
+//"#base" "default_occupy.theater"
 	// Right now you have to manually change ^ to whatever mode you're playing. Is there a better way to do this?
+//"#base" "default.theater"
+	// console shows this being loaoded via mp_theater_override, but game doesn't work b/c the squads that default_push.theater defines aren't setup
+
+// https://gaming.stackexchange.com/questions/372996/modify-source-insurgency-weapon-for-all-theaters
+// is there a way to get a variable, so can say something like `default_{ mp_gamemode }` ?
+// or maybe have to make an actual mod? see manual section of https://developer.valvesoftware.com/wiki/Create_a_Mod
 
 "theater"
 {
