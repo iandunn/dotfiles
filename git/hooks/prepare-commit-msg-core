@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#
+# todo: add code to grab previous commit prefixes. probably in wordcamp hook
+#
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+if [ $COMMIT_SOURCE ]; then
+	# A messages is already being provided via `commit -m`, rebase, etc.
+	exit 0;
+fi
+
+template="Component: Brief summary.
+
+Longer description with more details, such as a \`new_hook\` being introduced with the context of a \`\$post\` and a \`\$screen\`.
+
+More paragraphs can be added as needed.
+
+Props person, another.
+Fixes #30000. See #20202, #105.
+#
+# See https://make.wordpress.org/core/handbook/best-practices/commit-messages/ for more detailed guidelines."
+
+# Wrapping the variable in quotes preserves the newlines, because BASH is weird.
+echo "$template" > $COMMIT_MSG_FILE
