@@ -33,13 +33,20 @@
 	cim  = commit -m
 
 	#
+	# stash
+	#
+	pop       = stash pop
+	stashshow = "!git stash show -p stash@{\"$1\"} #"
+
+	#
 	# misc
 	#
 	cherp 	  = cherry-pick
 	reshh 	  = reset --hard HEAD
 	showm     = show --no-abbrev-commit --format=medium  # Appending `m` for `medium` because can't overwrite default `show` command :( -- see https://stackoverflow.com/questions/3538774/is-it-possible-to-override-git-command-by-git-alias
-	stashshow = "!git stash show -p stash@{\"$1\"} #"
 	amshow    = am --show-current-patch   # Useful for understanding the context when resolving merge conflicts.
+	pullu     = pull --set-upstream
+	# what to name this? maybe better to just memorize. for deleting remote branches. need origin name maybe. rbranchrm = push -d
 
 	# ideally want this to automatically run on every commit whenever it's modified in any way.
 	# e.g., want the date of the commit to be the _modified_ date, not the _created_ date
@@ -111,7 +118,7 @@
 	# log
 	#
 	logdef = log ...production
-		# use `defbarnch` alias once working
+		# use `defbranch` alias once working
 		# see comments around `phpcs-changed-git` for notes on getting default
 	logorg = log ...origin
 		# should compare current local branch to current remote branch. might works on production, might not work on untracked branches
