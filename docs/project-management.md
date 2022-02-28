@@ -23,6 +23,9 @@
 		multiply "should" estimate by 2-4
 		PERT: ( Optimal + ( 4 * likely ) + Pessimistic ) / 6
 		w-delphi - team based
+- [ ] leave room at end of project timeline b/c last 20% takes significantly more than 20% of time
+	because lots of detail work and polishing, also because people tend to leave hard/complex/unknown stuff to the end
+	https://github.com/webflow/leadership/blob/master/tech_lead.md#the-8020-rule
 - [ ] re-evaluate and communicate estimates at regular intervals
 	cone of uncertainty / construx chart - https://projectmanagementfoundations.files.wordpress.com/2020/12/time-and-estimates.pdf
 - [ ] get stakeholder feedback at regular intervals

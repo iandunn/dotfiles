@@ -169,6 +169,7 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 		* if not important then look for shortcuts, or just don't do it.
 		* if it's essential, then take a (task-negative) break, then catch up on comms and do other stuff the rest of the day.
 			come back to it tomorrow when your brain is fresh
+			consider if there are different ways to approach it
 
 * are there too many remaining TODOs to keep track of mentally?
 	* if so, make a list of them, organize it in logical order, and do each one at a time.
@@ -183,6 +184,7 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 
 * would it help to start fresh with a different approach?
 	don't look at it as throwing away the code you've written, look at it as building a second version with the knowledge you gained building the prototype
+	can save current code in archived branch in case need to refer to it or switch back to it
 
 * if you're working on X, and notice problem Y
 	* is Y blocking X?
