@@ -1,0 +1,7 @@
+need to find where phpstorm stores gruvbox-customized and move/symlink it here
+
+not in xml anymore? in
+~/Library/ApplicationSupport/JetBrains/PhpStorm2021.1/plugins/gruvbox-theme/lib/gruvbox-theme-0.4.4.jar
+instead? so can't customize?
+
+could prob duplicate, and customize that one?
