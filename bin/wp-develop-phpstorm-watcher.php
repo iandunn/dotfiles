@@ -20,10 +20,15 @@
  * show console: `always` to test/troubleshoot, `on error` once working
  */
 
-$source      = $argv[1];
+$source = $argv[1];
+
+// Skip non-src files
+if ( false === strpos( $source, '/src/' ) ) {
+	exit( 0 );
+}
+
 $destination = str_replace( '/src/', '/build/', $source );
 
 exec( "cp $source $destination", $output, $status );
 
 exit( $status );
-
