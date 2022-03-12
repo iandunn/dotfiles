@@ -117,9 +117,10 @@ if [ 'laptop' == $DEVICE_TYPE ]; then
 	sudo pmset -b disksleep 5
 	sudo pmset -b sleep 10
 fi
-sudo pmset -c displaysleep 20
-sudo pmset -c disksleep 20
-sudo pmset -c sleep 30
+#sudo pmset -c displaysleep 20
+#sudo pmset -c disksleep 20
+#sudo pmset -c sleep 30
+# tmp disabled to see if it was causing problems w/ external hard drive disconnected while sleep warnings
 
 # Require password to unlock, with an optional grace period
 defaults write com.apple.screensaver askForPassword -int 1
@@ -157,7 +158,9 @@ defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 defaults write com.apple.notificationcenterui bannerTime 6
 
 # Disable mouse acceleration, to improve aiming in games. Default value is 0.875.
-defaults write .GlobalPreferences com.apple.mouse.scaling -1
+#defaults write .GlobalPreferences com.apple.mouse.scaling -1
+#tmp disable to b/c might want it with new mice?
+# need to write sensitivity too
 
 # https://github.com/electron/electron/issues/13164#issuecomment-435735605
 defaults write -g NSRequiresAquaSystemAppearance -bool Yes
@@ -170,7 +173,13 @@ defaults write -g NSRequiresAquaSystemAppearance -bool Yes
 # todo - get UUID dynamically
 # ln -sf "/System/Library/Desktop Pictures/Solid Colors/Stone.png" "/Library/Caches/Desktop Pictures/DC73FE49-1CB7-459B-AD9D-E9BA6173FCFB/lockscreen.png"
 # ln -sf "/Library/Desktop Pictures/Mojave Night.jpg" "/Library/Caches/Desktop Pictures/DC73FE49-1CB7-459B-AD9D-E9BA6173FCFB/lockscreen.jpg"
-ln -s "/System/Library/Desktop Pictures/Big Sur.heic" "/Library/Caches/Desktop Pictures/DC73FE49-1CB7-459B-AD9D-E9BA6173FCFB/lockscreen.heic"
+#ln -s "/System/Library/Desktop Pictures/Big Sur.heic" "/Library/Caches/Desktop Pictures/DC73FE49-1CB7-459B-AD9D-E9BA6173FCFB/lockscreen.heic"
+# tmp disable b/c need to update uuid and want to make sure no problems before doing this
+
+
+# todo from running:
+# Warning: Idle sleep timings for "AC Power" may not behave as expected.
+#- Disk sleep should be non-zero whenever system sleep is non-zero.
 
 
 
