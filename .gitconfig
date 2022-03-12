@@ -91,6 +91,13 @@
 	# diff
 	#
 	diffc   = diff --cached
+	diffno	= diff trunk --name-only
+		# detect main branch automatically
+		# git remote show origin | sed -n '/HEAD branch/s/.*: //p'
+			# https://stackoverflow.com/questions/28666357/git-how-to-get-default-branch works but is slow b/c http request
+		# maybe set some kind of variable based on path, or switch case?
+		# git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@' works and is local, but isn't reliable
+		# git rev-parse --abbrev-ref origin/HEAD works but need to strip out origin/ can do with bash if make this a ! command
 	diffnob = !git diff |grep -v build
 
 	# in general, this is better for diffing a string of text, especially longer strings
@@ -156,9 +163,18 @@
 
 
 [diff]
-	tool = dw
-	noprefix = true
+#	tool = dw
+#	noprefix = true
 	#external = '/Applications/DeltaWalker.app/Contents/Resources/git-diff'
+
+#	relative = true
+		# not working
+
+#	wordRegex="[A-Za-z0-9. ]|[^[:space:]]"
+		# useful in some scenarios, but really bad in others
+
+# trying to make word diff the default
+#external = "git diff --word-diff=color"
 
 [difftool]
 	prompt = false
