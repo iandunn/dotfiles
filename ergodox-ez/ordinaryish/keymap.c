@@ -31,9 +31,9 @@ void keyboard_post_init_user( void ) {
 		debug_enable = true;
 	#endif
 
-	//debug_matrix = true;
-	//debug_keyboard = true;
-	//debug_mouse = true;
+	//debug_matrix = true;      // on/off matrix for each key
+	//debug_keyboard = true;    // keyboard_report: 00 00 29 00 00 00 00 00
+	//debug_mouse = true;       // mousekey [btn|x y v h](rep/acl): [00|0 0 0 0](0/0) - for simulated mouse keys
 }
 
 bool is_oneshot_cancel_key( uint16_t keycode ) {
@@ -105,11 +105,24 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
+	#ifdef CONSOLE_ENABLE
+		uprintf(
+			"keycode: %u, layer_state: %u, pressed: %u, shift: %u, ctrl: %u, alt: %u, cmd: %u \n",
+			keycode,
+			layer_state,
+			record->event.pressed,
+			os_shft_state,
+			os_ctrl_state,
+			os_alt_state,
+			os_cmd_state
+		);
+	#endif
+
 	// Turn one-shot mods on/off.
 	update_oneshot( &os_shft_state, KC_LSFT, OS_SHFT, keycode, record );
 	update_oneshot( &os_ctrl_state, KC_LCTL, OS_CTRL, keycode, record );
-	update_oneshot(	&os_alt_state, KC_LALT, OS_ALT,	keycode, record	);
-	update_oneshot( &os_cmd_state, KC_LCMD, OS_CMD,	keycode, record	);
+	update_oneshot(	&os_alt_state,  KC_LALT, OS_ALT,  keycode, record );
+	update_oneshot( &os_cmd_state,  KC_LCMD, OS_CMD,  keycode, record );
 
 	switch (keycode) {
 		case ST_MACRO_1:
