@@ -12,7 +12,7 @@
 // This has to come before `keycodes` and `process_record_user`.
 enum custom_keycodes {
 	RGB_SLD = EZ_SAFE_RANGE,
-	ST_MACRO_0, // Unused, but must exist to avoid macro one-shot conflict.
+	ST_MACRO_0, // Unused, but must exist to avoid weird conflict between macros and one-shot keys.
 	ST_MACRO_1,
 	ST_MACRO_2,
 };
@@ -27,10 +27,13 @@ enum keycodes {
 // Uncomment to see output in QMK Toolkit.
 // Mac's on-screen keyboard viewer is also useful, and works even when not active application.
 void keyboard_post_init_user( void ) {
-	//debug_enable=true;
-	//debug_matrix=true;
-	//debug_keyboard=true;
-	//debug_mouse=true;
+	#ifdef CONSOLE_ENABLE
+		debug_enable = true;
+	#endif
+
+	//debug_matrix = true;
+	//debug_keyboard = true;
+	//debug_mouse = true;
 }
 
 bool is_oneshot_cancel_key( uint16_t keycode ) {
