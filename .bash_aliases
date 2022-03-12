@@ -1,3 +1,6 @@
+# todo clean up this, maybe split into separate files and source them all here.
+# eg aliases/core-utils.sh, aliases/version-control.sh, etc
+
 ## Core utilities
 # ls --group-directories-first requires `coreutils` from Homebrew on OS X b/c native `ls` doesn't support sorting folders first
 alias ls='ls --all --group-directories-first --color'
@@ -12,28 +15,46 @@ alias du='du -h'
 alias grep='grep -i'
 alias rm='rm -i'
 alias diff='diff -u'
+alias diffsplit='/usr/bin/diff -y -W 250' # full path b/c -y conflicts w/ -u alias
 alias stat='stat -x'
 alias which='which -a'
 alias locate='locate -i'
 # todo works but throws usage notice - alias tail='tail -n40'
-alias watch='watch -d'
 alias ..="cd .."
 alias ...="cd .. && cd .."
 alias ....="cd .. && cd .. && cd .."
 alias .....="cd .. && cd .. && cd .. && cd .."
+
+# Usage: watch curl -iks https://misc.wordcamp.test/2016/tmp/ |grep WordCampBlocks
+# Note this will watch the current working directory.
+# todo not working yet
+alias watch='watch $(pwd) |xargs -n1 -I{} $1'
+	# where was this installed from?
 
 alias date='gdate'
 
 # This assumes you're in the directory you want to search
 alias findgrep='find . -type f ! -path '*/.svn/*' ! -path '*/.git/*' -follow |xargs grep --ignore-case --line-number --no-messages'
 # also add build, vendor, etc folders to exclude?
+# maybe need something like b/c exclude above doesn't work
+# function grep() {
+#	/bin/grep --exclude-dir=.svn "$@"
+#}
+#also exclude binary files
+
 
 # z doesn't always add folders for some reason, but this lets you manually do it easily when you encounter one that should exist and doesn't
 alias zadd='z --add $(pwd)'
 
-alias devdown="sudo brew services stop nginx && brew services stop php@7.2 && brew services stop mailhog && brew services stop mysql && brew services list"
-alias devup="sudo brew services start nginx && brew services start php@7.2 && brew services start mailhog && brew services start mysql && brew services list"
+alias devdown="sudo nginx -s quit && brew services stop  php@8.0 && brew services stop  mailhog && brew services stop  mysql && brew services list"
+alias devup="  sudo nginx         && brew services start php@8.0 && brew services start mailhog && brew services start mysql && brew services list"
 #todo move ^ to appropriate section below
+
+alias nr='npm run'
+alias cr='composer run'
+alias ce='composer exec'
+alias yr='yarn run'
+alias ywr='yarn workspaces run'
 
 ## Miscellaneous
 alias patch='patch --no-backup-if-mismatch'
@@ -42,6 +63,7 @@ alias phpcbf='phpcbf -v'
 alias phpcs='phpcs -a'
 alias phpcs-git-files='phpcs -a $(git diff production --name-only) $(git diff --cached --name-only)'
 	# todo ^ should use default branch, not hardcode "master". doesn't work w/ "production" , "develop" etc
+	# `git remote show origin | grep 'HEAD branch' | cut -d' ' -f5` works. have to hardcode "origin" but works in most cases.
 	# none from https://stackoverflow.com/questions/28666357/git-how-to-get-default-branch work in 5ftF repo, maybe have to track remote or something
 #alias phpcs-git-lines='DIFF_BASE=production DEV_LIB_ONLY=phpsyntax,phpcs ~/vhosts/tools/xwp-wp-dev-lib/pre-commit'
 	# todo ^ also needs to get default branch instead of hardcoding
@@ -49,6 +71,9 @@ alias phpcs-svn-files='phpcs -a $(svn stat | grep "\(M \|A \)" | grep -v "extern
 # todo can combine ^^^ into just `phpcs-changed` ?
 alias phpcs-changed-lines='DIFF_BASE=production DEV_LIB_ONLY=phpsyntax,phpcs /Users/iandunn/vhosts/tools/xwp-wp-dev-lib/pre-commit'
 	# todo also shouldn't hardcode branch ^
+alias wpef='wp eval-file'
+alias wpupall='wp core update && wp plugin update --all && wp theme update --all && wp core language update'
+alias devnote='cp ~/dotfiles/docs/development-process-and-tips.md '
 
 alias wpef='wp eval-file'
 
@@ -84,10 +109,12 @@ alias dcomp='docker-compose'
 alias gorramit_firefox='rm -f ~/Library/Application Support/Firefox/Profiles/**/.parentlock'
 
 # To allow `svn up` without certificate errors
+# nginx has to be off
 # can't leave this running after svn up, though, b/c messes up .test cert verification in browser
-# look into that, doesn't make sense.
-alias forward-wporg-svn='sudo ssh -ND 8081 -p22 -L 443:dotorg.svn.wordpress.org:443 iandunn@proxy.automattic.com &'
-	# sometimes ^ doesn't work, just shows "stopped" right away? is it because of sudo combined with & ?
+alias proxy-svn-on='sudo nginx -s stop     && sudo ssh -fN iandunn@proxy.automattic.com -L 443:dotorg.svn.wordpress.org:443'
+alias proxy-svn-off='sudo pkill -f "ssh -fN iandunn@proxy.automattic.com -L 443:dotorg.svn.wordpress.org:443"       && sudo nginx'
+# todo add & so see output
+# todo might need to specify ident file if add more
 
 
 alias skipinstall='WP_TESTS_SKIP_INSTALL=1'
@@ -124,6 +151,19 @@ alias svn-showhead='svn up --ignore-externals && svn diff -rPREV |less'
 
 alias syncsvn='php /Users/iandunn/vhosts/localhost/wordcamp.test/public_html/bin/php/multiple-use/miscellaneous/sync-svn-with-git.php'
 
+alias svn-externals='svn propedit svn:externals .'
+alias svn-ignore='svn propedit svn:ignore .'
+
+alias svn-diffw='svn diff -x --ignore-all-space'
+# naming not consistent w/ `git diffw` alias?
+
+#alias rmlock=''
+	# parse files out of `git stat` of `git clean --dry-run`, rm if composer-lock or package-lock
+		# not git clean b/c that's only untracked files
+
+# works, but why doesn't it autocomplete?
+alias ImageOptim='/Applications/ImageOptim.app/Contents/MacOS/ImageOptim'
+
 ## Host-specific aliases
 case $(hostname) in
 	# alias tar='tar --exclude-vcs'
@@ -149,6 +189,37 @@ case $(hostname) in
 		alias timeutc='gdate --utc --date="@$1"'
 		alias timelocal='gdate --date='@''
 
+		# use xdebug with wp-cli commands
+		# from https://gist.github.com/joshlevinson/93253aec2b41749e10de
+		# start listening for connections in phpstorm, set breakpoints, then use this alias to call the wp-cli command
+		#
+		# if this ever stops working, first try restarting phpstorm and firefox b/c it seems like that that's all that's needed sometimes
+		# if that doesn't fix it, then make sure that xdebug.ini settings match. might need to add more of them here explicitly rather than relying on defaults
+		# also try putting xdebug_break(); in code, then run and sometimes there's errors in the phpstorm console that you wouldn't otherwise see
+		# also check ip address in /usr/local/etc/php/7.2/conf.d/ext-xdebug.ini, make sure matches current ip
+		#
+		# ugh, it DID stop working, 10 minutes later, even though nothing changed.
+		# have to use manual xdebug_breaks everywhere.
+		# seems to recognize files in wordcamp/.../mu (core), but not in wordcamp/.../bin
+		# it just gets "/3" as the filename instead of teh path to the file
+		#   oh, i wonder if this is only with `wp eval-file` commands? `var_dump()` doesn't know the line know in that case either:
+		#   phar:///usr/local/bin/wp/vendor/wp-cli/eval-command/src/EvalFile_Command.php(76) : eval()'d code:169: bool(true)
+		#   that's still a problem, but less of one, and is maybe a hint at a solution
+		#
+		# todo phpstorm will open the `wp` binary for some reason, and you'll have to hit the `play/run to...` button to go to the next pointpoint
+		#   maybe some way to fix that?
+		alias wpdebug='XDEBUG_CONFIG="idekey=iandunn remote_connect_back=1" wp'
+
+		# this has all the same problems as wpdebug
+		# plus is breaks the flow, and phpunit doesn't run the tests until after xdebug is finished, or something?
+		#
+		# a not-so-great workaround is to manually execute the function-under-test with the data for a failing case
+		#   wpdebug eval "var_dump( WordCamp\Sunrise\get_post_slug_url_without_duplicate_dates(  true, '/%postname%/', 'vancouver.wordcamp.test', '/2020/', '/2020/2019/save-the-date-for-wordcamp-vancouver-2020/' ) );"
+		alias phpunitdebug='XDEBUG_CONFIG="idekey=iandunn remote_connect_back=1" phpunit'
+
+		alias skipinst='WP_TESTS_SKIP_INSTALL=1 phpunit '
+
+
 		# When unplug external webcam (like when traveling), then plug back in, it's not recognized until restart service
 		alias fix-camera='sudo killall VDCAssistant'
 
@@ -172,5 +243,8 @@ case $(hostname) in
 	"iandunn.dev.wordpress.org" | "iandunn.dev.ord.wordpress.org" )
 		alias svnupall='svnup-all.sh'
 		alias svnup-all='svnup-all.sh'
+
+		# problem: xdebug idekey is different from what local env uses
+		# probably can't change config file, but maybe could setup an alias like `XDEBUG_CONFIG="idekey=iandunn remote_connect_back=1" php` or something, similar to how get it working locally w/ wp-cli and phpunit
 	;;
 esac
