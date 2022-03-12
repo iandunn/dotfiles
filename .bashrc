@@ -12,18 +12,33 @@ export SVN_EDITOR="nano -w"
 export PATH="$PATH:$DOTFILES_DIR/bin"
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
+# Fix git-svn, see https://github.com/Homebrew/homebrew-core/issues/52490#issuecomment-792604853
+# will need to update when perl version changes
+export PERL5LIB=/usr/local/lib/perl5/site_perl/5.30.2/darwin-thread-multi-2level/
+
 # todo maybe use \nano or /usr/bin/nano to avoid the -w and force line wrapping during git/svn commits
+
+
+export _Z_MAX_SCORE=50000
+	# todo increasing fixes bug and allows new folders to be added?
+		# but it was 16k before, and ~/.z only has 26 entries, shouldn't be anywhere close to 16k
+		# maybe it was from re-running `source ~/.bashrc` while testing?
+		# let's just bump it to 50k for awhile and see what happens
+	# or maybe it's just that you're testing w/ 1 shell, and each shell has its own memory copy of ~/.z so it overwrites?
+		# nope, ^ doesn't seem to be the case, so maybe just increasing max score
+
 
 # Host-specific environmental variables
 case $(hostname) in
 	"willow" | "willow.local" | "flanders" | "flanders.local" )
-		export PATH="$HOME/bin:$DOTFILES_DIR/bin:/usr/local/opt/php@7.2/bin:$PATH:/usr/local/sbin:$HOME/.gem/ruby/2.3.0/bin:/usr/local/opt/gettext/bin"
+		export PATH="$HOME/bin:$DOTFILES_DIR/bin:/usr/local/bin/php:$PATH:/usr/local/sbin:$HOME/.gem/ruby/2.3.0/bin:/usr/local/opt/gettext/bin:/Users/iandunn/.composer/vendor/bin"
 		export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
 		# export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
 		export NVM_DIR="$HOME/.nvm"
 		source "/usr/local/opt/nvm/nvm.sh"
 		source /usr/local/etc/profile.d/z.sh
 		export GPG_TTY=$(tty)
+		export HOMEBREW_NO_AUTO_UPDATE=1
 	;;
 
 	"durin" )
@@ -34,6 +49,7 @@ esac
 
 source $DOTFILES_DIR/bin/git-completion.bash
 source $DOTFILES_DIR/bin/hub-completion.bash
+source $DOTFILES_DIR/bin/gh-completion.bash
 source $DOTFILES_DIR/bin/wp-cli-completion.bash
 
 #todo source bash-completion, but need to setup path per environment. dont leak root paths
@@ -206,8 +222,16 @@ function deploy {
 			ssh wordcamp.org 'deploy-wordcamp.sh'
 		;;
 
+		*themes/wporg-news* )
+			ssh wordpress.org 'deploy-dotorg.sh'
+		;;
+
+		*mu-plugins/global-header* )
+			ssh wordpress.org 'deploy-dotorg.sh'
+		;;
+
 		*i18n-tools* )
-			ssh wordpress.org 'deploy-dotorg.sh wporg'
+			ssh wordpress.org 'deploy-dotorg.sh'
 		;;
 
 		*wp15.wordpress.test* )
@@ -262,4 +286,14 @@ function composer {
 			env composer "$@"
 		;;
 	esac
+}
+
+# run a request against all w.org web heads
+# must be ran on sandbox, must use http
+function check_all_wporg_web_heads {
+	local query_string = $1
+
+	for i in $(seq 1 5); do
+		curl "http://web$i.ord.wordpress.org$query_string" -I -H 'Host: wordpress.org';
+	 done
 }
