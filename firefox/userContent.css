@@ -44,4 +44,9 @@ References:
 			.computed-property-name-container {
 				width: auto !important;
 			}
+
+	/*
+	when expand a property, the child row should take up 100% of the computed-property-contaenr, instead of it's parten
+	right now it leaves a lot of space unused
+	*/
 }

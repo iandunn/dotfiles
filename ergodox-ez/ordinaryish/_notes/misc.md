@@ -14,6 +14,9 @@ escape problems
 	could have dedicated "ESCAPE_OS" key in one of the blank spots?
 	thats hard to reach but so is escape
 
+	- [ ] try switghing it to layer thumb key since never use that w/ mods
+		but will that stick the layer on? would want to cancel the layer oneshot too
+
 	maybe the even deeper root problem is just that locking mods on is problematic
 	didn't have these problems w/ native OSM() though, so how is callum different?
 
@@ -47,6 +50,12 @@ escape problems
 
 
 ### medium
+
+- [ ] reformat layout() to be easier to read and more compact
+	some one where someone used ---+---- or something to draw borders of keys
+
+- [ ] break layout() into vars for left and right hand, so don't have to scroll?
+	can't b/c then they wouldn't be all on the same line?
 
 - [ ] find a way to use GUI to edit the keymap itself
 	might be nice to move keymap to separate file even if don't get this working

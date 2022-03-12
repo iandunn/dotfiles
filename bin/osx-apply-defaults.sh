@@ -36,6 +36,8 @@ esac
 # time machine ignored folders
 # default skin tone - maybe com.apple.EmojiPreferences
 # test out disabling desktop icons - defaults write com.apple.finder CreateDesktop false; killall Finder
+# shorten incorrect pw delay, tradeoffs not worth it - https://www.google.com/search?q=mac+pam.d+incorrect+password+delay&sxsrf=ALeKk00b0kcTN20ch8UYhpPHKMlQUIhmtA%3A1621802079762&ei=X7yqYPvzLc610PEP26WwoAI&oq=mac+pam.d+incorrect+password+delay&gs_lcp=Cgdnd3Mtd2l6EAM6BwgAEEcQsANQ4JMHWLeWB2DPlwdoAXACeACAAUKIAa8CkgEBNZgBAKABAaoBB2d3cy13aXrIAQjAAQE&sclient=gws-wiz&ved=0ahUKEwi7n_DG0-DwAhXOGjQIHdsSDCQQ4dUDCA4&uact=5
+
 
 # sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.locate.plist
 

@@ -94,6 +94,11 @@ function git_status {
 
 	elif [[ $status == *"rebase in progress"* || $status == *"currently rebasing"* ]]; then
 		location="rebasing onto ${6}"
+		# ^ is deceptive, because that value isn't HEAD, it's the commit that's being rebased against
+		# maybe replace it with "rebasing, head is {}" or, "rebasing onto "342", at "234"
+
+		# todo for "rebase in progress; onto 22faf4b5" need to pick out {5} not {6}
+			# what're the other two, to disambiguate?
 
 	elif [[ $status == *"currently cherry-picking"* ]]; then
 		# todo-bug remove the `.` at the end of the word
@@ -201,6 +206,8 @@ function svn_status {
 		"$HOME/vhosts/localhost/wordcamp.test/public_html/wp-content/plugins/gutenberg"
 		"$HOME/vhosts/localhost/wp-develop.test/public_html"
 		"$HOME/vhosts/localhost/wp-develop.test/public_html/src"
+		"$HOME/vhosts/localhost/wp-develop-subdir.test/public_html"
+		"$HOME/vhosts/localhost/wp-develop-subdir.test/public_html/src"
 	)
 
 	# Only check for an exact match, since subfolders are fast enough to test.

@@ -23,7 +23,6 @@ case $(hostname) in
 		export NVM_DIR="$HOME/.nvm"
 		source "/usr/local/opt/nvm/nvm.sh"
 		source /usr/local/etc/profile.d/z.sh
-			# todo isntall on w.org sandbox too? if so will be in diff directory
 		export GPG_TTY=$(tty)
 	;;
 
@@ -192,7 +191,6 @@ function deploy {
 			*api* | *buddypress* | *planet* )
 				deploy-dotorg.sh $1
 			;;
-
 
 			* )
 				echo "Couldn't detect site to deploy."

@@ -3,13 +3,16 @@
 
 /*
  * This copies `wordpress-develop` `src/` files to `build/`, as a backup for the buggy `npm run watch` script.
- * Core's build script often misses files or messes up, and it's very frustrating, and makes it difficult to get anything done.
+ * Core's build script often misses files or messes up, and it ruins the devex.
+ *
+ * See https://core.trac.wordpress.org/ticket/51960
  *
  * Setup:
  *
  * phpstorm > preferences > tools > file watchers
  * type: php
  * scope: open files
+	* ugh wait, this doesn't handle things like `git checkout {branch}`, so needs to be all src files?
  * arguments: $FilePath$
  * advanced:
  * 	uncheck `auto save...`

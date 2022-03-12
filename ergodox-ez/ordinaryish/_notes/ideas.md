@@ -3,6 +3,7 @@
 iirc tthere's other text files saved in 'ergo documentation' folder that have lots more
 
 
+- [ ] hold down 3 keys on home row to replace far-away keys like esc, layers, etc
 
 maybe make outer 2u keys layer toggle
 then make inner 2u keys delete / enter on the layer
