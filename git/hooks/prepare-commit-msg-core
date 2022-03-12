@@ -12,7 +12,8 @@ if [ $COMMIT_SOURCE ]; then
 	exit 0;
 fi
 
-template="Component: Brief summary.
+template="
+Component: Brief summary.
 
 Longer description with more details, such as a \`new_hook\` being introduced with the context of a \`\$post\` and a \`\$screen\`.
 
