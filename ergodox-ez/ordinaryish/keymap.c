@@ -24,6 +24,11 @@ enum keycodes {
 	OS_CMD,
 };
 
+oneshot_state os_shft_state = os_up_unqueued;
+oneshot_state os_ctrl_state = os_up_unqueued;
+oneshot_state os_alt_state  = os_up_unqueued;
+oneshot_state os_cmd_state  = os_up_unqueued;
+
 // Uncomment to see output in QMK Toolkit.
 // Mac's on-screen keyboard viewer is also useful, and works even when not active application.
 void keyboard_post_init_user( void ) {
@@ -37,7 +42,16 @@ void keyboard_post_init_user( void ) {
 }
 
 bool is_oneshot_cancel_key( uint16_t keycode ) {
-	return KC_ESCAPE == keycode;
+
+	if ( 21505 == keycode && 0 == layer_state ) {
+		// if can't find an existing descriptitve constant for it, then make one called ONESHOT_LAYER_1
+		// document chosen because never use this with mods, and doesn't have any side effects, whereas sometimes do want to use escape with
+		// mods and it has side effects like cancelling current action
+
+		return true;
+	}
+
+	return false;
 }
 
 bool is_oneshot_ignored_key( uint16_t keycode ) {
@@ -52,11 +66,6 @@ bool is_oneshot_ignored_key( uint16_t keycode ) {
 			return false;
 	}
 }
-
-oneshot_state os_shft_state = os_up_unqueued;
-oneshot_state os_ctrl_state = os_up_unqueued;
-oneshot_state os_alt_state  = os_up_unqueued;
-oneshot_state os_cmd_state  = os_up_unqueued;
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	[0] = LAYOUT_ergodox_pretty(
