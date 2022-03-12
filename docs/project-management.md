@@ -11,7 +11,7 @@
 - [ ] prioritize deliverables up front, decide what gets cut if need to meet deadline.
 	goals/features/tasks spreadsheet from https://projectmanagementfoundations.files.wordpress.com/2020/12/vision-and-goals.pdf
 - [ ] Create estimates for the work and communicate them
-	break everything down into specific tasks, small enough to flesh out assumptions. none should take longer than 3 days
+	break everything down into specific tasks, small enough to flesh out assumptions. make small enough that none take longer than ~18 hours
 	will take longer when
 	    team hasn't worked together
 	    hasn't done this type of work before
@@ -20,11 +20,15 @@
 	    working on other projects at same time, or maintenance rotations
 	include generous padding for unknown unknowns
 	techniques
-		multiply "should" estimate by 2-4
+		multiply casual/basic/rough estimate by 2-4
 		PERT: ( Optimal + ( 4 * likely ) + Pessimistic ) / 6
+			don't like much b/c relies on likely being very accurate, but that's not realistic
+			could adjust the factor from 2 and then divide by 4? that doesn't help much
 		w-delphi - team based
+- [ ] factor in time for bug reports and feature requests
 - [ ] leave room at end of project timeline b/c last 20% takes significantly more than 20% of time
 	because lots of detail work and polishing, also because people tend to leave hard/complex/unknown stuff to the end
+	this sounds like too much, but have seen it happen to a large extent
 	https://github.com/webflow/leadership/blob/master/tech_lead.md#the-8020-rule
 - [ ] re-evaluate and communicate estimates at regular intervals
 	cone of uncertainty / construx chart - https://projectmanagementfoundations.files.wordpress.com/2020/12/time-and-estimates.pdf
