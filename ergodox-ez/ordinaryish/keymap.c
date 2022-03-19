@@ -118,18 +118,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
-	#ifdef CONSOLE_ENABLE
-		uprintf(
-			"keycode: %u, layer_state: %u, pressed: %u, shift: %u, ctrl: %u, alt: %u, cmd: %u \n",
-			keycode,
-			layer_state,
-			record->event.pressed,
-			os_shft_state,
-			os_ctrl_state,
-			os_alt_state,
-			os_cmd_state
-		);
-	#endif
+	dprintf(
+		"keycode: %u, layer_state: %u, pressed: %u, shift: %u, ctrl: %u, alt: %u, cmd: %u \n",
+			// something wrong here? they don't seem to correspond to what i expect
+			// maybe it's some kind of bitwise thing rather than bool on/off?
+			// look at source to understand
+		keycode,
+		layer_state,
+		record->event.pressed,
+		os_shft_state,
+		os_ctrl_state,
+		os_alt_state,
+		os_cmd_state
+	);
 
 	// Turn one-shot mods on/off.
 	update_oneshot( &os_shft_state, KC_LSFT, OS_SHFT, keycode, record );

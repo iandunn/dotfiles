@@ -21,4 +21,4 @@
 	user.keymap=iandunn
 	```
 1. `cd {qmk checkout}`
-1. `qmk flash`
+1. `qmk lint && qmk flash`
