@@ -5,10 +5,6 @@
 	#include <print.h>
 #endif
 
-// Use callum-oakley's one-shot implementation, to avoid OSM bug in stock firmware.
-// See https://github.com/qmk/qmk_firmware/issues/3963
-#include "../../../users/callum/oneshot.h"
-
 // This has to come before `keycodes` and `process_record_user`.
 enum custom_keycodes {
 	RGB_SLD = EZ_SAFE_RANGE,
@@ -17,19 +13,7 @@ enum custom_keycodes {
 	ST_MACRO_2,
 };
 
-enum keycodes {
-	OS_SHFT = SAFE_RANGE,
-	OS_CTRL,
-	OS_ALT,
-	OS_CMD,
-};
-
-oneshot_state os_shft_state = os_up_unqueued;
-oneshot_state os_ctrl_state = os_up_unqueued;
-oneshot_state os_alt_state  = os_up_unqueued;
-oneshot_state os_cmd_state  = os_up_unqueued;
-
-// Uncomment to see output in QMK Toolkit.
+// Enable the constant to see output in QMK Toolkit.
 // Mac's on-screen keyboard viewer is also useful, and works even when not active application.
 void keyboard_post_init_user( void ) {
 	#ifdef CONSOLE_ENABLE
@@ -41,39 +25,13 @@ void keyboard_post_init_user( void ) {
 	//debug_mouse = true;       // mousekey [btn|x y v h](rep/acl): [00|0 0 0 0](0/0) - for simulated mouse keys
 }
 
-bool is_oneshot_cancel_key( uint16_t keycode ) {
-
-	if ( 21505 == keycode && 0 == layer_state ) {
-		// if can't find an existing descriptitve constant for it, then make one called ONESHOT_LAYER_1
-		// document chosen because never use this with mods, and doesn't have any side effects, whereas sometimes do want to use escape with
-		// mods and it has side effects like cancelling current action
-
-		return true;
-	}
-
-	return false;
-}
-
-bool is_oneshot_ignored_key( uint16_t keycode ) {
-	switch ( keycode ) {
-		case OS_SHFT:
-		case OS_CTRL:
-		case OS_ALT:
-		case OS_CMD:
-			return true;
-
-		default:
-			return false;
-	}
-}
-
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	[0] = LAYOUT_ergodox_pretty(
 		KC_ESCAPE, KC_1, KC_2, KC_3, KC_4, KC_5, KC_6,              KC_TRANSPARENT, KC_7, KC_8, KC_9,     KC_0,   KC_MINUS,  KC_EQUAL,
 		KC_GRAVE,  KC_Q, KC_W, KC_F, KC_P, KC_G, KC_LCBR,           KC_RCBR,        KC_J, KC_L, KC_U,     KC_Y,   KC_SCOLON, KC_BSLASH,
 		KC_TAB,    KC_A, KC_R, KC_S, KC_T, KC_D,                    KC_H,           KC_N, KC_E, KC_I,     KC_O,   KC_QUOTE,
-		OS_SHFT,   KC_Z, KC_X, KC_C, KC_V, KC_B, KC_LBRACKET,       KC_RBRACKET,    KC_K, KC_M, KC_COMMA, KC_DOT, KC_SLASH,  OS_SHFT,
-		OS_CTRL,   KC_TRANSPARENT, KC_TRANSPARENT, OS_ALT, OS_CMD,  OS_CMD, OS_ALT, KC_TRANSPARENT, KC_TRANSPARENT, OS_CTRL,
+		OSM(MOD_LSFT), KC_Z, KC_X, KC_C, KC_V, KC_B, KC_LBRACKET,   KC_RBRACKET,    KC_K, KC_M, KC_COMMA, KC_DOT, KC_SLASH,   OSM(MOD_RSFT),
+		OSM(MOD_LCTL), KC_TRANSPARENT, KC_TRANSPARENT, OSM(MOD_LALT), OSM(MOD_LGUI), OSM(MOD_RGUI), OSM(MOD_RALT), KC_TRANSPARENT, KC_TRANSPARENT, OSM(MOD_RCTL),
 
 					 OSL(2), KC_PGUP,                               KC_LEFT, KC_RIGHT,
 					       KC_PGDOWN,                               KC_UP,
@@ -119,24 +77,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 	dprintf(
-		"keycode: %u, layer_state: %u, pressed: %u, shift: %u, ctrl: %u, alt: %u, cmd: %u \n",
+		"keycode: %u, layer_state: %u, pressed: %u \n",
 			// something wrong here? they don't seem to correspond to what i expect
 			// maybe it's some kind of bitwise thing rather than bool on/off?
 			// look at source to understand
 		keycode,
 		layer_state,
-		record->event.pressed,
-		os_shft_state,
-		os_ctrl_state,
-		os_alt_state,
-		os_cmd_state
+		record->event.pressed
 	);
-
-	// Turn one-shot mods on/off.
-	update_oneshot( &os_shft_state, KC_LSFT, OS_SHFT, keycode, record );
-	update_oneshot( &os_ctrl_state, KC_LCTL, OS_CTRL, keycode, record );
-	update_oneshot(	&os_alt_state,  KC_LALT, OS_ALT,  keycode, record );
-	update_oneshot( &os_cmd_state,  KC_LCMD, OS_CMD,  keycode, record );
 
 	switch (keycode) {
 		case ST_MACRO_1:
