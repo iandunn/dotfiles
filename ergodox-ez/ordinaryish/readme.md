@@ -4,7 +4,8 @@
 
 * Base layer based on [Ordinary](/layouts/community/ergodox/ordinary/readme.md)
 * [Colemak](https://colemak.com/)
-* [One shot modifiers](/docs/one_shot_keys.md), using [Callum Oakley's implementation](/users/callum/readme.md)
+* [One shot modifiers](/docs/one_shot_keys.md).
+	* Note that there's a QMK bug that locks them, but [a workaround is available](https://github.com/qmk/qmk_firmware/issues/3963#issuecomment-1074525658).
 * Additional layers for navigation & media
 * Remove some hard to reach keys
 
