@@ -1,7 +1,0 @@
-# Reference: https://www.nano-editor.org/dist/v2.1/nanorc.5.html
-
-set const
-set nowrap
-
-unset backup
-unset casesensitive

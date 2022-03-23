@@ -7,8 +7,8 @@ done
 DOTFILES_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 # Environmental variables
-export EDITOR="nano"
-export SVN_EDITOR="nano -w"
+export EDITOR="micro"
+export SVN_EDITOR="micro"
 export PATH="$PATH:$DOTFILES_DIR/bin"
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
@@ -16,7 +16,6 @@ export BASH_SILENCE_DEPRECATION_WARNING=1
 # will need to update when perl version changes
 export PERL5LIB=/usr/local/lib/perl5/site_perl/5.30.2/darwin-thread-multi-2level/
 
-# todo maybe use \nano or /usr/bin/nano to avoid the -w and force line wrapping during git/svn commits
 
 
 export _Z_MAX_SCORE=50000

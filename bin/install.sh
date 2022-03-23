@@ -29,7 +29,7 @@ ln -sf $DOTFILES_DIR/.bash_prompt	$HOME/.bash_prompt
 ln -sf $DOTFILES_DIR/.gitconfig		$HOME/.gitconfig
 ln -sf $DOTFILES_DIR/.gitignore_global	$HOME/.gitignore_global
 ln -sf $DOTFILES_DIR/.inputrc		$HOME/.inputrc
-ln -sf $DOTFILES_DIR/.nanorc		$HOME/.nanorc
+ln -sf $DOTFILES_DIR/.config/micro	$HOME/.config/micro/
 
 # These have to be hard links, because Subversion and SSH configs don't support symlinks.
 ln -f $DOTFILES_DIR/.ssh/config		$HOME/.ssh/config
