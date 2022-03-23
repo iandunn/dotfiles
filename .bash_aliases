@@ -149,8 +149,6 @@ alias svn-showhead='svn up --ignore-externals && svn diff -rPREV |less'
 
 # todo setup https://stackoverflow.com/a/3885594/450127 so `svn ci` also prints the diff like git does
 
-alias syncsvn='php /Users/iandunn/vhosts/localhost/wordcamp.test/public_html/bin/php/multiple-use/miscellaneous/sync-svn-with-git.php'
-
 alias svn-externals='svn propedit svn:externals .'
 alias svn-ignore='svn propedit svn:ignore .'
 

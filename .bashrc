@@ -180,6 +180,31 @@ function qtmono {
 # git checkout `git rev-list -n 1 --before="2017-01-16 17:00" master`
 # probably better to make this a git alias instead of a bash alias
 
+# Sync canonical Git repos with legacy/deploy SVN repos
+function sync {
+	current_folder=$(pwd)
+	printf "\n"
+
+	case "$current_folder" in
+		*wordcamp.test* )
+			php /Users/iandunn/vhosts/localhost/wordcamp.test/public_html/bin/php/multiple-use/miscellaneous/sync-svn-with-git.php
+		;;
+
+		*themes/wporg-news* )
+			ssh wordpress.org '$SYNCPATH/news.sh'
+		;;
+
+		*wporg-mu-plugins* )
+			echo "Sync script broken until https://github.com/WordPress/wporg-mu-plugins/pull/175 merged"
+			#ssh wordpress.org '$SYNCPATH/wporg-mu-plugins.sh'
+		;;
+
+		* )
+			printf "Couldn't detect repo to sync.\n"
+		;;
+	esac
+}
+
 # Deploy the site that corresponds to the current directory
 # $1 For w.org, the role to deploy. Otherwise unused.
 function deploy {
@@ -226,7 +251,7 @@ function deploy {
 			ssh wordpress.org 'deploy-dotorg.sh'
 		;;
 
-		*mu-plugins/global-header* )
+		*wporg-mu-plugins* )
 			ssh wordpress.org 'deploy-dotorg.sh'
 		;;
 
