@@ -12,6 +12,9 @@ export SVN_EDITOR="micro"
 export PATH="$PATH:$DOTFILES_DIR/bin"
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
+# is it possible to configure the less pager for git/svn to not line wrap?
+# minified files take up many pages
+
 # Fix git-svn, see https://github.com/Homebrew/homebrew-core/issues/52490#issuecomment-792604853
 # will need to update when perl version changes
 export PERL5LIB=/usr/local/lib/perl5/site_perl/5.30.2/darwin-thread-multi-2level/

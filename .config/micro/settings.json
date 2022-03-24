@@ -1,4 +1,8 @@
 {
+    "*.md": {
+        "softwrap": true,
+        "wordwrap": true
+    },
     "*COMMIT_EDITMSG*": {
         "softwrap": true,
         "wordwrap": true

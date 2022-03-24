@@ -16,3 +16,5 @@
 
 - [ ] how to move through search results? rebind f3 to not a function key?
 	saw some github issues about this
+
+- [ ] turn off the `` [] etc autocompletion b/c it's faster to just type it yourelf then to have to use arrow keys
