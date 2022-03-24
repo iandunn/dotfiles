@@ -1,4 +1,7 @@
 # Note: This has to be hard-linked, because ssh doesn't support symlinks.
 
+[helpers]
+diff-cmd = colordiff
+
 [miscellany]
-global-ignores = .idea .git* .DS_Store debug.log local-config.php sandbox-functionality sandbox-functionality.php node_modules *.map *.diff *.patch
+global-ignores = .idea .git* .DS_Store debug.log local-config.php sandbox-functionality sandbox-functionality.php node_modules *.map *.diff *.patch _notes

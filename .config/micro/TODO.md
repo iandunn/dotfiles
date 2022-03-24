@@ -13,3 +13,6 @@
 - [ ] is there a theme similar to gruvbox?
 - [ ] look for any plugins that'd be useful?
 - [ ] customize keybindings https://github.com/zyedidia/micro/blob/master/runtime/help/keybindings.md
+
+- [ ] how to move through search results? rebind f3 to not a function key?
+	saw some github issues about this

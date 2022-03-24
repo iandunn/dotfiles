@@ -28,9 +28,7 @@ alias .....="cd .. && cd .. && cd .. && cd .."
 # Note this will watch the current working directory.
 # todo not working yet
 alias watch='watch $(pwd) |xargs -n1 -I{} $1'
-	# where was this installed from?
-
-alias date='gdate'
+	# where was this installed from? add to homebrew list
 
 # This assumes you're in the directory you want to search
 alias findgrep='find . -type f ! -path '*/.svn/*' ! -path '*/.git/*' -follow |xargs grep --ignore-case --line-number --no-messages'
@@ -55,6 +53,8 @@ alias ce='composer exec'
 alias yr='yarn run'
 alias ywr='yarn workspaces run'
 
+alias nano='echo "remember to use micro instead"'
+
 ## Miscellaneous
 alias patch='patch --no-backup-if-mismatch'
 alias trim-whitespace="sed -i '' -e's/[[:space:]]*$//'"
@@ -71,10 +71,9 @@ alias phpcs-svn-files='phpcs -a $(svn stat | grep "\(M \|A \)" | grep -v "extern
 alias phpcs-changed-lines='DIFF_BASE=production DEV_LIB_ONLY=phpsyntax,phpcs /Users/iandunn/vhosts/tools/xwp-wp-dev-lib/pre-commit'
 	# todo also shouldn't hardcode branch ^
 alias wpef='wp eval-file'
+alias wppat='wp --url=https://wordpress.org/patterns'
 alias wpupall='wp core update && wp plugin update --all && wp theme update --all && wp core language update'
 alias devnote='cp ~/dotfiles/docs/development-process-and-tips.md '
-
-alias wpef='wp eval-file'
 
 # tweak the -n option, but this is really more here just to remind yourself that `nice` is available to throttle commands that hog a lot of resources
 alias slurp='nice -n 19 ~/vhosts/tools/wordpress-plugin-directory-slurper/update'
@@ -139,10 +138,10 @@ alias pullup='svn up && git pull'
 
 
 # remove noise from externals
-# the full wording here is verbose, but rememver that bash does tab completion on aliases too
+# the full wording here is verbose, but remember that bash does tab completion on aliases too
 alias svn-stat-pruned='svn status | grep ^[?MAD]'
 alias svn-stat-pruned-tracked='svn status | grep ^[MAD]'
-# todo: "alias svn-stat-deep" which will include externals in subdirectiories. probably needs to be a function rather than an alias
+# todo: "alias svn-stat-deep" which will include externals in subdirectories. probably needs to be a function rather than an alias
 
 alias svn-showhead='svn up --ignore-externals && svn diff -rPREV |less'
 

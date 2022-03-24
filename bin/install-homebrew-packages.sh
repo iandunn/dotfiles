@@ -14,6 +14,7 @@
 # wget nvm
 # gunpg openssl
 # svn
+# colordiff
 # micro
 
 #pecl install xdebug
