@@ -201,6 +201,10 @@ function sync {
 			#ssh wordpress.org '$SYNCPATH/wporg-mu-plugins.sh'
 		;;
 
+		*wporg-5ftf* )
+			ssh wordpress.org '$SYNCPATH/5ftf.sh'
+		;;
+
 		* )
 			printf "Couldn't detect repo to sync.\n"
 		;;

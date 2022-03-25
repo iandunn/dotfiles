@@ -33,6 +33,7 @@
 - [ ] re-evaluate and communicate estimates at regular intervals
 	cone of uncertainty / construx chart - https://projectmanagementfoundations.files.wordpress.com/2020/12/time-and-estimates.pdf
 - [ ] get stakeholder feedback at regular intervals
+	if practical, give them a way to demo it, like a staging site of feature flag
 
 
 * PM triangle: any time there are changes to scope, deadline, or quality, then the others have to change to account for it
