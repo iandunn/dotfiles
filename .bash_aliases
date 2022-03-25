@@ -26,9 +26,7 @@ alias .....="cd .. && cd .. && cd .. && cd .."
 
 # Usage: watch curl -iks https://misc.wordcamp.test/2016/tmp/ |grep WordCampBlocks
 # Note this will watch the current working directory.
-# todo not working yet
-alias watch='watch $(pwd) |xargs -n1 -I{} $1'
-	# where was this installed from? add to homebrew list
+alias watch='fswatch -o $(pwd) |xargs -n1 -I{} $1'
 
 # This assumes you're in the directory you want to search
 alias findgrep='find . -type f ! -path '*/.svn/*' ! -path '*/.git/*' -follow |xargs grep --ignore-case --line-number --no-messages'
@@ -105,6 +103,9 @@ alias dcomp='docker-compose'
 
 # It crashed more than it should, and when it does, it can't be re-opened until this file is deleted.
 alias gorramit_firefox='rm -f ~/Library/Application Support/Firefox/Profiles/**/.parentlock'
+
+# have to specify which firefox, see https://github.com/mozilla/web-ext/issues/628
+alias webext='web-ext --firefox=firefoxdeveloperedition --keep-profile-changes'
 
 # To allow `svn up` without certificate errors
 # nginx has to be off

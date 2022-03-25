@@ -16,6 +16,7 @@
 # svn
 # colordiff
 # micro
+# fswatch
 
 #pecl install xdebug
 
