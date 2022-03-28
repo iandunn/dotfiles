@@ -105,7 +105,8 @@ alias dcomp='docker-compose'
 alias gorramit_firefox='rm -f ~/Library/Application Support/Firefox/Profiles/**/.parentlock'
 
 # have to specify which firefox, see https://github.com/mozilla/web-ext/issues/628
-alias webext='web-ext --firefox=firefoxdeveloperedition --keep-profile-changes'
+# Don't add `--keep-profile-changes` because that causes security problems
+alias webxr='web-ext run --firefox=firefoxdeveloperedition --firefox-profile="Ian Dunn"'
 
 # To allow `svn up` without certificate errors
 # nginx has to be off

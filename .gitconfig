@@ -146,6 +146,7 @@
 	svnrebase = !git stash && git svn rebase --log-window-size=100000 && git stash pop
 		# todo don't do ^ if there's already something in stash, b/c when have conflicts it gets all messed up. er, or is it because left in stash after fix conflict? i think it's the latter
 	svnrebasemirror = !git checkout master && git pull origin master && git svn rebase && git push origin master
+	squash-all = "!f(){ git reset $(git commit-tree HEAD^{tree} -m \"${1:-Squashed all commits}\");};f"
 
 	# rebase current branch against given branch, and override any conflicts with the code in the current branch. note that "theirs" in this context refers to the current branch, which is the opposite of what it means in the context of a merge.
 	#rebtheirs = rebase -Xtheirs
