@@ -6,5 +6,9 @@
     "*COMMIT_EDITMSG*": {
         "softwrap": true,
         "wordwrap": true
+    },
+    "svn-commit.tmp": {
+        "softwrap": true,
+        "wordwrap": true
     }
 }
