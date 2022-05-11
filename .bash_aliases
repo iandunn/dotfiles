@@ -51,7 +51,10 @@ alias ce='composer exec'
 alias yr='yarn run'
 alias ywr='yarn workspaces run'
 
+alias mic='micro'
 alias nano='echo "remember to use micro instead"'
+alias mical='micro ~/.bash_aliases'
+alias soal='source ~/.bash_aliases'
 
 ## Miscellaneous
 alias patch='patch --no-backup-if-mismatch'
@@ -138,6 +141,7 @@ alias pullup='svn up && git pull'
 # todo works manually but not as alias
 #alias svn-revert-clean="svn revert -R . && rm -rf $(svn status | grep ? | awk '{print $2}')"
 
+alias qf='qmk lint && qmk flash'
 
 # remove noise from externals
 # the full wording here is verbose, but remember that bash does tab completion on aliases too

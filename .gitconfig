@@ -22,6 +22,8 @@
 	# checkout
 	#
 	co  = checkout
+	cob = checkout -b
+	cop = checkout -p
 	cos = !sh -c \"git branch -a | grep -v remotes | grep $1 | head -n 1 | xargs git checkout\"
 
 	#
@@ -43,10 +45,13 @@
 	#
 	cherp 	  = cherry-pick
 	reshh 	  = reset --hard HEAD
+	resp      = reset -p
 	showm     = show --no-abbrev-commit --format=medium  # Appending `m` for `medium` because can't overwrite default `show` command :( -- see https://stackoverflow.com/questions/3538774/is-it-possible-to-override-git-command-by-git-alias
 	amshow    = am --show-current-patch   # Useful for understanding the context when resolving merge conflicts.
 	pullu     = pull --set-upstream
 	# what to name this? maybe better to just memorize. for deleting remote branches. need origin name maybe. rbranchrm = push -d
+	pushnv	  = push --no-verify
+	cleani    = clean -i
 
 	# ideally want this to automatically run on every commit whenever it's modified in any way.
 	# e.g., want the date of the commit to be the _modified_ date, not the _created_ date
