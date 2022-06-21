@@ -26,12 +26,15 @@ void keyboard_post_init_user( void ) {
 }
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
+	/*
+	 * Both sides use LALT because RALT is AltGR and I don't need those characters, and they occasionally cause accidents.
+	 */
 	[0] = LAYOUT_ergodox_pretty(
 		KC_ESCAPE, KC_1, KC_2, KC_3, KC_4, KC_5, KC_6,              KC_TRANSPARENT, KC_7, KC_8, KC_9,     KC_0,   KC_MINUS,  KC_EQUAL,
 		KC_GRAVE,  KC_Q, KC_W, KC_F, KC_P, KC_G, KC_LCBR,           KC_RCBR,        KC_J, KC_L, KC_U,     KC_Y,   KC_SCOLON, KC_BSLASH,
 		KC_TAB,    KC_A, KC_R, KC_S, KC_T, KC_D,                    KC_H,           KC_N, KC_E, KC_I,     KC_O,   KC_QUOTE,
 		OSM(MOD_LSFT), KC_Z, KC_X, KC_C, KC_V, KC_B, KC_LBRACKET,   KC_RBRACKET,    KC_K, KC_M, KC_COMMA, KC_DOT, KC_SLASH,   OSM(MOD_RSFT),
-		OSM(MOD_LCTL), KC_TRANSPARENT, KC_TRANSPARENT, OSM(MOD_LALT), OSM(MOD_LGUI), OSM(MOD_RGUI), OSM(MOD_RALT), KC_TRANSPARENT, KC_TRANSPARENT, OSM(MOD_RCTL),
+		OSM(MOD_LCTL), KC_TRANSPARENT, KC_TRANSPARENT, OSM(MOD_LALT), OSM(MOD_LGUI), OSM(MOD_RGUI), OSM(MOD_LALT), KC_TRANSPARENT, KC_TRANSPARENT, OSM(MOD_RCTL),
 
 					 OSL(2), KC_PGUP,                               KC_LEFT, KC_RIGHT,
 					       KC_PGDOWN,                               KC_UP,
