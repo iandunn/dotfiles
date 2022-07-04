@@ -8,9 +8,10 @@
 // This has to come before `keycodes` and `process_record_user`.
 enum custom_keycodes {
 	RGB_SLD = EZ_SAFE_RANGE,
-	ST_MACRO_0, // Unused, but must exist to avoid weird conflict between macros and one-shot keys.
-	ST_MACRO_1,
-	ST_MACRO_2,
+	ST_MACRO_NULL, // Unused, but must exist to avoid weird conflict between macros and one-shot keys.
+	ST_MACRO_DASHES,
+	ST_MACRO_CHECKBOX,
+	ST_MACRO_YAHOO
 };
 
 // Enable the constant to see output in QMK Toolkit.
@@ -42,7 +43,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	),
 
 	[1] = LAYOUT_ergodox_pretty(
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_MS_BTN3, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,         KC_TRANSPARENT, KC_PGUP,KC_MS_ACCEL0, KC_MS_ACCEL1, KC_MS_ACCEL2, ST_MACRO_1, ST_MACRO_2,
+		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_MS_BTN3, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,         KC_TRANSPARENT, KC_PGUP,KC_MS_ACCEL0, KC_MS_ACCEL1, ST_MACRO_YAHOO, ST_MACRO_DASHES, ST_MACRO_CHECKBOX,
 		KC_TRANSPARENT, KC_TRANSPARENT, KC_MS_BTN1, KC_MS_UP, KC_MS_BTN2, KC_TRANSPARENT, KC_TRANSPARENT,                   KC_TRANSPARENT, KC_MS_WH_DOWN, RGUI(RSFT(KC_LBRACKET)),KC_UP, RGUI(RSFT(KC_RBRACKET)),KC_HOME,KC_TRANSPARENT,
 		KC_TRANSPARENT, KC_TRANSPARENT, KC_MS_LEFT, KC_MS_DOWN, KC_MS_RIGHT,KC_TRANSPARENT, KC_MS_WH_UP,                    KC_LEFT,KC_DOWN,KC_RIGHT, KC_END, KC_TRANSPARENT,
 		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,     KC_TRANSPARENT, KC_PGDOWN, RGUI(KC_LBRACKET),KC_TRANSPARENT, RGUI(KC_RBRACKET),KC_TRANSPARENT, KC_TRANSPARENT,
@@ -90,17 +91,23 @@ bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 	);
 
 	switch (keycode) {
-		case ST_MACRO_1:
+		case ST_MACRO_DASHES:
 			if (record->event.pressed) {
 				SEND_STRING( "-------------------------------" );
 			}
-		break;
+			break;
 
-		case ST_MACRO_2:
+		case ST_MACRO_CHECKBOX:
 			if (record->event.pressed) {
 				SEND_STRING( "- [ ] " );
 			}
-		break;
+			break;
+
+		case ST_MACRO_YAHOO:
+			if (record->event.pressed) {
+				SEND_STRING( "ian_wdunn@yahoo.com" );
+			}
+			break;
 	}
 
 	return true; // Continue processing the key event
