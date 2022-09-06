@@ -100,6 +100,10 @@ function git_status {
 		# todo for "rebase in progress; onto 22faf4b5" need to pick out {5} not {6}
 			# what're the other two, to disambiguate?
 
+	elif [[ $status == *"currently reverting commit"* ]]; then
+		# todo-bug remove the `.` at the end of the word
+		location="reverting ${17}"
+
 	elif [[ $status == *"currently cherry-picking"* ]]; then
 		# todo-bug remove the `.` at the end of the word
 		location="cherry-picking ${9}"
