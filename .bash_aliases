@@ -18,6 +18,8 @@ alias diffsplit='/usr/bin/diff -y -W 250' # full path b/c -y conflicts w/ -u ali
 alias stat='stat -x'
 alias which='which -a'
 alias locate='locate -i'
+alias zip='zip -r'
+
 # todo works but throws usage notice - alias tail='tail -n40'
 alias ..="cd .."
 alias ...="cd .. && cd .."
@@ -141,11 +143,11 @@ alias pullup='svn up && git pull'
 # todo works manually but not as alias
 #alias svn-revert-clean="svn revert -R . && rm -rf $(svn status | grep ? | awk '{print $2}')"
 
-alias qf='qmk lint && qmk flash'
+alias qmklf='qmk lint && qmk flash'
 
 # remove noise from externals
 # the full wording here is verbose, but remember that bash does tab completion on aliases too
-alias svn-stat-pruned='svn status | grep ^[?MAD]'
+alias svn-stat-pruned='clear && echo -e "" && svn status | grep ^[?!MAD]'
 alias svn-stat-pruned-tracked='svn status | grep ^[MAD]'
 # todo: "alias svn-stat-deep" which will include externals in subdirectories. probably needs to be a function rather than an alias
 
