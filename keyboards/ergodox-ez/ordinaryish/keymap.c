@@ -105,7 +105,7 @@ bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 
 		case ST_MACRO_YAHOO:
 			if (record->event.pressed) {
-				SEND_STRING( "ian_wdunn@yahoo.com" );
+				SEND_STRING( "ian_dunn@yahoo.com" );
 			}
 			break;
 	}
