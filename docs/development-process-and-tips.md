@@ -21,6 +21,15 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 
 ### code
 - [ ] write failing tests
+	experiment with only doing integration tests, not unit
+	only test the public interface for a series of functions
+	( not e2e, still fast local phpunit, but )
+
+	worked ok for 5ftF test-contributor.php
+	not sure it was any faster, but probably more reliable
+	still not worth the time though? try again just to see if next time is faster
+
+
 - [ ] write stubs that solve tests w/ hardcoded data
 - [ ] replace hardcoded w/ live data in small steps
 
@@ -53,6 +62,7 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 - [ ] get a deep understanding of problem
 	- [ ] spend time thinking/reading about it, asking questions. make sure you really understand it
 	- [ ] did they come to you with a problem, or a solution? if it's the latter, step back and ask what problem they're trying to solve
+		https://en.wikipedia.org/wiki/XY_problem
 	- [ ] are you being asked to solve the root problem, or just a symptom of it?
 	- [ ] as you learn things, post them the ticket/issue/p2/whatever.
 			that documents important info, models that people don't have to know everything, and spurs ideas and feedback from others
@@ -191,6 +201,7 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 		* if no: don't stop X and start Y, just write down a quick note or gh issue for Y with a quick brain dump, and go back to X
 		* if yes: write a brain dump of where you are with X, then another dump of what you know about Y. then start the general process for Y, finish it, and circle back to X
 
+* ask for help. maybe a different perspective will provide a better approach.
 
 --------------------------------------------------------------------------------------------------------------------------------------------
 

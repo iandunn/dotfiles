@@ -10,6 +10,7 @@
 - [ ] Get explicit expectations for timeline & deliverables
 - [ ] prioritize deliverables up front, decide what gets cut if need to meet deadline.
 	goals/features/tasks spreadsheet from https://projectmanagementfoundations.files.wordpress.com/2020/12/vision-and-goals.pdf
+- [ ] identify key stats that will track success of project. start collecting now to have baseline that can be compared to once project is done.
 - [ ] Create estimates for the work and communicate them
 	* break everything down into specific tasks, small enough to flesh out assumptions. make small enough that none take longer than ~18 dev hours
 	* account for fact that it will take longer than expected when
@@ -26,8 +27,9 @@
 			* could adjust the factor from 2 and then divide by 4? that doesn't help much
 		* w-delphi - team based
 - [ ] factor in significant time for post-launch bug reports and feature requests
-- [ ] leave room at end of project timeline b/c last 20% takes significantly more than 20% of time
+- [ ] leave room at end of project timeline b/c the last 20% takes significantly more than 20% of time
 	because lots of detail work and polishing, also because people tend to leave hard/complex/unknown stuff to the end
+	also because bugs are found and new features are requested once a large # of folks start using it
 	this sounds like too much, but have seen it happen to a large extent
 	https://github.com/webflow/leadership/blob/master/tech_lead.md#the-8020-rule
 - [ ] re-evaluate and communicate estimates at regular intervals
