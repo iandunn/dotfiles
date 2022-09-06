@@ -17,7 +17,7 @@ export BASH_SILENCE_DEPRECATION_WARNING=1
 
 # Fix git-svn, see https://github.com/Homebrew/homebrew-core/issues/52490#issuecomment-792604853
 # will need to update when perl version changes
-export PERL5LIB=/usr/local/lib/perl5/site_perl/5.30.2/darwin-thread-multi-2level/
+export PERL5LIB=/usr/local/lib/perl5/site_perl/5.30.3/darwin-thread-multi-2level/
 
 
 

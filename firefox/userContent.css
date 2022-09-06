@@ -14,6 +14,10 @@ References:
 * https://superuser.com/questions/1706966/is-it-possible-to-edit-the-stylesheet-of-firefox-developer-tools/1706968#1706968
 * https://www.reddit.com/r/FirefoxCSS/comments/t1g8z9/cant_get_userchromecss_working_none_of_the_normal/
 
+* have to quit & reload after every change?
+	does `web-ext run` reload automatically?
+
+
 */
 
 
@@ -48,5 +52,12 @@ References:
 	/*
 	when expand a property, the child row should take up 100% of the computed-property-contaenr, instead of it's parten
 	right now it leaves a lot of space unused
+
+
 	*/
+	.computed-property-content {
+		display: grid !important;
+		grid-template-columns: subgrid;
+		grid-column: 1 / 3;
+	}
 }

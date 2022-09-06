@@ -163,6 +163,7 @@
 	#
 	# status
 	#
+	st 		 = status
 	stat     = status
 		# make ^ default to current directory only, then create alias for all files
 	statlong = status --long
