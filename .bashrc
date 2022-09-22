@@ -57,6 +57,18 @@ source $DOTFILES_DIR/bin/wp-cli-completion.bash
 #todo source bash-completion, but need to setup path per environment. dont leak root paths
 	# maybe more proper to go in .bash_profile that .bashrc
 
+# find all files in the current folder and below, then grep each of them for the given string
+# this could _almost_ be an alias, but then $QUERY would have to be at the end of the command, so you couldn't remove the binary files
+function findgrep {
+	local QUERY=$1
+	local MATCHES=$(find . -type f ! -name "*.svn*" ! -name "*.git*" -follow |xargs grep --ignore-case --line-number --no-messages $QUERY)
+	# ! -path '*/.svn/*' ! -path '*/.git/*' might be better ?
+	local OUTPUT=$(printf '%s\n' "${MATCHES[@]}" | grep -v "Binary file")
+	# also add build, vendor, etc folders to exclude?
+
+	printf '%s\n' "${OUTPUT[@]}"
+}
+
 # todo describe
 function wordcamp-diff() {
 	exit

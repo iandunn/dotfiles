@@ -30,16 +30,6 @@ alias .....="cd .. && cd .. && cd .. && cd .."
 # Note this will watch the current working directory.
 alias watch='fswatch -o $(pwd) |xargs -n1 -I{} $1'
 
-# This assumes you're in the directory you want to search
-alias findgrep='find . -type f ! -path '*/.svn/*' ! -path '*/.git/*' -follow |xargs grep --ignore-case --line-number --no-messages'
-# also add build, vendor, etc folders to exclude?
-# maybe need something like b/c exclude above doesn't work
-# function grep() {
-#	/bin/grep --exclude-dir=.svn "$@"
-#}
-#also exclude binary files
-
-
 # z doesn't always add folders for some reason, but this lets you manually do it easily when you encounter one that should exist and doesn't
 alias zadd='z --add $(pwd)'
 
