@@ -73,6 +73,7 @@ alias slurp='nice -n 19 ~/vhosts/tools/wordpress-plugin-directory-slurper/update
 
 # todo move these below w/ version control. clean up this file in general
 # cleans up externals within the pwd too
+# can just do `svn cleanup --include-externals` instead?
 alias svn-cleanup-deep="find . -name '.svn' | sed 's/.svn//' | xargs -I% svn cleanup %"
 # todo move ^ into vcs section below
 #same for others above it
@@ -125,13 +126,13 @@ alias pullup='svn up && git pull'
 	# could maybe do git pull --autostash instead
 
 # todo works manually but not as alias
+# probably need to escape $2 to be \$2 and other stuff
+# but probably easier to make it a function like svn-rm-untracked is
 	# maybe something like this, but need to remove the `rm` stuff: svn st $DIR |awk '/^!/ { print "svn rm -q "$2; } /^[?]/ { print "svn add -q "$2; }' | sh
 # todo also grep for begining of sentance, to avoid false matches
 # alias svn-add-untracked="svn add $(svn status | grep [^?] | awk '{print $2}')"
-# also do something like alias rm-svn-untracked="rm -f $(svn status | grep [^?] | awk '{print $2}')"
 
-# todo works manually but not as alias
-#alias svn-revert-clean="svn revert -R . && rm -rf $(svn status | grep ? | awk '{print $2}')"
+alias svn-revert-clean="svn-revertr && svn-rm-untracked"
 
 alias qmklf='qmk lint && qmk flash'
 
@@ -150,6 +151,8 @@ alias svn-ignore='svn propedit svn:ignore .'
 
 alias svn-diffw='svn diff -x --ignore-all-space'
 # naming not consistent w/ `git diffw` alias?
+
+alias svn-revertr='svn revert -R .'
 
 #alias rmlock=''
 	# parse files out of `git stat` of `git clean --dry-run`, rm if composer-lock or package-lock

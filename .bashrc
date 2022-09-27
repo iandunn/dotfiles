@@ -69,6 +69,13 @@ function findgrep {
 	printf '%s\n' "${OUTPUT[@]}"
 }
 
+# especiallly helpful when git and svn checked out side by side, like w/ gutenberg plugin
+function svn-rm-untracked {
+	local FILES=$(svn status | egrep '^\?' | awk '{print $2}')
+
+	 rm -rf ${FILES[@]}
+}
+
 # todo describe
 function wordcamp-diff() {
 	exit
