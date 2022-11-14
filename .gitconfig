@@ -1,4 +1,4 @@
-# todo try to find a way to clear the screen inbetween `git add -p` prompts. 
+# todo try to find a way to clear the screen inbetween `git add -p` prompts.
 # it's too hard to tell how the current hunk has been split because the previous prompt is so easy to miss
 # https://www.reddit.com/r/git/comments/6mll23/is_it_possible_to_clear_the_screen_for_each_hunk/
 # workaround for now is to just hit <return> if it's not obvious, because that'll spit out the help menu followed by the hunk
@@ -246,3 +246,7 @@
 [init]
 	# Some other options: production, stable, release, base, default, trunk, main, primary.
 	defaultBranch = develop
+
+[include]
+	# This allows per-machine customizations.
+	path = .gitconfig.local
