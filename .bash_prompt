@@ -160,6 +160,7 @@ function git_status {
 
 	# Determine if clean or dirty.
 	if [[ $status == *"working directory clean"* || $status == *"working tree clean"* ]]; then
+		# todo-bug: this is incorrectly triggered when `git diff --cached` contains one of those strings
 		state="${color_clean}clean${color_reset}"
 	else
 		state="${color_dirty}dirty${color_reset}"
@@ -254,6 +255,15 @@ function vcs_prompt {
 }
 
 function set_prompt {
+	# Disable `promptvars` for security.
+	#
+	# Git/SVN branch names, etc are user input in many contexts (e.g., a pull request) and could
+	# contain a payload crafted to expand into a command. Anything that makes it into `PS1` will
+	# automatically be executed, which would result in RCE.
+	#
+	# @link https://hackerone.com/reports/1785378
+	shopt -u promptvars
+
 	# Set marks at each prompt to enable jumping between previous commands
 	command_mark=""
 	if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
