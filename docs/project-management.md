@@ -4,7 +4,7 @@
 
 * https://projectmanagementfoundations.wordpress.com/2020/12/16/project-management-fundamentals-with-scott-berkun-full-presentation/
 * https://projectmanagementfoundations.wordpress.com/2021/02/22/project-management-fundamentals-part-2-full-presentation/
-* https://github.com/webflow/leadership/blob/master/tech_lead.md
+* https://github.com/iandunn/leadership/blob/e9cf877d84a4335027b5558b5f9001a21632ace2/tech_lead.md (source repo no longer exists)
 
 - [ ] Identify stakeholders early and engage w/ them. include any affected people ("not about us without us")
 - [ ] Get explicit expectations for timeline & deliverables
