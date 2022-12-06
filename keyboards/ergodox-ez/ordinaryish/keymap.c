@@ -29,6 +29,8 @@ void keyboard_post_init_user( void ) {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	/*
 	 * Both sides use LALT because RALT is AltGR and I don't need those characters, and they occasionally cause accidents.
+	 * todo this doesn't work, i guess lalt on mac still produces alt chars, but maybe different ones than altgr?
+	 * or maybe on mac these's a different char that will send alt but not the alt chars? need more research
 	 */
 	[0] = LAYOUT_ergodox_pretty(
 		KC_ESCAPE, KC_1, KC_2, KC_3, KC_4, KC_5, KC_6,              KC_TRANSPARENT, KC_7, KC_8, KC_9,     KC_0,   KC_MINUS,  KC_EQUAL,
@@ -91,6 +93,17 @@ bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 	);
 
 	switch (keycode) {
+		// Disable the `OSM(cmd) + enter` sequence, because it often causes me to accidentally submit Slack/GitHub/etc messages.
+		// All other OSM combinations should remain active.
+		case KC_ENTER:
+			if ( record->event.pressed ) {
+				if ( get_oneshot_mods() == MOD_LGUI ) {
+					return false; // Don't continue processing
+				}
+			}
+			break;
+
+		// Macros
 		case ST_MACRO_DASHES:
 			if (record->event.pressed) {
 				SEND_STRING( "-------------------------------" );
