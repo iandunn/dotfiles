@@ -92,7 +92,7 @@ bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 		record->event.pressed
 	);
 
-	switch (keycode) {
+	switch ( keycode ) {
 		// Disable the `OSM(cmd) + enter` sequence, because it often causes me to accidentally submit Slack/GitHub/etc messages.
 		// All other OSM combinations should remain active.
 		case KC_ENTER:
@@ -105,19 +105,19 @@ bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 
 		// Macros
 		case ST_MACRO_DASHES:
-			if (record->event.pressed) {
+			if ( record->event.pressed ) {
 				SEND_STRING( "-------------------------------" );
 			}
 			break;
 
 		case ST_MACRO_CHECKBOX:
-			if (record->event.pressed) {
+			if ( record->event.pressed ) {
 				SEND_STRING( "- [ ] " );
 			}
 			break;
 
 		case ST_MACRO_YAHOO:
-			if (record->event.pressed) {
+			if ( record->event.pressed ) {
 				SEND_STRING( "ian_dunn@yahoo.com" );
 			}
 			break;
