@@ -5,3 +5,5 @@ CONSOLE_ENABLE = no
 COMMAND_ENABLE = no
 WEBUSB_ENABLE = yes
 RGBLIGHT_ENABLE = no
+DYNAMIC_TAPPING_TERM_ENABLE = yes
+	# todo tmp, set to no when done

@@ -1,3 +1,5 @@
+// Copyright 2021 Ian Dunn (@iandunn)
+// SPDX-License-Identifier: GPL-2.0-or-later
 #include QMK_KEYBOARD_H
 #include "version.h"
 
@@ -31,13 +33,17 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	 * Both sides use LALT because RALT is AltGR and I don't need those characters, and they occasionally cause accidents.
 	 * todo this doesn't work, i guess lalt on mac still produces alt chars, but maybe different ones than altgr?
 	 * or maybe on mac these's a different char that will send alt but not the alt chars? need more research
+	 * AltGR can also interfere with home row mods; see https://precondition.github.io/home-row-mods#use-left-and-right-modifiers-but-beware-of-altgr
+	 *
+	 * The CASG order was chosen for home row mods to minimize hand swiping when typing capital letters.
+	 * See https://precondition.github.io/home-row-mods#home-row-mods-order for details.
 	 */
 	[0] = LAYOUT_ergodox_pretty(
 		KC_ESCAPE, KC_1, KC_2, KC_3, KC_4, KC_5, KC_6,              KC_TRANSPARENT, KC_7, KC_8, KC_9,     KC_0,   KC_MINUS,  KC_EQUAL,
 		KC_GRAVE,  KC_Q, KC_W, KC_F, KC_P, KC_G, KC_LCBR,           KC_RCBR,        KC_J, KC_L, KC_U,     KC_Y,   KC_SCOLON, KC_BSLASH,
-		KC_TAB,    KC_A, KC_R, KC_S, KC_T, KC_D,                    KC_H,           KC_N, KC_E, KC_I,     KC_O,   KC_QUOTE,
-		OSM(MOD_LSFT), KC_Z, KC_X, KC_C, KC_V, KC_B, KC_LBRACKET,   KC_RBRACKET,    KC_K, KC_M, KC_COMMA, KC_DOT, KC_SLASH,   OSM(MOD_RSFT),
-		OSM(MOD_LCTL), KC_TRANSPARENT, KC_TRANSPARENT, OSM(MOD_LALT), OSM(MOD_LGUI), OSM(MOD_RGUI), OSM(MOD_LALT), KC_TRANSPARENT, KC_TRANSPARENT, OSM(MOD_RCTL),
+		KC_TAB,     MT( MOD_LCTL, KC_A ), MT( MOD_LALT, KC_R ), MT( MOD_LSFT, KC_S ), MT( MOD_LGUI, KC_T ), KC_D,                    KC_H, MT( MOD_RGUI, KC_N ), MT( MOD_RSFT, KC_E ), MT( MOD_LALT, KC_I ), MT( MOD_RCTL, KC_O ), KC_QUOTE,
+		KC_TRANSPARENT, KC_Z, KC_X, KC_C, KC_V, KC_B, KC_LBRACKET,   KC_RBRACKET,    KC_K, KC_M, KC_COMMA, KC_DOT, KC_SLASH,   KC_TRANSPARENT,
+		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
 
 					 OSL(2), KC_PGUP,                               KC_LEFT, KC_RIGHT,
 					       KC_PGDOWN,                               KC_UP,
@@ -57,8 +63,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	),
 
 	[2] = LAYOUT_ergodox_pretty(
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_BRIGHTNESS_UP,KC_AUDIO_VOL_UP,KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
+		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,     KC_TRANSPARENT, KC_TRANSPARENT, DT_PRNT, DT_UP, DT_DOWN, KC_TRANSPARENT, KC_TRANSPARENT,
+		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,     KC_TRANSPARENT, KC_TRANSPARENT, KC_BRIGHTNESS_UP,KC_AUDIO_VOL_UP,KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
 		KC_TRANSPARENT, KC_MEDIA_PREV_TRACK,KC_MEDIA_REWIND,KC_MEDIA_PLAY_PAUSE,KC_MEDIA_FAST_FORWARD,KC_MEDIA_NEXT_TRACK,KC_TRANSPARENT, KC_BRIGHTNESS_DOWN,KC_AUDIO_VOL_DOWN,KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
 		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, WEBUSB_PAIR,WEBUSB_PAIR,KC_TRANSPARENT, KC_TRANSPARENT, KC_AUDIO_MUTE, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
 		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
@@ -81,6 +87,22 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	),
 };
 
+// only doing this to work around the ` error: "TAPPING_TERM" redefined` problem
+// circle back and figure out how to fix it so that don't need this and can just use the constant
+// unless you actually want to change it on a per key basis
+//
+// note have to use g_tapping_term instead of TAPPING_TERM b/c dynamic
+// see https://docs.qmk.fm/#/tap_hold?id=dynamic-tapping-term
+//
+// see https://precondition.github.io/home-row-mods#finding-the-sweet-spot for tips on setting this
+uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
+	// default is 200, people generally choose between 150-220
+	// if mods are being accidentally activated, you need to increase the tapping term. if they're not, you need to lower it
+	return 220;
+	// todo this isn't working. have to manually set each time w/ the dynamic DT_* keys
+	// maybe b/c the upstream keymap has the constant defined?
+}
+
 bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 	dprintf(
 		"keycode: %u, layer_state: %u, pressed: %u \n",
@@ -95,6 +117,8 @@ bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 	switch ( keycode ) {
 		// Disable the `OSM(cmd) + enter` sequence, because it often causes me to accidentally submit Slack/GitHub/etc messages.
 		// All other OSM combinations should remain active.
+		// This isn't necessary now that using home row mods, but it doesn't hurt anything either. It's best to
+		// keep it in case I switch back one day.
 		case KC_ENTER:
 			if ( record->event.pressed ) {
 				if ( get_oneshot_mods() == MOD_LGUI ) {

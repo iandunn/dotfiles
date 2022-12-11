@@ -4,8 +4,7 @@
 
 * Base layer based on [Ordinary](https://github.com/qmk/qmk_firmware/blob/7eb6f86bc0aac3ff83abe4365cd11c5c195dc403/layouts/community/ergodox/ordinary/readme.md)
 * [Colemak](https://colemak.com/)
-* [One shot modifiers](https://github.com/qmk/qmk_firmware/blob/7eb6f86bc0aac3ff83abe4365cd11c5c195dc403/docs/one_shot_keys.md).
-	* Note that there's a QMK bug that locks them, but [a workaround is available](https://github.com/qmk/qmk_firmware/issues/3963#issuecomment-1074525658).
+* [Home row modifiers](https://precondition.github.io/home-row-mods).
 * Additional layers for navigation & media
 * Remove some hard-to-reach keys
 
