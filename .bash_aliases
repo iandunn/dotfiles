@@ -152,7 +152,8 @@ alias svn-ignore='svn propedit svn:ignore .'
 alias svn-diffw='svn diff -x --ignore-all-space'
 # naming not consistent w/ `git diffw` alias?
 
-alias svn-revertr='svn revert -R .'
+alias svn-revertr='svn revert -R'
+#rename this and others to not have the - in it? breaks typing flow
 
 #alias rmlock=''
 	# parse files out of `git stat` of `git clean --dry-run`, rm if composer-lock or package-lock
