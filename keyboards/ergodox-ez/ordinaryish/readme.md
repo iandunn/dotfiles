@@ -11,7 +11,7 @@
 
 ## Installation
 
-1. [Setup QMK](https://docs.qmk.fm/#/newbs_getting_started). The latest release I've tested is `0.16.9`, but it may work on newer ones.
+1. [Setup QMK](https://docs.qmk.fm/#/newbs_getting_started). The latest release I've tested is `0.19.2`, but it may work on newer ones.
 1. Symlink this folder to `{qmk checkout}/keyboards/ergodox_ez/keymaps/iandunn/`
 1. Set these config values
 	```sh
