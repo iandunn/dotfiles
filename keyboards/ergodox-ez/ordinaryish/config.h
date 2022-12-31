@@ -15,14 +15,14 @@
 
 #define FIRMWARE_VERSION u8"wEZWj/QM7mp"
 
-// Necessary for home row mods
+// Necessary for home row mods to work well
 #define IGNORE_MOD_TAP_INTERRUPT
 
-//#define TAPPING_TERM 220
-	// todo fail b/c redefining var from upstream
-	// is there a way to not include the upstream config? or to change the value?
-	// otherwise that's bad. could work around with the get_tapping_term() func but shouldn't have to
-	// work around with get_tapping_term for now, but circle back if stick with this to clean up
+// see https://precondition.github.io/home-row-mods#finding-the-sweet-spot for tips on setting this
+// default is 200, people generally choose between 150-220
+// if mods are being accidentally activated, you need to increase the tapping term. if they're not, you need to lower it
+#undef TAPPING_TERM
+#define TAPPING_TERM 230
 
 #define TAPPING_TERM_PER_KEY
 	// tmp to work around not being able to redefine taippingterm

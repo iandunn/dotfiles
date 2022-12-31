@@ -75,22 +75,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	),
 };
 
-// only doing this to work around the ` error: "TAPPING_TERM" redefined` problem
-// circle back and figure out how to fix it so that don't need this and can just use the constant
-// unless you actually want to change it on a per key basis
-//
-// note have to use g_tapping_term instead of TAPPING_TERM b/c dynamic
-// see https://docs.qmk.fm/#/tap_hold?id=dynamic-tapping-term
-//
-// see https://precondition.github.io/home-row-mods#finding-the-sweet-spot for tips on setting this
-uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
-	// default is 200, people generally choose between 150-220
-	// if mods are being accidentally activated, you need to increase the tapping term. if they're not, you need to lower it
-	return 220;
-	// todo this isn't working. have to manually set each time w/ the dynamic DT_* keys
-	// maybe b/c the upstream keymap has the constant defined?
-}
-
 bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 	dprintf(
 		"keycode: %u, layer_state: %u, pressed: %u \n",
