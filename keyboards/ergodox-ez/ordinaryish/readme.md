@@ -5,6 +5,7 @@
 * Base layer based on [Ordinary](https://github.com/qmk/qmk_firmware/blob/7eb6f86bc0aac3ff83abe4365cd11c5c195dc403/layouts/community/ergodox/ordinary/readme.md)
 * [Colemak](https://colemak.com/)
 * [Home row modifiers](https://precondition.github.io/home-row-mods).
+	* The [US No Dead Keys](https://github.com/iandunn/dotfiles/tree/master/keyboards/US%20No%20Dead%20Keys) OSX layout is also needed, to prevent accidental dead keys with words like "version", "vacation", etc.
 * Additional layers for navigation & media
 * Remove some hard-to-reach keys
 

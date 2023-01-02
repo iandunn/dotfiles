@@ -30,18 +30,13 @@ void keyboard_post_init_user( void ) {
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	/*
-	 * Both sides use LALT because RALT is AltGR and I don't need those characters, and they occasionally cause accidents.
-	 * todo this doesn't work, i guess lalt on mac still produces alt chars, but maybe different ones than altgr?
-	 * or maybe on mac these's a different char that will send alt but not the alt chars? need more research
-	 * AltGR can also interfere with home row mods; see https://precondition.github.io/home-row-mods#use-left-and-right-modifiers-but-beware-of-altgr
-	 *
 	 * The CASG order was chosen for home row mods to minimize hand swiping when typing capital letters.
 	 * See https://precondition.github.io/home-row-mods#home-row-mods-order for details.
 	 */
 	[0] = LAYOUT_ergodox_pretty(
 		KC_ESCAPE, KC_1, KC_2, KC_3, KC_4, KC_5, KC_6,                                                              KC_TRANSPARENT, KC_7, KC_8, KC_9, KC_0, KC_MINUS,     KC_EQUAL,
 		KC_GRAVE,  KC_Q, KC_W, KC_F, KC_P, KC_G, KC_LCBR,                                                           KC_RCBR,        KC_J, KC_L, KC_U, KC_Y, KC_SEMICOLON, KC_BACKSLASH,
-		KC_TAB,    MT( MOD_LCTL, KC_A ), MT( MOD_LALT, KC_R ), MT( MOD_LSFT, KC_S ), MT( MOD_LGUI, KC_T ), KC_D,    KC_H, MT( MOD_RGUI, KC_N ), MT( MOD_RSFT, KC_E ), MT( MOD_LALT, KC_I ), MT( MOD_RCTL, KC_O ), KC_QUOTE,
+		KC_TAB,    MT( MOD_LCTL, KC_A ), MT( MOD_LALT, KC_R ), MT( MOD_LSFT, KC_S ), MT( MOD_LGUI, KC_T ), KC_D,    KC_H, MT( MOD_RGUI, KC_N ), MT( MOD_RSFT, KC_E ), MT( MOD_RALT, KC_I ), MT( MOD_RCTL, KC_O ), KC_QUOTE,
 		KC_TRANSPARENT, KC_Z,           KC_X,           KC_C,           KC_V, KC_B, KC_LEFT_BRACKET,                KC_RIGHT_BRACKET, KC_K,           KC_M,           KC_COMMA,       KC_DOT, KC_SLASH, KC_TRANSPARENT,
 		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                             KC_TRANSPARENT,   KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
 
