@@ -38,7 +38,7 @@
 
 // see https://precondition.github.io/home-row-mods#finding-the-sweet-spot for tips on setting this
 // default is 200, people generally choose between 150-220
-// if mods are being accidentally activated, you need to increase the tapping term. if they're not, you need to lower it
+// if mods are being accidentally activated, you need to increase the tapping term. if they're not being activated, you need to lower it
 #undef TAPPING_TERM
 #define TAPPING_TERM 210
 
