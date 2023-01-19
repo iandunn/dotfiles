@@ -31,32 +31,19 @@ void keyboard_post_init_user( void ) {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	// Base Layer
 	[0] = LAYOUT_ergodox_pretty(
-		KC_ESCAPE, KC_1, KC_2, KC_3, KC_4, KC_5, KC_6,                                                              KC_TRANSPARENT, KC_7, KC_8, KC_9, KC_0, KC_MINUS,     KC_EQUAL,
-		KC_GRAVE,  KC_Q, KC_W, KC_F, KC_P, KC_G, KC_LCBR,                                                           KC_RCBR,        KC_J, KC_L, KC_U, KC_Y, KC_SEMICOLON, KC_BACKSLASH,
-		KC_TAB,    MT( MOD_LCTL, KC_A ), MT( MOD_LALT, KC_R ), MT( MOD_LSFT, KC_S ), MT( MOD_LGUI, KC_T ), KC_D,    KC_H, MT( MOD_RGUI, KC_N ), MT( MOD_RSFT, KC_E ), MT( MOD_RALT, KC_I ), MT( MOD_RCTL, KC_O ), KC_QUOTE,
-		KC_TRANSPARENT, KC_Z,           KC_X,           KC_C,           KC_V, KC_B, KC_LEFT_BRACKET,                KC_RIGHT_BRACKET, KC_K,           KC_M,           KC_COMMA,       KC_DOT, KC_SLASH, KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, OSL(1),                                     OSL(1),   KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
+		KC_ESCAPE,       KC_1, KC_2, KC_3, KC_4, KC_5, KC_6,                                 KC_TRANSPARENT,   KC_7,            KC_8,           KC_9,           KC_0,           KC_MINUS,     KC_EQUAL,
+		KC_GRAVE,        KC_Q, KC_W, KC_F, KC_P, KC_G, KC_LCBR,                              KC_RCBR,          KC_J,            KC_L,           KC_U,           KC_Y,           KC_SEMICOLON, KC_BACKSLASH,
+		KC_TAB,          KC_A, KC_R, KC_S, KC_T, KC_D,                                       KC_H,             KC_N,            KC_E,           KC_I,           KC_O,           KC_QUOTE,
+		OSM( MOD_LSFT ), KC_Z, KC_X, KC_C, KC_V, KC_B, KC_LEFT_BRACKET,                      KC_RIGHT_BRACKET, KC_K,            KC_M,           KC_COMMA,       KC_DOT,         KC_SLASH, OSM( MOD_RSFT ),
+		OSM( MOD_LCTL ), KC_TRANSPARENT, KC_TRANSPARENT, OSM( MOD_LALT ), OSM( MOD_LGUI ),   OSM( MOD_RGUI ),  OSM( MOD_RALT ), KC_TRANSPARENT, KC_TRANSPARENT, OSM( MOD_RCTL ),
 
-					 OSL(3), KC_PAGE_UP,                               KC_LEFT, KC_RIGHT,
+					 OSL(2), KC_PAGE_UP,                               KC_LEFT, KC_RIGHT,
 					       KC_PAGE_DOWN,                               KC_UP,
-		KC_BACKSPACE, OSL(2), KC_DELETE,                               KC_DOWN, KC_ENTER, KC_SPACE
-	),
-
-	// One-shot home-row mods
-	[1] = LAYOUT_ergodox_pretty(
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,         KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,         KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
-		KC_TRANSPARENT, OSM( MOD_LCTL ), OSM( MOD_LALT ), OSM( MOD_LSFT ), OSM( MOD_LGUI ), KC_TRANSPARENT,                     KC_TRANSPARENT, OSM( MOD_RGUI ), OSM( MOD_RSFT ), OSM( MOD_RALT ), OSM( MOD_RCTL ), KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,         KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_AUDIO_MUTE, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                         KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
-
-		KC_TRANSPARENT, KC_TRANSPARENT,                     KC_TRANSPARENT, KC_TRANSPARENT,
-		KC_TRANSPARENT,                                     KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT
+		KC_BACKSPACE, OSL(1), KC_DELETE,                               KC_DOWN, KC_ENTER, KC_SPACE
 	),
 
 	// Navigation, macros, misc commonly used
-	[2] = LAYOUT_ergodox_pretty(
+	[1] = LAYOUT_ergodox_pretty(
 		KC_TRANSPARENT, KC_F1, KC_F2, KC_MS_BTN3, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                           KC_TRANSPARENT, KC_PAGE_UP, KC_MS_ACCEL0, KC_MS_ACCEL1, ST_MACRO_YAHOO, ST_MACRO_DASHES, ST_MACRO_CHECKBOX,
 		KC_TRANSPARENT, KC_TRANSPARENT, KC_MS_BTN1, KC_MS_UP, KC_MS_BTN2, KC_TRANSPARENT, KC_TRANSPARENT,                   KC_TRANSPARENT, KC_MS_WH_DOWN, RGUI(RSFT(KC_LEFT_BRACKET)), KC_UP, RGUI(RSFT(KC_RIGHT_BRACKET)), KC_HOME, KC_TRANSPARENT,
 		KC_TRANSPARENT, KC_TRANSPARENT, KC_MS_LEFT, KC_MS_DOWN, KC_MS_RIGHT, KC_TRANSPARENT, KC_MS_WH_UP,                   KC_LEFT, KC_DOWN, KC_RIGHT, KC_END, KC_TRANSPARENT,
@@ -69,7 +56,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	),
 
 	// Misc rarely used
-	[3] = LAYOUT_ergodox_pretty(
+	[2] = LAYOUT_ergodox_pretty(
 		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,         KC_TRANSPARENT, KC_TRANSPARENT, DT_PRNT, DT_UP, DT_DOWN, KC_TRANSPARENT, KC_TRANSPARENT,
 		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,         KC_TRANSPARENT, KC_TRANSPARENT, KC_BRIGHTNESS_UP, KC_AUDIO_VOL_UP, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
 		KC_TRANSPARENT, KC_MEDIA_PREV_TRACK, KC_MEDIA_REWIND, KC_MEDIA_PLAY_PAUSE, KC_MEDIA_FAST_FORWARD, KC_MEDIA_NEXT_TRACK,  KC_TRANSPARENT, KC_BRIGHTNESS_DOWN, KC_AUDIO_VOL_DOWN, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
@@ -96,8 +83,6 @@ bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 	switch ( keycode ) {
 		// Disable the `OSM(cmd) + enter` sequence, because it often causes me to accidentally submit Slack/GitHub/etc messages.
 		// All other OSM combinations should remain active.
-		// This isn't necessary now that using home row mods, but it doesn't hurt anything either. It's best to
-		// keep it in case I switch back one day.
 		case KC_ENTER:
 			if ( record->event.pressed ) {
 				if ( get_oneshot_mods() == MOD_LGUI ) {

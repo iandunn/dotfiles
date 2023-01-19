@@ -30,8 +30,8 @@
 
 
 /*
- * Home Row Mods
- */
+ * Home Row Mods - Disabled for now, but leaving here in case I want to try again in the future.
+ *
 
 // Necessary for home row mods to work well
 #define IGNORE_MOD_TAP_INTERRUPT
@@ -55,3 +55,5 @@
 // might do more harm than good?
 // if you start getting accidental mod activations then reconsider. read precondition article for more info
 #define PERMISSIVE_HOLD
+
+*/
