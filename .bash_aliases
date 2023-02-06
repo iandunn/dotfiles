@@ -223,6 +223,9 @@ case $(hostname) in
 
 		alias push-deploy='git push && deploy'
 		alias pushdeploy='push-deploy'
+
+		# cd to Git repo and `pr 510` to checkout the branch for that PR
+		alias pr='git fetch && gh pr checkout'
 	;;
 
 	"vvv" )
