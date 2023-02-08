@@ -31,41 +31,41 @@ void keyboard_post_init_user( void ) {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	// Base Layer
 	[0] = LAYOUT_ergodox_pretty(
-		KC_ESCAPE,       KC_1, KC_2, KC_3, KC_4, KC_5, KC_6,                                 KC_TRANSPARENT,   KC_7,            KC_8,           KC_9,           KC_0,           KC_MINUS,     KC_EQUAL,
-		KC_GRAVE,        KC_Q, KC_W, KC_F, KC_P, KC_G, KC_LCBR,                              KC_RCBR,          KC_J,            KC_L,           KC_U,           KC_Y,           KC_SEMICOLON, KC_BACKSLASH,
-		KC_TAB,          KC_A, KC_R, KC_S, KC_T, KC_D,                                       KC_H,             KC_N,            KC_E,           KC_I,           KC_O,           KC_QUOTE,
-		OSM( MOD_LSFT ), KC_Z, KC_X, KC_C, KC_V, KC_B, KC_LEFT_BRACKET,                      KC_RIGHT_BRACKET, KC_K,            KC_M,           KC_COMMA,       KC_DOT,         KC_SLASH, OSM( MOD_RSFT ),
-		_______, OSM( MOD_LCTL ), KC_TRANSPARENT, OSM( MOD_LALT ), OSM( MOD_LGUI ),   OSM( MOD_RGUI ),  OSM( MOD_RALT ), KC_TRANSPARENT, OSM( MOD_RCTL ), _______,
+		KC_ESCAPE,       KC_1, KC_2, KC_3, KC_4, KC_5, KC_6,                     _______,          KC_7, KC_8, KC_9, KC_0, KC_MINUS,     KC_EQUAL,
+		KC_GRAVE,        KC_Q, KC_W, KC_F, KC_P, KC_G,       KC_LCBR,            KC_RCBR,          KC_J, KC_L, KC_U, KC_Y, KC_SEMICOLON, KC_BACKSLASH,
+		KC_TAB,          KC_A, KC_R, KC_S, KC_T, KC_D,                                             KC_H, KC_N, KC_E, KC_I, KC_O,         KC_QUOTE,
+		OSM( MOD_LSFT ), KC_Z, KC_X, KC_C, KC_V, KC_B,       KC_LEFT_BRACKET,    KC_RIGHT_BRACKET, KC_K, KC_M, KC_COMMA, KC_DOT, KC_SLASH, OSM( MOD_RSFT ),
+		_______,  OSM( MOD_LCTL ), _______, OSM( MOD_LALT ), OSM( MOD_LGUI ),    OSM( MOD_RGUI ), OSM( MOD_RALT ), _______, OSM( MOD_RCTL ), _______,
 
-					 OSL(2), KC_PAGE_UP,                               KC_LEFT, KC_RIGHT,
-					       KC_PAGE_DOWN,                               KC_UP,
-		KC_BACKSPACE, OSL(1), KC_DELETE,                               KC_DOWN, KC_ENTER, KC_SPACE
+					 OSL(2), KC_PAGE_UP,       KC_LEFT, KC_RIGHT,
+					       KC_PAGE_DOWN,       KC_UP,
+		KC_BACKSPACE, OSL(1), KC_DELETE,       KC_DOWN, KC_ENTER, KC_SPACE
 	),
 
 	// Navigation, macros, misc commonly used
 	[1] = LAYOUT_ergodox_pretty(
-		KC_TRANSPARENT, KC_F1, KC_F2, KC_MS_BTN3, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                           KC_TRANSPARENT, KC_PAGE_UP, KC_MS_ACCEL0, KC_MS_ACCEL1, ST_MACRO_YAHOO, ST_MACRO_DASHES, ST_MACRO_CHECKBOX,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_MS_BTN1, KC_MS_UP, KC_MS_BTN2, KC_TRANSPARENT, KC_TRANSPARENT,                   KC_TRANSPARENT, KC_MS_WH_DOWN, RGUI(RSFT(KC_LEFT_BRACKET)), KC_UP, RGUI(RSFT(KC_RIGHT_BRACKET)), KC_HOME, KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_MS_LEFT, KC_MS_DOWN, KC_MS_RIGHT, KC_TRANSPARENT, KC_MS_WH_UP,                   KC_LEFT, KC_DOWN, KC_RIGHT, KC_END, KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,     KC_TRANSPARENT, KC_PAGE_DOWN, RGUI(KC_LEFT_BRACKET), KC_TRANSPARENT, RGUI(KC_RIGHT_BRACKET), KC_TRANSPARENT, KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
+		_______, KC_F1,   KC_F2,      KC_MS_BTN3, _______, _______, _______,            _______, KC_PAGE_UP, KC_MS_ACCEL0, KC_MS_ACCEL1, ST_MACRO_YAHOO, ST_MACRO_DASHES, ST_MACRO_CHECKBOX,
+		_______, _______, KC_MS_BTN1, KC_MS_UP,   KC_MS_BTN2, _______, _______,         _______, KC_MS_WH_DOWN, RGUI(RSFT(KC_LEFT_BRACKET)), KC_UP, RGUI(RSFT(KC_RIGHT_BRACKET)), KC_HOME, _______,
+		_______, _______, KC_MS_LEFT, KC_MS_DOWN, KC_MS_RIGHT, _______, KC_MS_WH_UP,    KC_LEFT, KC_DOWN, KC_RIGHT, KC_END, _______,
+		_______, _______, _______, _______, _______, _______, _______,                  _______, KC_PAGE_DOWN, RGUI(KC_LEFT_BRACKET), _______, RGUI(KC_RIGHT_BRACKET), _______, _______,
+		_______, _______, _______, _______, _______, _______, _______,                  _______, _______, _______,
 
-		KC_TRANSPARENT, KC_TRANSPARENT,                     KC_TRANSPARENT, KC_TRANSPARENT,
-		KC_TRANSPARENT,                                     KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT
+				 _______, _______,     _______, _______,
+						  _______,     _______,
+		_______, _______, _______,     _______, _______, _______
 	),
 
 	// Misc rarely used
 	[2] = LAYOUT_ergodox_pretty(
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,         KC_TRANSPARENT, KC_TRANSPARENT, DT_PRNT, DT_UP, DT_DOWN, KC_TRANSPARENT, KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,         KC_TRANSPARENT, KC_TRANSPARENT, KC_BRIGHTNESS_UP, KC_AUDIO_VOL_UP, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_MEDIA_PREV_TRACK, KC_MEDIA_REWIND, KC_MEDIA_PLAY_PAUSE, KC_MEDIA_FAST_FORWARD, KC_MEDIA_NEXT_TRACK,  KC_TRANSPARENT, KC_BRIGHTNESS_DOWN, KC_AUDIO_VOL_DOWN, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, WEBUSB_PAIR,            WEBUSB_PAIR, KC_TRANSPARENT, KC_TRANSPARENT, KC_AUDIO_MUTE, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                         KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
+		_______, _______, _______, _______, _______, _______, _______,                                                      _______, _______, DT_PRNT, DT_UP, DT_DOWN, _______, _______,
+		_______, _______, _______, _______, _______, _______, _______,                                                      _______, _______, KC_BRIGHTNESS_UP, KC_AUDIO_VOL_UP, _______, _______, _______,
+		_______, KC_MEDIA_PREV_TRACK, KC_MEDIA_REWIND, KC_MEDIA_PLAY_PAUSE, KC_MEDIA_FAST_FORWARD, KC_MEDIA_NEXT_TRACK,     _______, KC_BRIGHTNESS_DOWN, KC_AUDIO_VOL_DOWN, _______, _______, _______,
+		_______, _______, _______, _______, _______, _______, WEBUSB_PAIR,                                                  WEBUSB_PAIR, _______, _______, KC_AUDIO_MUTE, _______, _______, _______,
+		_______, _______, _______, _______, _______,                                                                        _______, _______, _______, _______, _______,
 
-		KC_TRANSPARENT, KC_TRANSPARENT,                     KC_TRANSPARENT, KC_TRANSPARENT,
-		KC_TRANSPARENT,                                     KC_TRANSPARENT,
-		KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT
+				 _______, _______,     _______, _______,
+						  _______,     _______,
+		_______, _______, _______,     _______, _______, _______
 	),
 };
 
