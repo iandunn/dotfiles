@@ -45,8 +45,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	// Navigation, macros, misc commonly used
 	[1] = LAYOUT_ergodox_pretty(
 		_______, KC_F1,   KC_F2,      KC_MS_BTN3, _______, _______, _______,            _______, KC_PAGE_UP, KC_MS_ACCEL0, KC_MS_ACCEL1, ST_MACRO_YAHOO, ST_MACRO_DASHES, ST_MACRO_CHECKBOX,
-		_______, _______, KC_MS_BTN1, KC_MS_UP,   KC_MS_BTN2, _______, _______,         _______, KC_MS_WH_DOWN, RGUI(RSFT(KC_LEFT_BRACKET)), KC_UP, RGUI(RSFT(KC_RIGHT_BRACKET)), KC_HOME, _______,
-		_______, _______, KC_MS_LEFT, KC_MS_DOWN, KC_MS_RIGHT, _______, KC_MS_WH_UP,    KC_LEFT, KC_DOWN, KC_RIGHT, KC_END, _______,
+		_______, _______, KC_MS_BTN1, KC_MS_UP,   KC_MS_BTN2, _______, _______,         _______, KC_MS_WH_UP, RGUI(RSFT(KC_LEFT_BRACKET)), KC_UP, RGUI(RSFT(KC_RIGHT_BRACKET)), KC_HOME, _______,
+		_______, _______, KC_MS_LEFT, KC_MS_DOWN, KC_MS_RIGHT, _______,                          KC_MS_WH_DOWN, KC_LEFT, KC_DOWN, KC_RIGHT, KC_END, _______,
 		_______, _______, _______, _______, _______, _______, _______,                  _______, KC_PAGE_DOWN, RGUI(KC_LEFT_BRACKET), _______, RGUI(KC_RIGHT_BRACKET), _______, _______,
 		_______, _______, _______, _______, _______, _______, _______,                  _______, _______, _______,
 
