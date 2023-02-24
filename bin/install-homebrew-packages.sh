@@ -17,6 +17,7 @@
 # colordiff
 # micro
 # fswatch
+# jq
 
 #pecl install xdebug
 

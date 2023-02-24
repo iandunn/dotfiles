@@ -1,1 +1,1 @@
-move custom config from /usr/local/etc to here and symlink
+move custom config from /opt/homebrew/etc to here and symlink

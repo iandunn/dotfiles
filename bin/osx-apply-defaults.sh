@@ -2,7 +2,7 @@
 
 ## Host-specific aliases
 case $(sysctl hw.model) in
-	*"iMac"* )
+	*"iMac"* | "Mac 14,12" )
 		DEVICE_TYPE="desktop"
 	;;
 

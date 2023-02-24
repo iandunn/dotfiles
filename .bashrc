@@ -17,7 +17,9 @@ export BASH_SILENCE_DEPRECATION_WARNING=1
 
 # Fix git-svn, see https://github.com/Homebrew/homebrew-core/issues/52490#issuecomment-792604853
 # will need to update when perl version changes
-export PERL5LIB=/usr/local/lib/perl5/site_perl/5.30.3/darwin-thread-multi-2level/
+export PERL5LIB=/opt/homebrew/lib/perl5/site_perl/5.30.3/darwin-thread-multi-2level/
+
+export HOMEBREW_NO_AUTO_UPDATE=1
 
 
 
@@ -33,14 +35,13 @@ export _Z_MAX_SCORE=50000
 # Host-specific environmental variables
 case $(hostname) in
 	"willow" | "willow.local" | "flanders" | "flanders.local" )
-		export PATH="$HOME/bin:$DOTFILES_DIR/bin:/usr/local/bin/php:$PATH:/usr/local/sbin:$HOME/.gem/ruby/2.3.0/bin:/usr/local/opt/gettext/bin:/Users/iandunn/.composer/vendor/bin"
+		export PATH="$HOME/bin:$DOTFILES_DIR/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin/php:$PATH:/usr/local/sbin:$HOME/.gem/ruby/2.3.0/bin:/usr/local/opt/gettext/bin:/Users/iandunn/.composer/vendor/bin"
 		export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
 		# export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
 		export NVM_DIR="$HOME/.nvm"
-		source "/usr/local/opt/nvm/nvm.sh"
-		source /usr/local/etc/profile.d/z.sh
+		source "/opt/homebrew/opt/nvm/nvm.sh"
+		source /opt/homebrew/etc/profile.d/z.sh	# maybe change this to use version in vhosts/tools/z so can have customizations, but give PR a chance to be merged
 		export GPG_TTY=$(tty)
-		export HOMEBREW_NO_AUTO_UPDATE=1
 	;;
 
 	"durin" )

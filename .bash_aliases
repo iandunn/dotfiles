@@ -31,8 +31,9 @@ alias watch='fswatch -o $(pwd) |xargs -n1 -I{} $1'
 # z doesn't always add folders for some reason, but this lets you manually do it easily when you encounter one that should exist and doesn't
 alias zadd='z --add $(pwd)'
 
-alias devdown="sudo nginx -s quit && brew services stop  php@8.0 && brew services stop  mailhog && brew services stop  mysql && brew services list"
-alias devup="  sudo nginx         && brew services start php@8.0 && brew services start mailhog && brew services start mysql && brew services list"
+alias devdown="brew services stop  nginx && brew services stop  php@8.0 && brew services stop  mailhog && brew services stop  mysql && brew services list"
+alias devup="  brew services start nginx && brew services start php@8.0 && brew services start mailhog && brew services start mysql && brew services list"
+alias brew-intel="/usr/local/bin/brew"
 #todo move ^ to appropriate section below
 
 alias nr='npm run'
@@ -65,6 +66,7 @@ alias wpef='wp eval-file'
 alias wppat='wp --url=https://wordpress.org/patterns'
 alias wpupall='wp core update && wp plugin update --all && wp theme update --all && wp core language update'
 alias devnote='cp ~/dotfiles/docs/development-process-and-tips.md '
+alias wpdev='/Users/iandunn/vhosts/tools/wp-cli/bin/wp'
 
 # tweak the -n option, but this is really more here just to remind yourself that `nice` is available to throttle commands that hog a lot of resources
 alias slurp='nice -n 19 ~/vhosts/tools/wordpress-plugin-directory-slurper/update'
@@ -193,14 +195,14 @@ case $(hostname) in
 		# if this ever stops working, first try restarting phpstorm and firefox b/c it seems like that that's all that's needed sometimes
 		# if that doesn't fix it, then make sure that xdebug.ini settings match. might need to add more of them here explicitly rather than relying on defaults
 		# also try putting xdebug_break(); in code, then run and sometimes there's errors in the phpstorm console that you wouldn't otherwise see
-		# also check ip address in /usr/local/etc/php/7.2/conf.d/ext-xdebug.ini, make sure matches current ip
+		# also check ip address in /opt/homebrew/etc/php/7.2/conf.d/ext-xdebug.ini, make sure matches current ip
 		#
 		# ugh, it DID stop working, 10 minutes later, even though nothing changed.
 		# have to use manual xdebug_breaks everywhere.
 		# seems to recognize files in wordcamp/.../mu (core), but not in wordcamp/.../bin
 		# it just gets "/3" as the filename instead of teh path to the file
 		#   oh, i wonder if this is only with `wp eval-file` commands? `var_dump()` doesn't know the line know in that case either:
-		#   phar:///usr/local/bin/wp/vendor/wp-cli/eval-command/src/EvalFile_Command.php(76) : eval()'d code:169: bool(true)
+		#   phar:///usr/opt/homebrew/wp/vendor/wp-cli/eval-command/src/EvalFile_Command.php(76) : eval()'d code:169: bool(true)
 		#   that's still a problem, but less of one, and is maybe a hint at a solution
 		#
 		# todo phpstorm will open the `wp` binary for some reason, and you'll have to hit the `play/run to...` button to go to the next pointpoint
