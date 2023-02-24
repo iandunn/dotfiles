@@ -4,9 +4,7 @@
 ## Core utilities
 # ls --group-directories-first requires `coreutils` from Homebrew on OS X b/c native `ls` doesn't support sorting folders first
 alias ls='ls --all --group-directories-first --color'
-alias ll='ls -lh'
-alias lstime='ll --time-style=full-iso'
-alias lltime='lstime'
+alias ll='ls -lh --time-style="+%b %e %Y %l:%M:%S %P"'	# always show the year, and use 12-hour time
 alias less='less -SR'
 alias lessn='less -N'
 alias df='df -h'
@@ -102,6 +100,7 @@ alias gorramit_firefox='rm -f ~/Library/Application Support/Firefox/Profiles/**/
 
 # have to specify which firefox, see https://github.com/mozilla/web-ext/issues/628
 # Don't add `--keep-profile-changes` because that causes security problems
+# Might need to add --watch-file manually in some cases, see https://github.com/mozilla/web-ext/issues/1626
 alias webxr='web-ext run --firefox=firefoxdeveloperedition --firefox-profile="Ian Dunn"'
 
 # To allow `svn up` without certificate errors
@@ -183,7 +182,7 @@ case $(hostname) in
 		alias behat='/Users/iandunn/vhosts/tools/wp-cli/vendor/behat/behat/bin/behat'
 		alias web-ext-run='web-ext run --firefox=/Applications/FirefoxDeveloperEdition.app/Contents/MacOS/firefox-bin --firefox-profile=dev-edition-default'
 
-		alias date='gdate' # use GNU date instead of BSD date for consistency across machines
+		alias date='gdate "+%b %e %Y %l:%M:%S %P"' # use GNU date instead of BSD date for consistency across machines
 		alias timeutc='gdate --utc --date="@$1"'
 		alias timelocal='gdate --date='@''
 
