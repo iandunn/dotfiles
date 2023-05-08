@@ -41,7 +41,14 @@ case $(hostname) in
 		export NVM_DIR="$HOME/.nvm"
 		source "/opt/homebrew/opt/nvm/nvm.sh"
 		source /opt/homebrew/etc/profile.d/z.sh	# maybe change this to use version in vhosts/tools/z so can have customizations, but give PR a chance to be merged
+			# maybe replace with https://github.com/wting/autojump since that more mature? not as new though, and not updated in a long time
 		export GPG_TTY=$(tty)
+		export GITLEAKS_CONFIG=~/.config/gitleaks/gitleaks.toml
+
+		# For Two Factor plugin
+		export WORDPRESS_DB_NAME=wordpress_develop_tests
+		export WORDPRESS_DB_USER=wp_tests
+		export WORDPRESS_DB_PASSWORD=wp_tests
 	;;
 
 	"durin" )
@@ -54,6 +61,10 @@ source $DOTFILES_DIR/bin/git-completion.bash
 source $DOTFILES_DIR/bin/hub-completion.bash
 source $DOTFILES_DIR/bin/gh-completion.bash
 source $DOTFILES_DIR/bin/wp-cli-completion.bash
+
+# make wp-cli completions work for the wpdev alias too
+complete -o nospace -F _wp_complete wpdev
+
 
 #todo source bash-completion, but need to setup path per environment. dont leak root paths
 	# maybe more proper to go in .bash_profile that .bashrc
