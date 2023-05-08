@@ -51,7 +51,10 @@
 	pullu     = pull --set-upstream
 	# what to name this? maybe better to just memorize. for deleting remote branches. need origin name maybe. rbranchrm = push -d
 	pushnv	  = push --no-verify
-	cleani    = clean -i
+
+	# include -i to avoid `the following untracked working tree files would be overwritten by checkout...` annoyance.
+	# test this out before committing though to make sure it doesn't end up including stuff you don't wanna delete in other situations
+	cleanid    = clean -id
 
 	# ideally want this to automatically run on every commit whenever it's modified in any way.
 	# e.g., want the date of the commit to be the _modified_ date, not the _created_ date
@@ -213,6 +216,7 @@
 
 [push]
 	default = current
+	forceWithLease = true
 
 [pull]
 	rebase = true

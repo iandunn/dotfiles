@@ -18,6 +18,7 @@
 # micro
 # fswatch
 # jq
+# git-svn
 
 #pecl install xdebug
 

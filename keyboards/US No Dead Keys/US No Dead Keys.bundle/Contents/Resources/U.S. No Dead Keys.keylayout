@@ -1,7 +1,7 @@
 <?xml version="1.1" encoding="UTF-8"?>
 <!DOCTYPE keyboard SYSTEM "file://localhost/System/Library/DTDs/KeyboardLayout.dtd">
 
-<!-- Deleted all of the modifier sets that contain dead keys. -->
+<!-- Deleted all of the modifier sets and actions that contain dead keys. -->
 
 <keyboard group="126" id="-12218" name="U.S. No Dead Keys" maxout="2">
     <layouts>
