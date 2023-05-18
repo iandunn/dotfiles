@@ -38,7 +38,7 @@
 	# stash
 	#
 	pop       = stash pop
-	stashshow = "!git stash show -p stash@{\"$1\"} #"
+	ss        = stash show
 
 	#
 	# misc
@@ -232,6 +232,10 @@
 [status]
 	short = true
 	showStash = true
+
+[stash]
+	showStat = false
+	showPatch = true
 
 [commit]
 	gpgsign = true
