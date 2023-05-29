@@ -37,6 +37,7 @@ alias brew-intel="/usr/local/bin/brew"
 #todo move ^ to appropriate section below
 
 alias nr='npm run'
+alias startminstack="npm start -- --color | grep --color=always -v '^    at .*/node_modules/'" # npm start w/ minimal stack trace, https://stackoverflow.com/a/35505086/450127
 alias cr='composer run'
 alias ce='composer exec'
 alias yr='yarn run'
