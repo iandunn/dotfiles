@@ -38,9 +38,11 @@ case $(hostname) in
 		export PATH="$HOME/bin:$DOTFILES_DIR/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin/php:$PATH:/usr/local/sbin:$HOME/.gem/ruby/2.3.0/bin:/usr/local/opt/gettext/bin:/Users/iandunn/.composer/vendor/bin"
 		export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
 		# export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
+		export HOMEBREW_PREFIX=$(brew --prefix) # different on laptop and desktop because intel vs silicon
 		export NVM_DIR="$HOME/.nvm"
-		source "/opt/homebrew/opt/nvm/nvm.sh"
-		source /opt/homebrew/etc/profile.d/z.sh	# maybe change this to use version in vhosts/tools/z so can have customizations, but give PR a chance to be merged
+		source "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
+		source "$HOMEBREW_PREFIX/etc/profile.d/z.sh"
+			# maybe change this to use version in vhosts/tools/z so can have customizations, but give PR a chance to be merged
 			# maybe replace with https://github.com/wting/autojump since that more mature? not as new though, and not updated in a long time
 		export GPG_TTY=$(tty)
 		export GITLEAKS_CONFIG=~/.config/gitleaks/gitleaks.toml
