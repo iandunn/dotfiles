@@ -20,7 +20,7 @@ There are presumably many other situations where they're undesirable.
 
 1. `cp -R "US No Dead Keys.bundle" "~/Library/Keyboard Layouts"`
 1. (optional) If you want to keep a canonical source in a different folder, you can symlink the individual `.keylayout` file:
-
+	`cd "~/Library/Keyboard Layouts/US No Dead Keys.bundle/Contents/Resources"`
 	`ln -sf "path/to/canonical/file.keylayout" "~/Library/Keyboard Layouts/US No Dead Keys.bundle/U.S. No Dead Keys.keylayout"`
 
 1. Logout and back in, so OSX will load the new bundle.
