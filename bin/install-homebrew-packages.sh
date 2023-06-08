@@ -2,6 +2,8 @@
 
 # hub
 # z
+	# need to manually apply https://github.com/rupa/z/pull/323
+	# or maybe switch to one that's maintained
 # mailhog
 # mkcert nss
 # composer
