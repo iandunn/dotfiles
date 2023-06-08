@@ -19,6 +19,7 @@
 # fswatch
 # jq
 # git-svn
+# gpatch 	# https://github.com/cweagans/composer-patches/issues/423#issuecomment-1301026697
 
 #pecl install xdebug
 
