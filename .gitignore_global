@@ -2,6 +2,7 @@
 .svn
 .DS_Store
 .idea
+.vscode
 0-sandbox-functionality.php
 sandbox-functionality.php
 sandbox-functionality/
