@@ -1,0 +1,3 @@
+db cli:
+  # Enable auto-completion: https://wordpress.stackexchange.com/a/418126/3898
+  auto-rehash: 1
