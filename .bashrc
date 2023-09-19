@@ -254,6 +254,16 @@ function deploy {
 	if [[ 'iandunn.dev.ord.wordpress.org' = $(hostname) ]]; then
 		case "$current_folder" in
 			*wordcamp* )
+				echo "Updating everything"
+				svnup $WORDCAMP_PATH
+
+				if ! $WORDCAMP_PATH/bin/php/multiple-use/miscellaneous/wpcut; then
+					printf "\n\nERROR: Aborting deploy. Make 'wpcut' pass and then retry.\n\n"
+					return
+				else
+					echo "Command succeeded, continue"
+				fi
+
 				deploy-wordcamp.sh
 			;;
 
