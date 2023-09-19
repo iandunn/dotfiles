@@ -268,11 +268,10 @@ function deploy {
 			;;
 
 			*wporg* )
-				echo "Updating root files from local SVN..."
-				svn up $WPORGPATH --depth=files
+				echo "Updating everything"
+				svnup $WPORGPATH
 
 				printf "\n"
-
 				deploy-dotorg.sh $1
 			;;
 
