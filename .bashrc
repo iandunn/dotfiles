@@ -34,8 +34,8 @@ export _Z_MAX_SCORE=50000
 
 # Host-specific environmental variables
 case $(hostname) in
-	"willow" | "willow.local" | "flanders" | "flanders.local" )
-		export PATH="$HOME/bin:$DOTFILES_DIR/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin/php:$PATH:/usr/local/sbin:$HOME/.gem/ruby/2.3.0/bin:/usr/local/opt/gettext/bin:/Users/iandunn/.composer/vendor/bin"
+	"willow" | "willow.local" | "willow.lan" | "MacBook-Pro.lan" | "flanders" | "flanders.local" )
+		export PATH="$HOME/bin:$DOTFILES_DIR/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin/php:/usr/local/opt/m4/bin:$PATH:/usr/local/sbin:$HOME/.gem/ruby/2.3.0/bin:/usr/local/opt/gettext/bin:/Users/iandunn/.composer/vendor/bin"
 		export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
 		# export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
 		export HOMEBREW_PREFIX=$(brew --prefix) # different on laptop and desktop because intel vs silicon

@@ -19,6 +19,7 @@ alias locate='locate -i'
 alias zip='zip -r'
 
 # todo works but throws usage notice - alias tail='tail -n40'
+alias watch='watch -d'
 alias ..="cd .."
 alias ...="cd .. && cd .."
 alias ....="cd .. && cd .. && cd .."
@@ -27,6 +28,18 @@ alias .....="cd .. && cd .. && cd .. && cd .."
 # Usage: watch curl -iks https://misc.wordcamp.test/2016/tmp/ |grep WordCampBlocks
 # Note this will watch the current working directory.
 alias watch='fswatch -o $(pwd) |xargs -n1 -I{} $1'
+
+alias date='gdate'
+
+# This assumes you're in the directory you want to search
+alias findgrep='find . -type f ! -path '*/.svn/*' ! -path '*/.git/*' -follow |xargs grep --ignore-case --line-number --no-messages'
+# also add build, vendor, etc folders to exclude?
+# maybe need something like b/c exclude above doesn't work
+# function grep() {
+#	/bin/grep --exclude-dir=.svn "$@"
+#}
+#also exclude binary files
+
 
 # z doesn't always add folders for some reason, but this lets you manually do it easily when you encounter one that should exist and doesn't
 alias zadd='z --add $(pwd)'
@@ -169,7 +182,7 @@ case $(hostname) in
 	# alias tar='tar --exclude-vcs'
 		# todo add ^ to all non-OSX hosts
 
-	"willow" | "willow.local" | "flanders" | "flanders.local" )
+	"willow" | "willow.local" | "willow.lan" | "MacBook-Pro.lan" | "flanders" | "flanders.local" )
 		alias ls='gls --all --group-directories-first --color'
 		alias vhosts='cd /Users/iandunn/vhosts/'
 		alias wpver='find /Users/iandunn/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'

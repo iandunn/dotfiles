@@ -15,7 +15,7 @@ color_folder="\e[38;5;27m"   # medium blue
 color_warning="\e[38;5;166m" # orange
 
 case $(hostname) in
-	"willow" | "willow.local" )
+	"willow" | "willow.local" | "willow.jetpack" )
 		color_user_host="\e[38;5;137m" # tan
 		hostname="willow"
 	;;
