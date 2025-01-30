@@ -33,6 +33,7 @@ esac
 # Prefs > Mission > When switching to an applicaiton, switch space... > disable
 # prefs > accessibi > display > reduce transparency
 # prefs > sec > advanced > required admin password for network-wide prefs
+# prefs > sound > sound effects > play sound on startup > off
 # time machine ignored folders
 # default skin tone - maybe com.apple.EmojiPreferences
 # test out disabling desktop icons - defaults write com.apple.finder CreateDesktop false; killall Finder
