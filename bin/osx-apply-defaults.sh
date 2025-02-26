@@ -150,7 +150,7 @@ defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1
 
 # Limit Time Machine space, because it shares the disk with other things
 #sudo defaults write /Library/Preferences/com.apple.TimeMachine MaxSize 850000
-# want more for flanders, less for macenzie. this is just a bash script, so just check the hostname
+# want more for mac mini than macbook, or vice versa? this is just a bash script, so just check the hostname
 
 # Full keyboard mode
 defaults write NSGlobalDomain AppleKeyboardUIMode -int 3

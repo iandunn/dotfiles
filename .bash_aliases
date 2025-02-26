@@ -182,8 +182,8 @@ case $(hostname) in
 	# alias tar='tar --exclude-vcs'
 		# todo add ^ to all non-OSX hosts
 
-	"willow" | "willow.local" | "willow.lan" | "MacBook-Pro.lan" | "flanders" | "flanders.local" )
-		alias ls='gls --all --group-directories-first --color'
+	"willow" | "willow.local" | "willow.lan" | "MacBook-Pro.lan" | "milo" | "milo.local" )
+		alias ls='gls --almost-all --group-directories-first --color'
 		alias vhosts='cd /Users/iandunn/vhosts/'
 		alias wpver='find /Users/iandunn/vhosts -name version.php -print0 |xargs -0 grep "wp_version =" -s'
 		alias vvv='cd /Users/iandunn/vhosts/virtual-machines/vvv-personal/www/'

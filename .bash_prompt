@@ -20,9 +20,9 @@ case $(hostname) in
 		hostname="willow"
 	;;
 
-	"flanders" | "flanders.local" )
+	"milo" | "milo.local" )
 		color_user_host="\e[38;5;27m" # medium blue
-		hostname="flanders"
+		hostname="milo"
 	;;
 
 	"vvv" )
