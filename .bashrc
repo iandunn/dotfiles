@@ -21,8 +21,6 @@ export PERL5LIB=/opt/homebrew/lib/perl5/site_perl/5.30.3/darwin-thread-multi-2le
 
 export HOMEBREW_NO_AUTO_UPDATE=1
 
-
-
 export _Z_MAX_SCORE=50000
 	# todo increasing fixes bug and allows new folders to be added?
 		# but it was 16k before, and ~/.z only has 26 entries, shouldn't be anywhere close to 16k
@@ -36,14 +34,18 @@ export _Z_MAX_SCORE=50000
 case $(hostname) in
 	"willow" | "willow.local" | "willow.lan" | "MacBook-Pro.lan" | "milo" | "milo.local" )
 		export PATH="$HOME/bin:$DOTFILES_DIR/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin/php:/usr/local/opt/m4/bin:$PATH:/usr/local/sbin:$HOME/.gem/ruby/2.3.0/bin:/usr/local/opt/gettext/bin:/Users/iandunn/.composer/vendor/bin"
-		export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
+		#export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
 		# export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
 		export HOMEBREW_PREFIX=$(brew --prefix) # different on laptop and desktop because intel vs silicon
+
 		export NVM_DIR="$HOME/.nvm"
-		source "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
+		[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
+		[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+
 		source "$HOMEBREW_PREFIX/etc/profile.d/z.sh"
 			# maybe change this to use version in vhosts/tools/z so can have customizations, but give PR a chance to be merged
 			# maybe replace with https://github.com/wting/autojump since that more mature? not as new though, and not updated in a long time
+
 		export GPG_TTY=$(tty)
 		export GITLEAKS_CONFIG=~/.config/gitleaks/gitleaks.toml
 
@@ -65,7 +67,7 @@ source $DOTFILES_DIR/bin/gh-completion.bash
 source $DOTFILES_DIR/bin/wp-cli-completion.bash
 
 # make wp-cli completions work for the wpdev alias too
-complete -o nospace -F _wp_complete wpdev
+#complete -o nospace -F _wp_complete wpdev
 
 
 #todo source bash-completion, but need to setup path per environment. dont leak root paths
