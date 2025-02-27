@@ -56,6 +56,13 @@ case $(hostname) in
 	;;
 esac
 
+# Make it obvious that we're in a LocalWP shell, to avoid confusion.
+if [[ "$WP_CLI_CONFIG_PATH" == *"/Applications/Local.app"* ]]; then
+	color_user_host="\e[38;5;166m" # orange
+	hostname="LocalWP"
+fi
+
+
 # Parsing `git status --long` isn't as elegant as using porcelan commands, etc, but it's much faster. That's
 # critical because larger repos can make every prompt painfully slow.
 #
