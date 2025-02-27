@@ -66,6 +66,9 @@ source $DOTFILES_DIR/bin/hub-completion.bash
 source $DOTFILES_DIR/bin/gh-completion.bash
 source $DOTFILES_DIR/bin/wp-cli-completion.bash
 
+source ~/.bash_aliases
+source ~/.bash_prompt
+
 # make wp-cli completions work for the wpdev alias too
 #complete -o nospace -F _wp_complete wpdev
 
