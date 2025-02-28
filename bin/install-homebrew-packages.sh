@@ -11,6 +11,7 @@ brew install lnav
 brew install wget
 brew install nvm
 brew install jq
+brew install glab
 
 # telnet
 # gunpg openssl
