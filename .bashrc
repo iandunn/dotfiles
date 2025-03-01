@@ -64,7 +64,6 @@ case $(hostname) in
 esac
 
 source $DOTFILES_DIR/bin/git-completion.bash
-source $DOTFILES_DIR/bin/hub-completion.bash
 source $DOTFILES_DIR/bin/gh-completion.bash
 source $DOTFILES_DIR/bin/wp-cli-completion.bash
 
