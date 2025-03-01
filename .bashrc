@@ -30,6 +30,8 @@ export _Z_MAX_SCORE=50000
 		# nope, ^ doesn't seem to be the case, so maybe just increasing max score
 
 
+export GLAB_CONFIG_DIR=$HOME/dotfiles/.config/glab-cli/
+
 # Host-specific environmental variables
 case $(hostname) in
 	"willow" | "willow.local" | "willow.lan" | "MacBook-Pro.lan" | "milo" | "milo.local" )
