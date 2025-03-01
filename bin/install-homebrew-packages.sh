@@ -13,6 +13,9 @@ brew install nvm
 brew install jq
 brew install glab
 
+# Not that useful since I can just alt-command-\, and creates another attack vector.
+#brew install 1password-cli
+
 # telnet
 # gunpg openssl
 # svn
