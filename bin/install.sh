@@ -45,9 +45,10 @@ ln -sf $DOTFILES_DIR/.bash_profile	$HOME/.bash_profile
 ln -sf $DOTFILES_DIR/.bash_prompt	$HOME/.bash_prompt
 ln -sf $DOTFILES_DIR/.bash_aliases	$HOME/.bash_aliases
 
-ln -sf $DOTFILES_DIR/.gitconfig			$HOME/.gitconfig
-ln -sf $DOTFILES_DIR/.gitignore_global	$HOME/.gitignore_global
-ln -sf $DOTFILES_DIR/.config/gh			$HOME/.config/gh
+ln -sf $DOTFILES_DIR/git/.gitconfig			$HOME/.gitconfig
+ln -sf $DOTFILES_DIR/git/.gitignore			$HOME/.gitignore
+ln -sf $DOTFILES_DIR/git/.gitignore_global	$HOME/.gitignore_global
+ln -sf $DOTFILES_DIR/git/gh					$HOME/.config/gh
 
 ln -sf $DOTFILES_DIR/.inputrc		$HOME/.inputrc
 ln -sf $DOTFILES_DIR/.config/micro/bindings.json	$HOME/.config/micro/bindings.json
@@ -58,8 +59,8 @@ ln -sf $DOTFILES_DIR/.config/micro/settings.json	$HOME/.config/micro/settings.js
 #ln -sf ~/dotfiles/iterm2/com.googlecode.iterm2.plist ~/Library/Preferences/com.googlecode.iterm2.plist
 
 # These have to be hard links, because Subversion and SSH configs don't support symlinks.
-mkdir $HOME/.ssh
-mkdir $HOME/.subversion
+mkdir -p $HOME/.ssh
+mkdir -p $HOME/.subversion
 ln -f $DOTFILES_DIR/.ssh/config			$HOME/.ssh/config
 ln -f $DOTFILES_DIR/.subversion/config	$HOME/.subversion/config
 ln -f $DOTFILES_DIR/.subversion/servers	$HOME/.subversion/servers
