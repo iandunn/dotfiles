@@ -148,6 +148,7 @@
 	rebi     = rebase -i production # todo get default branch, since prod is only for wordcamp repo
 	rebio    = rebase -i origin
 	rebisvn  = rebase -i git-svn
+	rebten	 = rebase -i HEAD~10
 	pullreb  = !git co production && git pull && git co - && git rebase production
 		# use `defbranch` once working
 		# also stash before, and pop after
@@ -238,7 +239,8 @@
 	showPatch = true
 
 [commit]
-	gpgsign = true
+	# Disable temporarily until can fix.
+	#gpgsign = true
 
 [gpg]
 	program = gpg
