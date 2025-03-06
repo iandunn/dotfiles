@@ -179,8 +179,8 @@ alias ImageOptim='/Applications/ImageOptim.app/Contents/MacOS/ImageOptim'
 
 # LocalWP shells
 # TODO - why can't use ~ instead of full path?
-alias shdmv='sh "/Users/iandunn/Library/Application Support/Local/ssh-entry/HOgy-WCkG.sh"'
-alias shfhl='sh "/Users/iandunn/Library/Application Support/Local/ssh-entry/O1BOJvLsA.sh"'
+alias shfhl='sh "/Users/iandunn/Library/Application Support/Local/ssh-entry/HOgy-WCkG.sh"'
+alias shdmv='sh "/Users/iandunn/Library/Application Support/Local/ssh-entry/O1BOJvLsA.sh"'
 
 ## Host-specific aliases
 case $(hostname) in
