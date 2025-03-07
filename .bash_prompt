@@ -275,7 +275,8 @@ function set_prompt {
 	# Set marks at each prompt to enable jumping between previous commands
 	command_mark=""
 	if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
-		# Note: This requires installing the shell integration from the iTerm2 menu.
+		# Note: This requires installing the shell integration from the iTerm2 menu, and running the script in `.bashrc`.
+		# Navigate through commands with cmd-shift-up and cmd-shift-down.
 		command_mark="$(iterm2_prompt_mark)"
 	fi
 

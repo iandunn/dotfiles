@@ -66,6 +66,10 @@ source $DOTFILES_DIR/bin/gh-completion.bash
 source $DOTFILES_DIR/bin/wp-cli-completion.bash
 
 source ~/.bash_aliases
+
+if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
+	source ~/.iterm2_shell_integration.bash
+fi
 source ~/.bash_prompt
 
 # make wp-cli completions work for the wpdev alias too
