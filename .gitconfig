@@ -249,7 +249,7 @@
 
 [gpg "ssh"]
 	# The path isn't portable, but using $HOME doesn't work.
-	allowedSignersFile = /Users/iandunn/dotfiles/git/allowed_signers
+	allowedSignersFile = /Users/iandunn/.ssh/allowed_signers
 
 [svn]
 	rmdir = true
