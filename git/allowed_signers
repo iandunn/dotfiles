@@ -1,2 +1,0 @@
-# Declaring the `git` namespace helps prevent cross-protocol attacks.
-ian@iandunn.name namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAvXI+G3RVUpDMEHQowHW3lz/HfO9rlI74Aa4ZhYBK/ ian@iandunn.name
