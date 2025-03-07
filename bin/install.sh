@@ -54,6 +54,8 @@ ln -sf $DOTFILES_DIR/.inputrc		$HOME/.inputrc
 ln -sf $DOTFILES_DIR/.config/micro/bindings.json	$HOME/.config/micro/bindings.json
 ln -sf $DOTFILES_DIR/.config/micro/settings.json	$HOME/.config/micro/settings.json
 
+ln -sf $DOTFILES_DIR/localwp/ssh-entry		"~/Library/Application Support/Local/ssh-entry"
+
 # iTerm2 has an option to load preferences from a file, but it isn't working.
 # If can get it working then won't need this. Using this may cause issues since it's not standard.
 #ln -sf ~/dotfiles/iterm2/com.googlecode.iterm2.plist ~/Library/Preferences/com.googlecode.iterm2.plist
