@@ -24,7 +24,7 @@ fi
 
 
 if [ -d $HOME/dotfiles ]; then
-	printf "\nInstalling from $HOME/dotfiles\n"
+	printf "\nInstalling from $HOME/dotfiles\n\n"
 	DOTFILES_DIR=$HOME/dotfiles
 else
 	printf "\nEnter directory where dotfiles have been cloned: "
@@ -45,16 +45,16 @@ ln -sf $DOTFILES_DIR/.bash_profile	$HOME/.bash_profile
 ln -sf $DOTFILES_DIR/.bash_prompt	$HOME/.bash_prompt
 ln -sf $DOTFILES_DIR/.bash_aliases	$HOME/.bash_aliases
 
-ln -sf $DOTFILES_DIR/git/.gitconfig			$HOME/.gitconfig
-ln -sf $DOTFILES_DIR/git/.gitignore			$HOME/.gitignore
-ln -sf $DOTFILES_DIR/git/.gitignore_global	$HOME/.gitignore_global
-ln -sf $DOTFILES_DIR/git/gh					$HOME/.config/gh
+ln -sf $DOTFILES_DIR/.gitconfig			$HOME/.gitconfig
+ln -sf $DOTFILES_DIR/.gitignore			$HOME/.gitignore
+ln -sf $DOTFILES_DIR/.gitignore_global	$HOME/.gitignore_global
+ln -sf $DOTFILES_DIR/.config/gh			$HOME/.config/gh
 
 ln -sf $DOTFILES_DIR/.inputrc		$HOME/.inputrc
 ln -sf $DOTFILES_DIR/.config/micro/bindings.json	$HOME/.config/micro/bindings.json
 ln -sf $DOTFILES_DIR/.config/micro/settings.json	$HOME/.config/micro/settings.json
 
-ln -sf $DOTFILES_DIR/localwp/ssh-entry		"~/Library/Application Support/Local/ssh-entry"
+ln -sf $DOTFILES_DIR/localwp/ssh-entry "/Users/iandunn/Library/Application Support/Local/ssh-entry"
 
 # iTerm2 has an option to load preferences from a file, but it isn't working.
 # If can get it working then won't need this. Using this may cause issues since it's not standard.
