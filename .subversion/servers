@@ -1,4 +1,5 @@
 # Note: This has to be hard-linked, because ssh doesn't support symlinks.
+# ln ~/.subversion/servers ~/dotfiles/.subversion/servers
 
 [groups]
 wordpress-org = *.wordpress.org
