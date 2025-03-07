@@ -59,11 +59,11 @@ ln -sf $DOTFILES_DIR/.config/micro/settings.json	$HOME/.config/micro/settings.js
 #ln -sf ~/dotfiles/iterm2/com.googlecode.iterm2.plist ~/Library/Preferences/com.googlecode.iterm2.plist
 
 # These have to be hard links, because Subversion and SSH configs don't support symlinks.
-mkdir -p $HOME/.ssh
 mkdir -p $HOME/.subversion
-ln -f $DOTFILES_DIR/.ssh/config			$HOME/.ssh/config
 ln -f $DOTFILES_DIR/.subversion/config	$HOME/.subversion/config
 ln -f $DOTFILES_DIR/.subversion/servers	$HOME/.subversion/servers
+
+bash $DOTFILES_DIR/bin/generate-config-files.sh
 
 cat << COW
 
@@ -71,7 +71,7 @@ cat << COW
 /         Installation complete            \\
 \\                                          /
   ----------------------------------------
-         \\   ^__^ 
+         \\   ^__^
           \\  (oo)\_______
              (__)\       )\\/\\
                  ||----w |

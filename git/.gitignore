@@ -1,2 +1,3 @@
 .gitconfig.local
 .config/micro/buffers
+.ssh/config-private
