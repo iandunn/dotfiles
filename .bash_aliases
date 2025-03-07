@@ -178,9 +178,8 @@ alias svnrevr='svn revert -R'
 alias ImageOptim='/Applications/ImageOptim.app/Contents/MacOS/ImageOptim'
 
 # LocalWP shells
-# TODO - why can't use ~ instead of full path?
-alias shfhl='sh "/Users/iandunn/Library/Application Support/Local/ssh-entry/HOgy-WCkG.sh"'
-alias shdmv='sh "/Users/iandunn/Library/Application Support/Local/ssh-entry/O1BOJvLsA.sh"'
+alias shfhl='sh "$HOME/dotfiles/localwp/ssh-entry/HOgy-WCkG.sh"'
+alias shdmv='sh "$HOME/dotfiles/localwp/ssh-entry/O1BOJvLsA.sh"'
 
 ## Host-specific aliases
 case $(hostname) in

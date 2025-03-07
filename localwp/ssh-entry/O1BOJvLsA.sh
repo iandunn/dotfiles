@@ -24,7 +24,7 @@ echo "MySQL:    $(mysql --version)"
 echo "----"
 
 # Ian's customizations
-cd "/Users/iandunn/local-sites/dmv/app/public"
+cd "/Users/iandunn/local-sites/10up/dmv/app/public"
 export LOCALWP_SHELL="DMV"
 
 echo "Launching shell: $SHELL ..."
