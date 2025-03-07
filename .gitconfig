@@ -250,7 +250,7 @@
 	format = ssh
 
 [gpg "ssh"]
-	# The path isn't portable, but using $HOME doesn't work.
+	# $HOME doesn't work here, but you could `[include ".gitconfig.local"]` to set it on different systems.
 	allowedSignersFile = /Users/iandunn/.ssh/allowed_signers
 
 [svn]
