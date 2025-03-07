@@ -1,20 +1,22 @@
-# todo write script to re-install these on new systems
+packages=(
+  micro
+  z  # Need to manually apply https://github.com/rupa/z/pull/323 or find a maintained version
+  gh
+  composer
+  coreutils
+  lnav
+  wget
+  nvm
+  jq
+  glab	# Remove if haven't been using
+  psysh
+)
 
-brew install micro
-brew install z
-	# need to manually apply https://github.com/rupa/z/pull/323
-	# or maybe switch to one that's maintained
-brew install gh
-brew install composer
-brew install coreutils
-brew install lnav
-brew install wget
-brew install nvm
-brew install jq
-brew install glab
+for package in "${packages[@]}"; do
+  brew install "$package"
+done
 
-# Not that useful since I can just alt-command-\, and creates another attack vector.
-#brew install 1password-cli
+printf "\nYou will need to run 'wp package install git@github.com:schlessera/wp-cli-psysh.git' inside a WP installation (and maybe a LocalWP shell) in order to get 'wp shell' to use psysh.\n"
 
 # telnet
 # gunpg openssl
@@ -39,9 +41,6 @@ brew install glab
 #brew services start php
 #mkcert -install
 
-# also want https://github.com/bobthecow/psysh/wiki/Installation, which doesn't have an brew package
 
-# don't need anymore?
-# httpd and/or httpd24
 # php-code-sniffer phpmd phpunit sass - installed via composer into local packages, not used globally?
 #
