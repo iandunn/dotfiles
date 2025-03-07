@@ -7,6 +7,7 @@
 	name  = Ian Dunn
 	email = ian@iandunn.name
 	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAvXI+G3RVUpDMEHQowHW3lz/HfO9rlI74Aa4ZhYBK/ ian@iandunn.name
+	useConfigOnly = true
 
 [credential]
 	helper = osxkeychain
@@ -24,6 +25,7 @@
 	co  = checkout
 	cob = checkout -b
 	cop = checkout -p
+	# Document what this does because it's not obvious.
 	cos = !sh -c \"git branch -a | grep -v remotes | grep $1 | head -n 1 | xargs git checkout\"
 
 	#
@@ -258,6 +260,8 @@
 	# Some other options: production, stable, release, base, default, trunk, main, primary.
 	defaultBranch = develop
 
-[include]
-	# This allows per-machine customizations.
-	path = .gitconfig.local
+# Use 10up SSH key for signing commits in their repos.
+# https://markentier.tech/posts/2021/02/github-with-multiple-profiles-gpg-ssh-keys/
+[includeIf "gitdir:~/local-sites/10up/"]
+	# Make sure 10up sites are created in this folder
+	path = ~/.gitconfig.10up
