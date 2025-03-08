@@ -48,6 +48,9 @@ source $DOTFILES_DIR/bin/git-completion.bash
 source $DOTFILES_DIR/bin/gh-completion.bash
 source $DOTFILES_DIR/bin/wp-cli-completion.bash
 
+# make wp-cli completions work for the wpdev alias too
+#complete -o nospace -F _wp_complete wpdev
+
 source ~/.bash_aliases
 
 if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
@@ -55,15 +58,7 @@ if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
 fi
 source ~/.bash_prompt
 
-[ -f /opt/homebrew/etc/profile.d/autojump.sh ] && . /opt/homebrew/etc/profile.d/autojump.sh
-
-# make wp-cli completions work for the wpdev alias too
-#complete -o nospace -F _wp_complete wpdev
-
-
-#todo source bash-completion, but need to setup path per environment. dont leak root paths
-	# maybe more proper to go in .bash_profile that .bashrc
-
+source /opt/homebrew/etc/profile.d/autojump.sh
 
 
 ####
