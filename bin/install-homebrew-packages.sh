@@ -1,15 +1,15 @@
 packages=(
-  micro
   autojump
-  gh
   composer
   coreutils
-  lnav
-  wget
-  nvm
-  jq
+  gh
   glab	# Remove if haven't been using
+  jq
+  lnav
+  micro
+  nvm
   psysh
+  wget
 )
 
 for package in "${packages[@]}"; do
