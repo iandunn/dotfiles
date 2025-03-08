@@ -12,36 +12,32 @@ export SVN_EDITOR="micro"
 export PATH="$PATH:$DOTFILES_DIR/bin"
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
-# is it possible to configure the less pager for git/svn to not line wrap?
-# minified files take up many pages
-
 # Fix git-svn, see https://github.com/Homebrew/homebrew-core/issues/52490#issuecomment-792604853
 # will need to update when perl version changes
 export PERL5LIB=/opt/homebrew/lib/perl5/site_perl/5.30.3/darwin-thread-multi-2level/
 
 export HOMEBREW_NO_AUTO_UPDATE=1
 
-# Host-specific environmental variables
+export PATH="$HOME/bin:$DOTFILES_DIR/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin/php:/usr/local/opt/m4/bin:$PATH:/usr/local/sbin:$HOME/.gem/ruby/2.3.0/bin:/usr/local/opt/gettext/bin:/Users/iandunn/.composer/vendor/bin"
+#export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
+# export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
+export HOMEBREW_PREFIX=$(brew --prefix) # different on laptop and desktop because intel vs silicon
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
+[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+
+export GPG_TTY=$(tty)
+export GITLEAKS_CONFIG=~/.config/gitleaks/gitleaks.toml
+
+# For Two Factor plugin
+export WORDPRESS_DB_NAME=wordpress_develop_tests
+export WORDPRESS_DB_USER=wp_tests
+export WORDPRESS_DB_PASSWORD=wp_tests
+
+
+# Host-specific overrides
 case $(hostname) in
-	"willow" | "willow.local" | "willow.lan" | "MacBook-Pro.lan" | "milo" | "milo.local" )
-		export PATH="$HOME/bin:$DOTFILES_DIR/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin/php:/usr/local/opt/m4/bin:$PATH:/usr/local/sbin:$HOME/.gem/ruby/2.3.0/bin:/usr/local/opt/gettext/bin:/Users/iandunn/.composer/vendor/bin"
-		#export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
-		# export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
-		export HOMEBREW_PREFIX=$(brew --prefix) # different on laptop and desktop because intel vs silicon
-
-		export NVM_DIR="$HOME/.nvm"
-		[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
-		[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
-
-		export GPG_TTY=$(tty)
-		export GITLEAKS_CONFIG=~/.config/gitleaks/gitleaks.toml
-
-		# For Two Factor plugin
-		export WORDPRESS_DB_NAME=wordpress_develop_tests
-		export WORDPRESS_DB_USER=wp_tests
-		export WORDPRESS_DB_PASSWORD=wp_tests
-	;;
-
 	"durin" )
 		# Need to periodically update this to match php-fpm's version
 		export PATH=/usr/local/php70/bin:$PATH
