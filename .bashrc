@@ -9,8 +9,11 @@ DOTFILES_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 # Environmental variables
 export EDITOR="micro"
 export SVN_EDITOR="micro"
-export PATH="$PATH:$DOTFILES_DIR/bin"
 export BASH_SILENCE_DEPRECATION_WARNING=1
+
+
+export PATH="$PATH:$HOME/bin:$DOTFILES_DIR/bin:\
+/opt/homebrew/bin:/opt/homebrew/sbin"
 
 # Fix git-svn, see https://github.com/Homebrew/homebrew-core/issues/52490#issuecomment-792604853
 # will need to update when perl version changes
@@ -18,7 +21,7 @@ export PERL5LIB=/opt/homebrew/lib/perl5/site_perl/5.30.3/darwin-thread-multi-2le
 
 export HOMEBREW_NO_AUTO_UPDATE=1
 
-export PATH="$HOME/bin:$DOTFILES_DIR/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin/php:/usr/local/opt/m4/bin:$PATH:/usr/local/sbin:$HOME/.gem/ruby/2.3.0/bin:/usr/local/opt/gettext/bin:/Users/iandunn/.composer/vendor/bin"
+
 #export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
 # export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
 export HOMEBREW_PREFIX=$(brew --prefix) # different on laptop and desktop because intel vs silicon
@@ -44,9 +47,8 @@ case $(hostname) in
 	;;
 esac
 
-source $DOTFILES_DIR/bin/git-completion.bash
-source $DOTFILES_DIR/bin/gh-completion.bash
-source $DOTFILES_DIR/bin/wp-cli-completion.bash
+source /Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bash
+complete -F _complete_ssh_hosts ssh
 
 # make wp-cli completions work for the wpdev alias too
 #complete -o nospace -F _wp_complete wpdev
@@ -64,6 +66,26 @@ source /opt/homebrew/etc/profile.d/autojump.sh
 ####
 #### FUNCTIONS
 ####
+
+
+# props https://github.com/tomjn/bashosx/blob/483f272af00be0cfee7a73f25210a0bbdfda7e1a/init.sh#L5
+_complete_ssh_hosts ()
+{
+        COMPREPLY=()
+        cur="${COMP_WORDS[COMP_CWORD]}"
+        comp_ssh_hosts=`cat ~/.ssh/known_hosts | \
+                        cut -f 1 -d ' ' | \
+                        sed -e s/,.*//g | \
+                        grep -v ^# | \
+                        uniq | \
+                        grep -v "\[" ;
+                cat ~/.ssh/config | \
+                        grep "^Host " | \
+                        awk '{print $2}'
+                `
+        COMPREPLY=( $(compgen -W "${comp_ssh_hosts}" -- $cur))
+        return 0
+}
 
 # find all files in the current folder and below, then grep each of them for the given string
 # this could _almost_ be an alias, but then $QUERY would have to be at the end of the command, so you couldn't remove the binary files

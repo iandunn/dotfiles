@@ -12,6 +12,7 @@ packages=(
   nvm
   psysh
   wget
+  wp-cli-completion
 )
 
 for package in "${packages[@]}"; do
