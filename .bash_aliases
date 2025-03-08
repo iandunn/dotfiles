@@ -25,6 +25,9 @@ alias ...="cd .. && cd .."
 alias ....="cd .. && cd .. && cd .."
 alias .....="cd .. && cd .. && cd .. && cd .."
 
+# This is more ergonomic on Colemak, and I'm already used to it from using rupa/z.
+alias z='j'
+
 # Usage: watch curl -iks https://misc.wordcamp.test/2016/tmp/ |grep WordCampBlocks
 # Note this will watch the current working directory.
 alias watch='fswatch -o $(pwd) |xargs -n1 -I{} $1'
@@ -39,10 +42,6 @@ alias findgrep='find . -type f ! -path '*/.svn/*' ! -path '*/.git/*' -follow |xa
 #	/bin/grep --exclude-dir=.svn "$@"
 #}
 #also exclude binary files
-
-
-# z doesn't always add folders for some reason, but this lets you manually do it easily when you encounter one that should exist and doesn't
-alias zadd='z --add $(pwd)'
 
 alias devdown="brew services stop  nginx && brew services stop  php@8.0 && brew services stop  mailhog && brew services stop  mysql && brew services list"
 alias devup="  brew services start nginx && brew services start php@8.0 && brew services start mailhog && brew services start mysql && brew services list"
@@ -118,13 +117,6 @@ alias gorramit_firefox='rm -f ~/Library/Application Support/Firefox/Profiles/**/
 # Might need to add --watch-file manually in some cases, see https://github.com/mozilla/web-ext/issues/1626
 alias webxr='web-ext run --firefox=firefoxdeveloperedition --firefox-profile="Ian Dunn"'
 
-# To allow `svn up` without certificate errors
-# nginx has to be off
-# can't leave this running after svn up, though, b/c messes up .test cert verification in browser
-alias proxy-svn-on='sudo nginx -s stop     && sudo ssh -fN iandunn@proxy.automattic.com -L 443:dotorg.svn.wordpress.org:443'
-alias proxy-svn-off='sudo pkill -f "ssh -fN iandunn@proxy.automattic.com -L 443:dotorg.svn.wordpress.org:443"       && sudo nginx'
-# todo add & so see output
-# todo might need to specify ident file if add more
 
 
 alias skipinstall='WP_TESTS_SKIP_INSTALL=1'

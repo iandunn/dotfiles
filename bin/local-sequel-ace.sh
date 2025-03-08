@@ -18,6 +18,7 @@ $(mysql -e "CREATE USER 'root'@'127.0.0.1' IDENTIFIED BY 'root'; GRANT ALL ON *.
 
 
 # Get the TCP/IP port that MySQL is currently running on.
+# You can also just run: jq < ~/Library/Application Support/Local/sites.json
 port=$(mysql -e "SHOW VARIABLES WHERE Variable_name = 'port';" | awk '/port/ {print $NF}')
 
 

@@ -21,15 +21,6 @@ export PERL5LIB=/opt/homebrew/lib/perl5/site_perl/5.30.3/darwin-thread-multi-2le
 
 export HOMEBREW_NO_AUTO_UPDATE=1
 
-export _Z_MAX_SCORE=50000
-	# todo increasing fixes bug and allows new folders to be added?
-		# but it was 16k before, and ~/.z only has 26 entries, shouldn't be anywhere close to 16k
-		# maybe it was from re-running `source ~/.bashrc` while testing?
-		# let's just bump it to 50k for awhile and see what happens
-	# or maybe it's just that you're testing w/ 1 shell, and each shell has its own memory copy of ~/.z so it overwrites?
-		# nope, ^ doesn't seem to be the case, so maybe just increasing max score
-
-
 # Host-specific environmental variables
 case $(hostname) in
 	"willow" | "willow.local" | "willow.lan" | "MacBook-Pro.lan" | "milo" | "milo.local" )
@@ -41,10 +32,6 @@ case $(hostname) in
 		export NVM_DIR="$HOME/.nvm"
 		[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
 		[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
-
-		source "$HOMEBREW_PREFIX/etc/profile.d/z.sh"
-			# maybe change this to use version in vhosts/tools/z so can have customizations, but give PR a chance to be merged
-			# maybe replace with https://github.com/wting/autojump since that more mature? not as new though, and not updated in a long time
 
 		export GPG_TTY=$(tty)
 		export GITLEAKS_CONFIG=~/.config/gitleaks/gitleaks.toml
@@ -72,12 +59,20 @@ if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
 fi
 source ~/.bash_prompt
 
+[ -f /opt/homebrew/etc/profile.d/autojump.sh ] && . /opt/homebrew/etc/profile.d/autojump.sh
+
 # make wp-cli completions work for the wpdev alias too
 #complete -o nospace -F _wp_complete wpdev
 
 
 #todo source bash-completion, but need to setup path per environment. dont leak root paths
 	# maybe more proper to go in .bash_profile that .bashrc
+
+
+
+####
+#### FUNCTIONS
+####
 
 # find all files in the current folder and below, then grep each of them for the given string
 # this could _almost_ be an alias, but then $QUERY would have to be at the end of the command, so you couldn't remove the binary files
