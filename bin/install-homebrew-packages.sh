@@ -1,3 +1,5 @@
+#!/bin/bash
+
 packages=(
   autojump
   composer
@@ -16,7 +18,7 @@ for package in "${packages[@]}"; do
   brew install "$package"
 done
 
-printf "\nYou will need to run 'wp package install git@github.com:schlessera/wp-cli-psysh.git' inside a WP installation (and maybe a LocalWP shell) in order to get 'wp shell' to use psysh.\n"
+printf "\nYou will need to run 'install-wpcli-packages.sh' inside a WP installation (and maybe a LocalWP shell) in order to get 'wp shell' to use psysh.\n"
 
 printf "\nEdit /opt/homebrew/share/autojump/autojump.bash and comment out the line in j() that echos the directory.\n"
 

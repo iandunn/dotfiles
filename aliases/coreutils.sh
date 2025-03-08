@@ -27,13 +27,4 @@ alias ...="cd .. && cd .."
 alias ....="cd .. && cd .. && cd .."
 alias .....="cd .. && cd .. && cd .. && cd .."
 
-# This assumes you're in the directory you want to search
-alias findgrep='find . -type f ! -path '*/.svn/*' ! -path '*/.git/*' -follow |xargs grep --ignore-case --line-number --no-messages'
-# also add build, vendor, etc folders to exclude?
-# maybe need something like b/c exclude above doesn't work
-# function grep() {
-#	/bin/grep --exclude-dir=.svn "$@"
-#}
-#also exclude binary files
-
 alias updatedb='sudo /usr/libexec/locate.updatedb'
