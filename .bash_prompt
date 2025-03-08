@@ -16,6 +16,9 @@ color_warning="\e[38;5;166m" # orange
 
 case $(hostname) in
 	# Primary workstation/laptop aren't included, since it's obvious where you are.
+	"milo" | "milo.local" | "willow" | "willow.local" | "willow.jetpack" )
+		:
+	;;
 
 	"durin" )
 		color_user_host="\e[38;5;64m"  # lime green
