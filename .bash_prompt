@@ -15,15 +15,7 @@ color_folder="\e[38;5;27m"   # medium blue
 color_warning="\e[38;5;166m" # orange
 
 case $(hostname) in
-	"willow" | "willow.local" | "willow.jetpack" )
-		color_user_host="\e[38;5;137m" # tan
-		hostname="willow"
-	;;
-
-	"milo" | "milo.local" )
-		color_user_host="\e[38;5;27m" # medium blue
-		hostname="milo"
-	;;
+	# Primary workstation/laptop aren't included, since it's obvious where you are.
 
 	"durin" )
 		color_user_host="\e[38;5;64m"  # lime green
@@ -271,7 +263,12 @@ function set_prompt {
 		command_mark="$(iterm2_prompt_mark)"
 	fi
 
-	export PS1="\n${command_mark}${color_user_host}\u${color_reset} @ ${color_user_host}$hostname${color_reset} in ${color_folder}\w${color_reset} \
+	at_host=""
+	if [[ -n $hostname ]]; then
+		at_host=" @ ${color_user_host}$hostname${color_reset}"
+	fi
+
+	export PS1="\n${command_mark}${color_user_host}\u${color_reset}${at_host} in ${color_folder}\w${color_reset} \
 	$(vcs_prompt) \
 	\n> "
 }
