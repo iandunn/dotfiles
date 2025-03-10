@@ -39,8 +39,9 @@
 	#
 	# stash
 	#
-	pop       = stash pop
-	ss        = stash show
+	pop		= stash pop
+	sshow	= stash show
+	sdrop	= stash drop
 
 	#
 	# misc
@@ -57,6 +58,13 @@
 	# include -i to avoid `the following untracked working tree files would be overwritten by checkout...` annoyance.
 	# test this out before committing though to make sure it doesn't end up including stuff you don't wanna delete in other situations
 	cleanid    = clean -id
+
+
+	#
+	# merge
+	#
+	mera	= merge --abort
+
 
 	# ideally want this to automatically run on every commit whenever it's modified in any way.
 	# e.g., want the date of the commit to be the _modified_ date, not the _created_ date
@@ -83,12 +91,15 @@
 	#
 	# branch
 	#
-	defbranch = !git remote show origin | grep 'HEAD branch' | cut -d' ' -f5
+	bmain	= !git remote show origin | grep 'HEAD branch' | cut -d' ' -f5
 		# todo working now, use in commands below
 		# use `git-svn` ref for git-svn
+	bdel	= branch -D
+		# breaks autocomplete of branch name. can i extend the autocomplete to include it?
 
-	rm-merged = !git branch -d $(git branch --merged=develop | grep -v develop) && git fetch --prune
+	rmmerged = !git branch -d $(git branch --merged=develop | grep -v develop) && git fetch --prune
 		# todo test -- https://medium.com/@FlorentDestrema/a-simple-way-to-clean-up-your-git-project-branches-283b87478fbc
+		# make sure this is only ran from the main branch.
 
 	# rename this to just `branch` if git every starts allowing aliases to override commands
 	tracking = branch -vv
