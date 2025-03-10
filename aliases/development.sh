@@ -1,8 +1,8 @@
 
 # LocalWP shells
-alias shdmv='sh "$HOME/dotfiles/localwp/ssh-entry/O1BOJvLsA.sh"'
-alias shfhl='sh "$HOME/dotfiles/localwp/ssh-entry/HOgy-WCkG.sh"'
-
+alias shdmv='sh  "$HOME/dotfiles/localwp/ssh-entry/O1BOJvLsA.sh"'
+alias shfhl='sh  "$HOME/dotfiles/localwp/ssh-entry/HOgy-WCkG.sh"'
+alias shcore='sh "$HOME/dotfiles/localwp/ssh-entry/eAU6ubHdw.sh"'
 
 # npm / yarn
 alias nr='npm run'

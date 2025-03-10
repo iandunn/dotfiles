@@ -48,9 +48,9 @@ case $(hostname) in
 esac
 
 source /Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bash
-complete -F _complete_ssh_hosts ssh
 source /opt/homebrew/etc/bash_completion.d/gh
 source /opt/homebrew/etc/bash_completion.d/wp
+complete -F _complete_ssh_hosts ssh
 
 # make wp-cli completions work for the wpdev alias too
 #complete -o nospace -F _wp_complete wpdev
