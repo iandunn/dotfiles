@@ -275,6 +275,9 @@
 	# Some other options: production, stable, release, base, default, trunk, main, primary.
 	defaultBranch = develop
 
+[include]
+	path = ~/.gitconfig.local
+
 # Use 10up SSH key for signing commits in their repos.
 # https://markentier.tech/posts/2021/02/github-with-multiple-profiles-gpg-ssh-keys/
 [includeIf "gitdir:~/local-sites/10up/"]
