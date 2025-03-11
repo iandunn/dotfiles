@@ -33,7 +33,6 @@ esac
 # Prefs > Mission > When switching to an applicaiton, switch space... > disable
 # prefs > accessibi > display > reduce transparency
 # prefs > sec > advanced > required admin password for network-wide prefs
-# prefs > sound > sound effects > play sound on startup > off
 # time machine ignored folders
 # default skin tone - maybe com.apple.EmojiPreferences
 # test out disabling desktop icons - defaults write com.apple.finder CreateDesktop false; killall Finder
@@ -67,6 +66,9 @@ defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 
 # Empty Trash securely by default
 defaults write com.apple.finder EmptyTrashSecurely -bool true
+
+# Turn off startup sound because it wakes people up in the middle of the night, at libraries, etc.
+sudo nvram StartupMute=%01
 
 # Reduce transparency of the Finder sidebar
 #defaults write com.apple.universalaccess reduceTransparency -boolean true
