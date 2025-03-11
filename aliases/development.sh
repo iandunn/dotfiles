@@ -55,7 +55,7 @@ alias behat='/Users/iandunn/vhosts/tools/wp-cli/vendor/behat/behat/bin/behat'
 # if this ever stops working, first try restarting phpstorm and firefox b/c it seems like that that's all that's needed sometimes
 # if that doesn't fix it, then make sure that xdebug.ini settings match. might need to add more of them here explicitly rather than relying on defaults
 # also try putting xdebug_break(); in code, then run and sometimes there's errors in the phpstorm console that you wouldn't otherwise see
-# also check ip address in /opt/homebrew/etc/php/7.2/conf.d/ext-xdebug.ini, make sure matches current ip
+# also check ip address in $HOMEBREW_PREFIX/etc/php/7.2/conf.d/ext-xdebug.ini, make sure matches current ip
 #
 # ugh, it DID stop working, 10 minutes later, even though nothing changed.
 # have to use manual xdebug_breaks everywhere.

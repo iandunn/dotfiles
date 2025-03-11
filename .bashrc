@@ -11,24 +11,23 @@ export EDITOR="micro"
 export SVN_EDITOR="micro"
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
+export HOMEBREW_PREFIX=$(brew --prefix) # different on laptop and desktop because intel vs silicon
 
 export PATH="$PATH:$HOME/bin:$DOTFILES_DIR/bin:\
-/opt/homebrew/bin:/opt/homebrew/sbin"
+$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin"
 
 # Fix git-svn, see https://github.com/Homebrew/homebrew-core/issues/52490#issuecomment-792604853
 # will need to update when perl version changes
-export PERL5LIB=/opt/homebrew/lib/perl5/site_perl/5.30.3/darwin-thread-multi-2level/
+export PERL5LIB=$HOMEBREW_PREFIX/lib/perl5/site_perl/5.30.3/darwin-thread-multi-2level/
 
 export HOMEBREW_NO_AUTO_UPDATE=1
 
-
 #export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
 # export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
-export HOMEBREW_PREFIX=$(brew --prefix) # different on laptop and desktop because intel vs silicon
 
 export NVM_DIR="$HOME/.nvm"
-[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
-[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+[ -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ] && \. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"  # This loads nvm
+[ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && \. "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
 
 export GPG_TTY=$(tty)
 export GITLEAKS_CONFIG=~/.config/gitleaks/gitleaks.toml
@@ -48,8 +47,8 @@ case $(hostname) in
 esac
 
 source /Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bash
-source /opt/homebrew/etc/bash_completion.d/gh
-source /opt/homebrew/etc/bash_completion.d/wp
+source $HOMEBREW_PREFIX/etc/bash_completion.d/gh
+source $HOMEBREW_PREFIX/etc/bash_completion.d/wp
 complete -F _complete_ssh_hosts ssh
 
 # make wp-cli completions work for the wpdev alias too
@@ -62,7 +61,7 @@ if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
 fi
 source ~/.bash_prompt
 
-source /opt/homebrew/etc/profile.d/autojump.sh
+source $HOMEBREW_PREFIX/etc/profile.d/autojump.sh
 
 
 ####
