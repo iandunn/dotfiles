@@ -53,6 +53,7 @@
 	ci   = commit
 	cia  = commit --amend
 	cinv = commit --no-verify
+	cimnv = commit --no-verify -m
 	cim  = commit -m
 
 	#
