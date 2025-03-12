@@ -26,8 +26,9 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 # export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
 
 export NVM_DIR="$HOME/.nvm"
-[ -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ] && \. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"  # This loads nvm
-[ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && \. "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+\. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
+\. "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"
+
 
 export GPG_TTY=$(tty)
 export GITLEAKS_CONFIG=~/.config/gitleaks/gitleaks.toml
