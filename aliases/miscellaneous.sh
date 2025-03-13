@@ -13,6 +13,7 @@ alias watch='fswatch -o $(pwd) |xargs -n1 -I{} $1'
 alias mic='micro'
 alias mical='micro ~/.bash_aliases'
 alias soal='source ~/.bash_aliases'
+alias soba='source ~/.bashrc'
 
 alias qmklf='qmk lint && qmk flash'
 
