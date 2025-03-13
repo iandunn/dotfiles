@@ -16,6 +16,7 @@ export PATH="$PATH:$HOME/bin:$DOTFILES_DIR/bin:\
 /usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:"
 
 export HOMEBREW_PREFIX=$(brew --prefix) # Different on laptop and desktop because intel vs silicon
+eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
 
 # Fix git-svn, see https://github.com/Homebrew/homebrew-core/issues/52490#issuecomment-792604853
 # will need to update when perl version changes
