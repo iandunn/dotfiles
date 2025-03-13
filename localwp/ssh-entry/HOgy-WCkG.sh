@@ -24,7 +24,7 @@ echo "MySQL:    $(mysql --version)"
 echo "----"
 
 # Ian's customizations
-cd "/Users/iandunn/local-sites/10up/fhl/app/public"
+cd "/Users/iandunn/local-sites/10up/fhl/app/public/wp-content"
 export LOCALWP_SHELL="FHL"
 
 echo "Launching shell: $SHELL ..."
