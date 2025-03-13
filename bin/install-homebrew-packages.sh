@@ -11,6 +11,7 @@ packages=(
   micro
   nvm
   psysh
+  svn
   wget
   wp-cli-completion
 )
