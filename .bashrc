@@ -11,10 +11,11 @@ export EDITOR="micro"
 export SVN_EDITOR="micro"
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
-export HOMEBREW_PREFIX=$(brew --prefix) # different on laptop and desktop because intel vs silicon
-
+# Need to hardcode /usr/local/bin for `brew` on Intel, and `/opt/homebrew/bin` for Silicone
 export PATH="$PATH:$HOME/bin:$DOTFILES_DIR/bin:\
-$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin"
+/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:"
+
+export HOMEBREW_PREFIX=$(brew --prefix) # Different on laptop and desktop because intel vs silicon
 
 # Fix git-svn, see https://github.com/Homebrew/homebrew-core/issues/52490#issuecomment-792604853
 # will need to update when perl version changes
