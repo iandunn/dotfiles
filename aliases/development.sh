@@ -14,8 +14,9 @@ alias ywr='yarn workspaces run'
 
 # composer
 alias cr='composer run'
-alias ce='composer exec'
-alias cr='composer run'
+alias comexec='composer exec'
+alias comup='composer update'
+alias comupx='composer update && git checkout composer.lock'
 
 # patches
 alias patch='patch --no-backup-if-mismatch'
