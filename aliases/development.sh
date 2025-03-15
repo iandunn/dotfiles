@@ -80,7 +80,7 @@ alias phpunitdebug='XDEBUG_CONFIG="idekey=iandunn remote_connect_back=1" phpunit
 alias skipinst='WP_TESTS_SKIP_INSTALL=1 phpunit '
 
 
-# homebrew
+# homebrew LEMP stack
 alias devdown="brew services stop  nginx && brew services stop  php@8.0 && brew services stop  mailhog && brew services stop  mysql && brew services list"
 alias devup="  brew services start nginx && brew services start php@8.0 && brew services start mailhog && brew services start mysql && brew services list"
 

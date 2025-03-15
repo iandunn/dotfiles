@@ -3,15 +3,11 @@
 # I'm using autojump instead of z, but this is more ergonomic on Colemak, and I'm already used to it from using rupa/z.
 alias z='j'
 
-# todo works but throws usage notice - alias tail='tail -n40'
-alias watch='watch -d'
-
 # Usage: watch curl -iks https://misc.wordcamp.test/2016/tmp/ |grep WordCampBlocks
-# Note this will watch the current working directory.
+# Note this will watch the current working directory and rerun the command when any file changes.
 alias watch='fswatch -o $(pwd) |xargs -n1 -I{} $1'
 
 alias mic='micro'
-alias mical='micro ~/.bash_aliases'
 alias soal='source ~/.bash_aliases'
 alias soba='source ~/.bashrc'
 

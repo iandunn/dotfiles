@@ -4,6 +4,7 @@ packages=(
   autojump
   composer
   coreutils
+  fswatch
   gh
   glab	# Remove if haven't been using
   jq
