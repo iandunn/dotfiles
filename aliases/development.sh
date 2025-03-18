@@ -40,6 +40,8 @@ alias phpcs-changed-lines='DIFF_BASE=production DEV_LIB_ONLY=phpsyntax,phpcs /Us
 ###
 ### wp-cli / wordpress
 ###
+alias wpcel='wp cron event list'
+alias wpcer='wp cron event run'
 alias wpef='wp eval-file'
 alias wppat='wp --url=https://wordpress.org/patterns'
 alias wpupall='wp core update && wp plugin update --all && wp theme update --all && wp core language update'
