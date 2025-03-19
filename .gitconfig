@@ -281,6 +281,7 @@
 	path = ~/.gitconfig.local
 
 # Use 10up SSH key for signing commits in their repos.
+# Override `user.email` and `user.signingkey`.
 # https://markentier.tech/posts/2021/02/github-with-multiple-profiles-gpg-ssh-keys/
 [includeIf "gitdir:~/local-sites/10up/"]
 	# Make sure 10up sites are created in this folder
