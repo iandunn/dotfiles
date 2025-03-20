@@ -94,6 +94,10 @@ function git_status {
 		# todo for "rebase in progress; onto 22faf4b5" need to pick out {5} not {6}
 			# what're the other two, to disambiguate?
 
+	elif [[ $status == *"you are still merging"* ]]; then
+		echo $status
+		location="merging into ${3}"
+
 	elif [[ $status == *"currently reverting commit"* ]]; then
 		# todo-bug remove the `.` at the end of the word
 		location="reverting ${17}"
