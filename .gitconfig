@@ -29,7 +29,9 @@
 		# breaks autocomplete of branch name. can i extend the autocomplete to include it?
 	bm		= branch -m
 
-	rmmerged = !git branch -d $(git branch --merged=develop | grep -v develop) && git fetch --prune
+	#rmmerged = !git branch -d $(git branch --merged=develop | grep -v develop) && git fetch --prune
+		# this makes asssumptions about workflow that aren't true of all projects
+		# probably shouldn't delete automatically, only list and you check before deleting
 		# todo test -- https://medium.com/@FlorentDestrema/a-simple-way-to-clean-up-your-git-project-branches-283b87478fbc
 		# make sure this is only ran from the main branch.
 
