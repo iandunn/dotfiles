@@ -49,6 +49,10 @@ case $(hostname) in
 	;;
 esac
 
+# Only tab-complete local branches.
+# You can include remote branches by using `git checkout --guess`. That has to be the full command, it won't work in an alias.
+export GIT_COMPLETION_CHECKOUT_NO_GUESS=1
+
 source /Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bash
 source $HOMEBREW_PREFIX/etc/bash_completion.d/gh
 source $HOMEBREW_PREFIX/etc/bash_completion.d/wp
