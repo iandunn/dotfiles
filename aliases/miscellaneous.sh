@@ -15,5 +15,7 @@ alias qmklf='qmk lint && qmk flash'
 
 # When unplug external webcam (like when traveling), then plug back in, it's not recognized until restart service
 alias fix-camera='sudo killall VDCAssistant'
+
 # todo see if there's one for the headset mic too
 # try sudo pkill coreaudiod
+# that didn't work, is there anything else?

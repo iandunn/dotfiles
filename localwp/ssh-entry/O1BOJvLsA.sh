@@ -1,4 +1,5 @@
 export DISABLE_AUTO_TITLE="true"
+export SITE_PATH="/Users/iandunn/local-sites/10up/dmv/app/public/wp-content"
 echo -n -e "\033]0;dmv Shell\007"
 
 export MYSQL_HOME="/Users/iandunn/Library/Application Support/Local/run/O1BOJvLsA/conf/mysql"
@@ -24,7 +25,7 @@ echo "MySQL:    $(mysql --version)"
 echo "----"
 
 # Ian's customizations
-cd "/Users/iandunn/local-sites/10up/dmv/app/public/wp-content"
+cd $SITE_PATH
 export LOCALWP_SHELL="DMV"
 
 echo "Launching shell: $SHELL ..."

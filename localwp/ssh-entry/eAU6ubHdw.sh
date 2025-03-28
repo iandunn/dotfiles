@@ -1,4 +1,5 @@
 export DISABLE_AUTO_TITLE="true"
+export SITE_PATH="/Users/iandunn/local-sites/core/app/public/wp-content"
 echo -n -e "\033]0;core Shell\007"
 
 export MYSQL_HOME="/Users/iandunn/Library/Application Support/Local/run/eAU6ubHdw/conf/mysql"
@@ -24,7 +25,7 @@ echo "MySQL:    $(mysql --version)"
 echo "----"
 
 # Ian's customizations
-cd "/Users/iandunn/local-sites/core/app/public"
+cd $SITE_PATH
 export LOCALWP_SHELL="Core"
 
 echo "Launching shell: $SHELL ..."
