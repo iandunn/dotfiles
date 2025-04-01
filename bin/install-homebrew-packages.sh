@@ -5,6 +5,7 @@ packages=(
   composer
   coreutils
   fswatch
+  ImageOptim
   gh
   glab	# Remove if haven't been using
   jq
