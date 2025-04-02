@@ -12,6 +12,8 @@ packages=(
   lnav
   micro
   nvm
+  php@8.2
+  phpunit
   psysh
   svn
   wget
