@@ -1,3 +1,4 @@
 .gitconfig.local
 .config/micro/buffers
-.ssh/config-private
+.ssh/config-personal
+.ssh/config-10up

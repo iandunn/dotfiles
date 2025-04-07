@@ -8,8 +8,11 @@ mkdir -p $HOME/.ssh
 touch $HOME/.ssh/config
 printf "# Don't edit this, it's generated from dotfiles\n\n" > $HOME/.ssh/config
 
-printf "####\n#### config-private\n####\n\n" >> $HOME/.ssh/config
-cat $HOME/dotfiles/.ssh/config-private >> $HOME/.ssh/config
+printf "####\n#### config-personal\n####\n\n" >> $HOME/.ssh/config
+cat $HOME/dotfiles/.ssh/config-personal >> $HOME/.ssh/config
+
+printf "####\n#### config-10up\n####\n\n" >> $HOME/.ssh/config
+cat $HOME/dotfiles/.ssh/config-10up >> $HOME/.ssh/config
 
 printf "\n\n####\n#### config-public\n####\n\n" >> $HOME/.ssh/config
 cat $HOME/dotfiles/.ssh/config-public >> $HOME/.ssh/config
