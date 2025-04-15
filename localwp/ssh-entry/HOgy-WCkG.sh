@@ -13,10 +13,11 @@ echo "Setting Local environment variables..."
 export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/mysql-8.0.35+2/bin/darwin-arm64/bin:$PATH"
 export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.2.23+0/bin/darwin-arm64/bin:$PATH"
 export PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix:$PATH"
-export PATH="/?Applications/Local.app/Contents/Resources/extraResources/bin/composer/posix:$PATH"
+export PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/composer/posix:$PATH"
 export PATH="$SITE_PATH/vendor/bin:$PATH"
 
 export MAGICK_CODER_MODULE_PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.2.23+0/bin/darwin-arm64/ImageMagick/modules-Q16/coders"
+
 
 echo "----"
 echo "WP-CLI:   $(wp --version)"
@@ -26,7 +27,7 @@ echo "MySQL:    $(mysql --version)"
 echo "----"
 
 # Ian's customizations
-cd $SITE_PATH
+cd $SITE_PATH/themes/fhlbank-boston
 export LOCALWP_SHELL="FHL"
 
 echo "Launching shell: $SHELL ..."
