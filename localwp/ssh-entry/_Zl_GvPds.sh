@@ -32,8 +32,8 @@ echo "MySQL:    $(mysql --version)"
 echo "----"
 
 # Ian's customizations
-cd $SITE_PATH/themes/fhlbank-boston
-export LOCALWP_SHELL="FHL"
+cd $SITE_PATH/themes/williams-2019
+export LOCALWP_SHELL="Williams"
 
 echo "Launching shell: $SHELL ..."
 exec $SHELL
