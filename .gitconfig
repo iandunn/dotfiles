@@ -228,6 +228,7 @@
 
 [merge]
 	tool = deltawalker
+	ff = false
 
 # Note: PHPStorm's diff tool seems better for resolving merge conflicts. Need Git plugin enabled.
 [mergetool "deltawalker"]
