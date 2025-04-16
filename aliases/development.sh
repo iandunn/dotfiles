@@ -23,6 +23,7 @@ alias patch='patch --no-backup-if-mismatch'
 alias trim-whitespace="sed -i '' -e's/[[:space:]]*$//'"
 
 # php linting
+alias cbf='phpcbf -v'
 alias phpcbf='phpcbf -v'
 alias phpcs='phpcs -a'
 alias phpcs-git-files='phpcs -a $(git diff production --name-only) $(git diff --cached --name-only)'
