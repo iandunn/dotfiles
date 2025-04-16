@@ -191,6 +191,10 @@ defaults write com.googlecode.iterm2 PrefsCustomFolder -string "~/.dotfiles/iter
 # Tell iTerm2 to use the custom preferences in the directory
 defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
 
+# Disable Gatekeeper so I can open files I downloaded.
+sudo spctl --master-disable
+printf "\nGlobally disabling the assessment system needs to be confirmed in System Settings.\n"
+
 
 ###
 ### Restart any services that were affected
