@@ -10,6 +10,23 @@ and stay on track instead of doing it aimlessly, or getting tunnel vision deep i
 note that this is for a small part of a project (e.g. a github issue). don't do waterfall approach for whole project, do agile.
 
 
+## AI Usage
+
+* At start of larger task like building a new feature - make it do the boilerplate
+	* Give AI a lot of context about the goal of the feature and how you want it to be architected
+	* Prompt: Give me 3 different ways to approach solving this problem. Then give me the pros/cons for each. Address the time required for each and code quality/maintainablility.
+	* Ask it to create the overall structure of the code and fill it with stubs for all the functions, views, etc
+* During
+  * Ask it to do each particular task, like filling in a stub w/ real logic
+  * Review all the code it adds and make changes yourself
+	* make sure it's working as intended.
+	* look for edge cases and error handling
+	* look for security, maintainability, performance, accessibility
+* Before merge
+  * Ask what problems are there?
+  * Ask what could be improved
+  * Do manual review of all code
+
 
 
 ## TL;DR
