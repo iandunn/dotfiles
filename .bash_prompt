@@ -44,7 +44,7 @@ esac
 # Make it obvious that we're in a LocalWP shell, to avoid confusion.
 # This requires modifying the default `ssh-entry` scripts to add `$LOCALWP_SHELL`.
 case "${LOCALWP_SHELL:-unset}" in
-	"DMV" | "FHL" | "Core" )
+	"DMV" | "FHL" | "Core" | "Williams" | "Comics" )
 		color_user_host="\e[38;5;166m" # orange
 		hostname=$LOCALWP_SHELL
 	;;

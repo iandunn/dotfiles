@@ -2,6 +2,8 @@
 # LocalWP shells
 alias shdmv='sh  "$HOME/dotfiles/localwp/ssh-entry/O1BOJvLsA.sh"'
 alias shfhl='sh  "$HOME/dotfiles/localwp/ssh-entry/HOgy-WCkG.sh"'
+alias shwill='sh "$HOME/dotfiles/localwp/ssh-entry/_Zl_GvPds.sh"'
+alias shcomics='sh "$HOME/dotfiles/localwp/ssh-entry/PI403ONHm.sh"'
 alias shcore='sh "$HOME/dotfiles/localwp/ssh-entry/eAU6ubHdw.sh"'
 
 # npm / yarn
