@@ -22,6 +22,7 @@ eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
 # will need to update when perl version changes
 export PERL5LIB=$HOMEBREW_PREFIX/lib/perl5/site_perl/5.30.3/darwin-thread-multi-2level/
 
+# Lots of stuff breaks when it's updated, so I want to manually update individual packages when I can supervise it.
 export HOMEBREW_NO_AUTO_UPDATE=1
 
 #export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
