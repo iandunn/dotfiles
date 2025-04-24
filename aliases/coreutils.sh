@@ -8,7 +8,7 @@ alias lessn='less -N'
 alias tail='tail -n40'
 alias df='df -h'
 alias du='du -h'
-alias grep='grep -i'
+alias grep='grep --ignore-case --color=always'
 alias rm='rm -i'
 alias diff='diff -u'
 alias diffsplit='/usr/bin/diff -y -W 250' # full path b/c -y conflicts w/ -u alias
