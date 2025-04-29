@@ -57,8 +57,10 @@
 	cia  = commit --amend
 	cianv = commit --amend --no-verify
 	cinv = commit --no-verify
-	cimnv = commit --no-verify -m
-	cim  = commit -m
+	cia  = commit --amend
+	cianv  = commit --amend --no-verify
+	cim  = commit --message
+	cimnv = commit --no-verify --message
 
 	#
 	# diff
