@@ -22,6 +22,8 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 	* make sure it's working as intended.
 	* look for edge cases and error handling
 	* look for security, maintainability, performance, accessibility
+
+	Once confident about approach: i think the fundamentals of this are done, and it just needs tweaking. before i spend that time, do you see any architectural flaws or things that need to be refactored or take a different approach?
 * Before merge
   * Ask what problems are there?
   * Ask what could be improved
