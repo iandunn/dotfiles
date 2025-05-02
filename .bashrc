@@ -389,3 +389,48 @@ function check_all_wporg_web_heads {
 		curl "http://web$i.ord.wordpress.org$query_string" -I -H 'Host: wordpress.org';
 	 done
 }
+
+# copy a new dev process template to the given filename in the current repo's _notes folder
+# call this when starting a new task so you have an intentional approach
+function devnote {
+	local dir="$PWD"
+	local template="$HOME/dotfiles/docs/development-process-and-tips.md"
+	local ext="md"
+	local filename
+	local target
+	local dest
+
+	# Find nearest _notes directory
+	while [ "$dir" != "/" ]; do
+		if [ -d "$dir/_notes" ]; then
+			target="$dir/_notes"
+			break
+		fi
+
+		dir="$(dirname "$dir")"
+	done
+
+	if [ -z "$target" ]; then
+		printf "\nError: No \`_notes\` directory found in parent tree.\n" >&2
+		return 1
+	fi
+
+	# Prompt for filename
+	printf "\n"
+	read -p "Enter a filename (without extension): " filename
+
+	if [ -z "$filename" ]; then
+		printf "\nError: No filename entered." >&2
+		return 1
+	fi
+
+	dest="$target/$filename.$ext"
+
+	if [ -e "$dest" ]; then
+		printf "\nError: File $filename.$ext already exists in $target. No files were modified.\n" >&2
+		return 1
+	fi
+
+	cp "$template" "$dest"
+	printf "\nCopied to $dest\n"
+}
