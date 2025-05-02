@@ -37,6 +37,7 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 - [ ] understand the problem. break it down problem into list of requirements
 - [ ] consider several approaches, choose the best
 - [ ] break solution down into list of small steps
+- [ ] determine what's essential and what isn't worth it
 
 ### code
 - [ ] write failing tests
@@ -102,6 +103,10 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 			- [ ]
 			- [ ]
 			- [ ]
+
+		- [ ] what is the 80% that solves the core problem?
+		- [ ] what is the 20% that is nice, but not essential. will it take more than 20% of the time?
+
 
 	- [ ] are there too many to fix in a single reasonably-sized pr?
 			if so, find some kind of logical grouping and open pr for 1st group, merge, then start pr for 2nd
