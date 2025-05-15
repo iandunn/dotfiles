@@ -1,5 +1,5 @@
 export DISABLE_AUTO_TITLE="true"
-export SITE_PATH="/Users/iandunn/local-sites/10up/comics/app/wordpress/wp-content"
+export SITE_PATH="/Users/iandunn/local-sites/10up/comics/app"
 echo -n -e "\033]0;comics kingdom Shell\007"
 
 export MYSQL_HOME="/Users/iandunn/Library/Application Support/Local/run/PI403ONHm/conf/mysql"
@@ -19,10 +19,9 @@ export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services
 export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.2.27+1/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
 export PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix:$PATH"
 export PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/composer/posix:$PATH"
-export PATH="$SITE_PATH/vendor/bin:$PATH"
+export PATH="$SITE_PATH/vendor/bin:$SITE_PATH/wordpress/wp-content/vendor/bin:$PATH"
 
 export MAGICK_CODER_MODULE_PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.2.27+1/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/ImageMagick/modules-Q16/coders"
-
 
 echo "----"
 echo "WP-CLI:   $(wp --version)"
@@ -32,7 +31,7 @@ echo "MySQL:    $(mysql --version)"
 echo "----"
 
 # Ian's customizations
-cd $SITE_PATH/mu-plugins/comics-kingdom
+cd $SITE_PATH
 export LOCALWP_SHELL="Comics"
 
 
