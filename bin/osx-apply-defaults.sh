@@ -195,6 +195,8 @@ defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
 sudo spctl --master-disable
 printf "\nGlobally disabling the assessment system needs to be confirmed in System Settings.\n"
 
+# Prevent things from auto-playing when connect bluetooth headphones
+launchctl unload -w /System/Library/LaunchAgents/com.apple.rcd.plist
 
 ###
 ### Restart any services that were affected
