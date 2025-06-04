@@ -151,6 +151,11 @@
 	# defaults to no (b/c working on branch). can answer yes if ready to run over entire branch for pr, or before pushing to production branch
 	pullu     = pull --set-upstream
 	# what to name this? maybe better to just memorize. for deleting remote branches. need origin name maybe. rbranchrm = push -d
+	pullreb  = pull --rebase
+	#pullreb  = !git co production && git pull && git co - && git rebase production
+		# use `defbranch` once working
+		# also stash before, and pop after
+
 
 	#
 	# push
@@ -166,9 +171,6 @@
 	rebio    = rebase -i origin
 	rebisvn  = rebase -i git-svn
 	rebten	 = rebase -i HEAD~10
-	pullreb  = !git co production && git pull && git co - && git rebase production
-		# use `defbranch` once working
-		# also stash before, and pop after
 	svnrebase = !git stash && git svn rebase --log-window-size=100000 && git stash pop
 		# todo don't do ^ if there's already something in stash, b/c when have conflicts it gets all messed up. er, or is it because left in stash after fix conflict? i think it's the latter
 	svnrebasemirror = !git checkout master && git pull origin master && git svn rebase && git push origin master
