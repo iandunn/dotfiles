@@ -25,6 +25,8 @@ export PERL5LIB=$HOMEBREW_PREFIX/lib/perl5/site_perl/5.30.3/darwin-thread-multi-
 # Lots of stuff breaks when it's updated, so I want to manually update individual packages when I can supervise it.
 export HOMEBREW_NO_AUTO_UPDATE=1
 
+export KUBECONFIG=~/.kube/comicskingdom.yml
+
 #export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
 # export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
 
@@ -57,7 +59,7 @@ export GIT_COMPLETION_CHECKOUT_NO_GUESS=1
 source /Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bash
 source $HOMEBREW_PREFIX/etc/bash_completion.d/gh
 source $HOMEBREW_PREFIX/etc/bash_completion.d/wp
-complete -F _complete_ssh_hosts ssh
+
 
 # make wp-cli completions work for the wpdev alias too
 #complete -o nospace -F _wp_complete wpdev
@@ -76,25 +78,35 @@ source $HOMEBREW_PREFIX/etc/profile.d/autojump.sh
 #### FUNCTIONS
 ####
 
-
-# props https://github.com/tomjn/bashosx/blob/483f272af00be0cfee7a73f25210a0bbdfda7e1a/init.sh#L5
 _complete_ssh_hosts ()
 {
-        COMPREPLY=()
-        cur="${COMP_WORDS[COMP_CWORD]}"
-        comp_ssh_hosts=`cat ~/.ssh/known_hosts | \
-                        cut -f 1 -d ' ' | \
-                        sed -e s/,.*//g | \
-                        grep -v ^# | \
-                        uniq | \
-                        grep -v "\[" ;
-                cat ~/.ssh/config | \
-                        grep "^Host " | \
-                        awk '{print $2}'
-                `
-        COMPREPLY=( $(compgen -W "${comp_ssh_hosts}" -- $cur))
-        return 0
+	# this has a bug where hosts need to have multiple hostnames in order to work
+	# see https://chatgpt.com/c/6824adea-296c-8006-ae12-f7df5a7e56eb
+
+    COMPREPLY=()
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+
+    local hosts_from_known_hosts
+    hosts_from_known_hosts=$(cut -f 1 -d ' ' ~/.ssh/known_hosts 2>/dev/null | \
+                             sed -e 's/,.*//g' | \
+                             grep -v '^\[' | \
+                             grep -v '^#' | \
+                             uniq)
+
+    local hosts_from_config
+    hosts_from_config=$(grep -i '^Host ' ~/.ssh/config 2>/dev/null | \
+                        awk '{for (i=2;i<=NF;i++) print $i}' | \
+                        grep -v '[*?]')
+
+    local comp_ssh_hosts
+    comp_ssh_hosts=$(echo -e "${hosts_from_known_hosts}\n${hosts_from_config}" | sort -u)
+
+    COMPREPLY=( $(compgen -W "${comp_ssh_hosts}" -- "$cur") )
+    return 0
 }
+complete -F _complete_ssh_hosts ssh
+
+
 
 # find all files in the current folder and below, then grep each of them for the given string
 # this could _almost_ be an alias, but then $QUERY would have to be at the end of the command, so you couldn't remove the binary files

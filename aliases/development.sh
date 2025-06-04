@@ -94,7 +94,6 @@ alias devup="  brew services start nginx && brew services start php@8.0 && brew 
 ###
 ### misc
 ###
-alias devnote='cp ~/dotfiles/docs/development-process-and-tips.md '
 
 # tweak the -n option, but this is really more here just to remind yourself that `nice` is available to throttle commands that hog a lot of resources
 alias slurp='nice -n 19 ~/vhosts/tools/wordpress-plugin-directory-slurper/update'
