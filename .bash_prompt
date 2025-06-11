@@ -56,6 +56,10 @@ esac
 # If ever feel like this is slow, then you could do something similar to `svn_status`, but with `git gc`. Probably
 # prompt first, though because you don't wanna lose anything in reflog that might be needed soon.
 function git_status {
+	# there's an error here when `cd`ing to a folder where there's a merge conflict?
+	# if happens again then troubleshoot deeper.
+	# if not then remove this
+
 	status=$(git status --long --verbose --branch --show-stash 2>&1)
 
 	# todo-enhance break these into modular functions
@@ -95,7 +99,6 @@ function git_status {
 			# what're the other two, to disambiguate?
 
 	elif [[ $status == *"you are still merging"* ]]; then
-		echo $status
 		location="merging into ${3}"
 
 	elif [[ $status == *"currently reverting commit"* ]]; then
@@ -144,7 +147,8 @@ function git_status {
 
 	# Conflicts?
 	conflicts=""
-	if [[ $status == *"fix conflicts"* ]]; then
+	if [[ $status == *"conflicts"* ]]; then
+		# not working for "All conflicts fixed but you are still merging"
 		conflicts=" (conflicts)"
 	fi
 

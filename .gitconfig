@@ -66,7 +66,7 @@
 	# diff
 	#
 	diffc   = diff --cached
-	diffno	= diff trunk --name-only
+	diffno	= diff --name-only
 		# detect main branch automatically
 		# git remote show origin | sed -n '/HEAD branch/s/.*: //p'
 			# https://stackoverflow.com/questions/28666357/git-how-to-get-default-branch works but is slow b/c http request
@@ -167,7 +167,7 @@
 	#
 	reba	 = rebase --abort
 	rebc	 = rebase --continue
-	rebi     = rebase -i production # todo get default branch, since prod is only for wordcamp repo
+	rebi     = rebase -i
 	rebio    = rebase -i origin
 	rebisvn  = rebase -i git-svn
 	rebten	 = rebase -i HEAD~10
