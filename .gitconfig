@@ -28,7 +28,7 @@
 	brm		= branch --delete
 		# breaks autocomplete of branch name. can i extend the autocomplete to include it?
 	bmv		= branch --move
-	bmered  = branch --merged
+	bmerged = branch --merged
 
 	#rmmerged = !git branch -d $(git branch --merged=develop | grep -v develop) && git fetch --prune
 		# this makes asssumptions about workflow that aren't true of all projects
