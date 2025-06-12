@@ -50,133 +50,82 @@ case "${LOCALWP_SHELL:-unset}" in
 	;;
 esac
 
-# Parsing `git status --long` isn't as elegant as using porcelan commands, etc, but it's much faster. That's
-# critical because larger repos can make every prompt painfully slow.
-#
-# If ever feel like this is slow, then you could do something similar to `svn_status`, but with `git gc`. Probably
-# prompt first, though because you don't wanna lose anything in reflog that might be needed soon.
 function git_status {
-	# there's an error here when `cd`ing to a folder where there's a merge conflict?
-	# if happens again then troubleshoot deeper.
-	# if not then remove this
+	status=$(git status --porcelain=v2 --branch 2>/dev/null)
 
-	status=$(git status --long --verbose --branch --show-stash 2>&1)
-
-	# todo-enhance break these into modular functions
-
-	# todo-enhance maybe add remote, like
-	# git-svn wordcamp.svn.wordpress.org:master
-	# git-svn meta.svn.wordpress.org:master
-	# Git github.com:master is clean - how to handle multiple remotes?
-	# add paths too? sometimes that's helpful, like with github.com
-
-	# Bail if not a Git repo.
-	if [[ $status == *"Not a git repository"* || $status == *"not a git repository"* || $status == *"must be run in a work tree"* ]]; then
+	# Bail if not a Git repo or status fails
+	if [[ $? -ne 0 || -z "$status" ]]; then
 		return
 	fi
 
-	# todo maybe do somehting similar to svn_status, because git can get real slow too on big repos, like gutenberg
-	# seems to show up more with tab completion on branches, and checking out, etc, though, rather than status
-	# if still noticable on status, could time it and run `git gc`, maybe with the `--aggressive` option
-		# no, --aggressive is takes 10 fracking minutes. but could maybe echo "ran gc, but you may want to run gc --aggressive if its still slow. that will take several minutes"
+	branch_name=$(git symbolic-ref -q --short HEAD 2>/dev/null || git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
 
-	root_folder=$(git rev-parse --show-toplevel)
+	flavor="Git"
 
-	# For some inexplicable fracking reason, this syntax is how you tell Bash that you want to explode a string
-	# into an array, so that you can reference the individual words.
-	set -- $status
-
-	# Figure out where we are / what we're doing.
-	if [[ $status == *"HEAD detached at"* ]]; then
-		location=${4}
-
-	elif [[ $status == *"rebase in progress"* || $status == *"currently rebasing"* ]]; then
-		location="rebasing onto ${6}"
-		# ^ is deceptive, because that value isn't HEAD, it's the commit that's being rebased against
-		# maybe replace it with "rebasing, head is {}" or, "rebasing onto "342", at "234"
-
-		# todo for "rebase in progress; onto 22faf4b5" need to pick out {5} not {6}
-			# what're the other two, to disambiguate?
-
-	elif [[ $status == *"you are still merging"* ]]; then
-		location="merging into ${3}"
-
-	elif [[ $status == *"currently reverting commit"* ]]; then
-		# todo-bug remove the `.` at the end of the word
-		location="reverting ${17}"
-
-	elif [[ $status == *"currently cherry-picking"* ]]; then
-		# todo-bug remove the `.` at the end of the word
-		location="cherry-picking ${9}"
-
-	# This has to come after above, because there are situations where you're cherry-picking but still on branch
-	# (e.g., fixing conflicts).
-	elif [[ $status == *"On branch"* ]]; then
-		location=${3}
-
-	else
-		location="[unknown]"
-		# todo get here when "head detached _FROM_ X" instead of "detached _AT_ X"
-		# would it be accurate to just add that to the one above, or would that be misleading, by making you think you're at X, when you're not
-			# that would be misleading, b/c you're not at X, you're at a totoally diffierent commit. X is just the one you were previiously at before running the last git command
-			# maybe show "detached at {the hash of HEAD, which will be 1 forward of X}"
-
-		# @IanDunn: This depends on your Git version. git status got smarter around Git 2.0, and then again a bit later: besides examining HEAD itself, git status looks into the reflog entries for HEAD.
-		# These tell Git whether you just recently ran a git checkout that detached HEAD, and it's still there at the commit you specified; or whether you did the git checkout, then moved HEAD around some more.
-		# The at <name> means "still there" and the from <name> means "was there, got moved since then". – torek 11 mins ago
-		#
-		# Different Git vintages produce slightly different messages here. The really old ones never bother to look at the reflog entries at all, and just say "detached", without any more detail.
-		# https://stackoverflow.com/questions/44738188/diagnose-a-misterious-detached-head-in-git/44739639?noredirect=1#comment108149704_44739639
-
-
-		# when "detached _FROM_ is because you checked out a tag, though, it should should the tag name
-			# sometimes it does say "deatached at v8.0.0", maybe depends on how you check it out, or what you were on previously?
-			#
-			# git describe --tags
-			# git describe --exact-match --tags $(git log -n1 --pretty='%h')
-			# https://stackoverflow.com/a/3405221/450127
-			#
-
+	if [[ -d ".git/svn" ]]; then
+		flavor="git-svn"
 	fi
 
-	# Got stashes?
+	state="${color_clean}clean${color_reset}"
+
+	if ! git diff --no-ext-diff --quiet || ! git diff --no-ext-diff --cached --quiet; then
+		state="${color_dirty}dirty${color_reset}"
+	fi
+
+	special_state=""
+
+	if [[ -f ".git/MERGE_HEAD" ]]; then
+		merge_conflicts=$(git diff --name-only --diff-filter=U 2>/dev/null)
+
+		# todo need a status where conflicts but they not fixed yet
+
+		if [[ -z "$merge_conflicts" ]]; then
+			# todo this isn't working for "All conflicts fixed but you are still merging." status message
+			special_state="merging $branch_name (conflicts fixed)"
+
+		else
+			special_state="merging $branch_name"
+		fi
+	fi
+
+	if [[ -d ".git/rebase-apply" || -d ".git/rebase-merge" ]]; then
+		special_state="rebasing"
+	fi
+
+	if [[ -f ".git/CHERRY_PICK_HEAD" ]]; then
+		# todo show hash
+		special_state="cherry-picking"
+	fi
+
+	if [[ -f ".git/REVERT_HEAD" ]]; then
+		# todo if reverting then show "reverting {hash}"
+		special_state="reverting"
+	fi
+
+	if [[ -f ".git/BISECT_LOG" ]]; then
+		special_state="${special_state} (bisecting)"
+	fi
+
+	# todo add entry for "detached HEAD" state
+
+	# make sure this says tag name when on a tag rather than branch
+
 	stashes=""
-	if [[ -f "$root_folder/.git/logs/refs/stash" ]]; then
+
+	if [[ -f ".git/logs/refs/stash" ]]; then
 		stashes=" (stashes)"
 	fi
 
-	# Conflicts?
-	conflicts=""
-	if [[ $status == *"conflicts"* ]]; then
-		# not working for "All conflicts fixed but you are still merging"
-		conflicts=" (conflicts)"
-	fi
-
-	# Bisecting?
-	bisecting=""
-	if [[ $status == *"currently bisecting"* ]]; then
-		bisecting=" (bisecting)";
+	# Display branch or special state
+	if [[ -n "$special_state" ]]; then
+		location="$special_state"
+	else
+		location="$branch_name"
 	fi
 
 	branch="${color_branch}${location}${color_reset}"
 
-	# Determine if clean or dirty.
-	if [[ $status == *"working directory clean"* || $status == *"working tree clean"* ]]; then
-		# todo-bug: this is incorrectly triggered when `git diff --cached` contains one of those strings
-		state="${color_clean}clean${color_reset}"
-	else
-		state="${color_dirty}dirty${color_reset}"
-	fi
-
-	# Determine Git vs git-svn.
-	if [[ -d "$root_folder/.git/svn" ]]; then
-		flavor="git-svn"
-	else
-		flavor="Git"
-	fi
-	# todo-bug if there's a git-svn remote and a native git remote, only the git-svn one is shown. should show both.
-
-	echo -n "$flavor $branch is $state$stashes$conflicts$bisecting"
+	echo -n "$flavor $branch is $state$stashes"
 }
 
 function svn_status {
