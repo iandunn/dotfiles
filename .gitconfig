@@ -112,6 +112,7 @@
 	# merge
 	#
 	mera	= merge --abort
+	merf	= merge --ff-only
 
 	#
 	# misc
