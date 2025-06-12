@@ -25,9 +25,10 @@
 	bmain	= !git remote show origin | grep 'HEAD branch' | cut -d' ' -f5
 		# todo working now, use in commands below
 		# use `git-svn` ref for git-svn
-	bdel	= branch -D
+	brm		= branch --delete
 		# breaks autocomplete of branch name. can i extend the autocomplete to include it?
-	bm		= branch -m
+	bmv		= branch --move
+	bmered  = branch --merged
 
 	#rmmerged = !git branch -d $(git branch --merged=develop | grep -v develop) && git fetch --prune
 		# this makes asssumptions about workflow that aren't true of all projects
