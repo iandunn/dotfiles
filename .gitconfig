@@ -247,6 +247,7 @@
 [push]
 	default = current
 	forceWithLease = true
+	autoSetupRemote = true
 
 [pull]
 	# true will cause local changes to be overwritten without warning. Or at least it seems that way,
