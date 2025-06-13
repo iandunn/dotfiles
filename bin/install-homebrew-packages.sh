@@ -15,7 +15,9 @@ packages=(
   php@8.2
   phpunit
   psysh
+  qmk/qmk/qmk
   svn
+  telnet
   wget
   wp-cli-completion
 )
