@@ -3,3 +3,4 @@
 .ssh/config-personal
 .ssh/config-10up
 .ssh/config-cadmv
+keyboards/ergodox-ez/ordinaryish/keymap.json
