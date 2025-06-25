@@ -16,6 +16,7 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 	* Give AI a lot of context about the goal of the feature and how you want it to be architected
 	* Prompt: Give me 3 different ways to approach solving this problem. Then give me the pros/cons for each. Address the time required for each and code quality/maintainablility.
 	* Ask it to create the overall structure of the code and fill it with stubs for all the functions, views, etc
+
 * During
   * Ask it to do each particular task, like filling in a stub w/ real logic
   * Review all the code it adds and make changes yourself
@@ -24,6 +25,7 @@ note that this is for a small part of a project (e.g. a github issue). don't do 
 	* look for security, maintainability, performance, accessibility
 
 	Once confident about approach: i think the fundamentals of this are done, and it just needs tweaking. before i spend that time, do you see any architectural flaws or things that need to be refactored or take a different approach?
+
 * Before merge
   * Ask what problems are there?
   * Ask what could be improved
