@@ -60,9 +60,28 @@ source /Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bas
 source $HOMEBREW_PREFIX/etc/bash_completion.d/gh
 source $HOMEBREW_PREFIX/etc/bash_completion.d/wp
 
+_wp_complete() {
+	local OLD_IFS="$IFS"
+	local cur=${COMP_WORDS[COMP_CWORD]}
 
-# make wp-cli completions work for the wpdev alias too
-#complete -o nospace -F _wp_complete wpdev
+	IFS=$'\n';  # want to preserve spaces at the end
+	local opts="$(wp cli completions --line="$COMP_LINE" --point="$COMP_POINT")"
+
+	if [[ "$opts" =~ \<file\>\s* ]]
+	then
+		COMPREPLY=( $(compgen -f -- $cur) )
+	elif [[ $opts = "" ]]
+	then
+		COMPREPLY=( $(compgen -f -- $cur) )
+	else
+		COMPREPLY=( ${opts[*]} )
+	fi
+
+	IFS="$OLD_IFS"
+	return 0
+}
+complete -o nospace -F _wp_complete wp
+complete -o nospace -F _wp_complete wpdev
 
 source ~/.bash_aliases
 
