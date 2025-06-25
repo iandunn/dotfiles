@@ -58,11 +58,11 @@ function git_status {
 		return
 	fi
 
+	git_root=$(git rev-parse --show-toplevel 2>/dev/null)
 	branch_name=$(git symbolic-ref -q --short HEAD 2>/dev/null || git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
-
 	flavor="Git"
 
-	if [[ -d ".git/svn" ]]; then
+	if [[ -d "$git_root/.git/svn" ]]; then
 		flavor="git-svn"
 	fi
 
@@ -74,13 +74,14 @@ function git_status {
 
 	special_state=""
 
-	if [[ -f ".git/MERGE_HEAD" ]]; then
+	if [[ -f "$git_root/.git/MERGE_HEAD" ]]; then
 		merge_conflicts=$(git diff --name-only --diff-filter=U 2>/dev/null)
 
 		# todo need a status where conflicts but they not fixed yet
 
 		if [[ -z "$merge_conflicts" ]]; then
 			# todo this isn't working for "All conflicts fixed but you are still merging." status message
+			# or was that just for the subdirectory issue, which is fixed now?
 			special_state="merging $branch_name (conflicts fixed)"
 
 		else
@@ -88,21 +89,21 @@ function git_status {
 		fi
 	fi
 
-	if [[ -d ".git/rebase-apply" || -d ".git/rebase-merge" ]]; then
+	if [[ -d "$git_root/.git/rebase-apply" || -d "$git_root/.git/rebase-merge" ]]; then
 		special_state="rebasing"
 	fi
 
-	if [[ -f ".git/CHERRY_PICK_HEAD" ]]; then
+	if [[ -f "$git_root/.git/CHERRY_PICK_HEAD" ]]; then
 		# todo show hash
 		special_state="cherry-picking"
 	fi
 
-	if [[ -f ".git/REVERT_HEAD" ]]; then
+	if [[ -f "$git_root/.git/REVERT_HEAD" ]]; then
 		# todo if reverting then show "reverting {hash}"
 		special_state="reverting"
 	fi
 
-	if [[ -f ".git/BISECT_LOG" ]]; then
+	if [[ -f "$git_root/.git/BISECT_LOG" ]]; then
 		special_state="${special_state} (bisecting)"
 	fi
 
@@ -112,7 +113,7 @@ function git_status {
 
 	stashes=""
 
-	if [[ -f ".git/logs/refs/stash" ]]; then
+	if [[ -f "$git_root/.git/logs/refs/stash" ]]; then
 		stashes=" (stashes)"
 	fi
 
