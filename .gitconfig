@@ -250,10 +250,7 @@
 	autoSetupRemote = true
 
 [pull]
-	# true will cause local changes to be overwritten without warning. Or at least it seems that way,
-	# even though it doesn't sound like it should, and I don't think it did in the past.
-	# Need to test this, but no time right now.
-	rebase = false
+	rebase = true
 
 [rebase]
 	abbreviateCommands = true
