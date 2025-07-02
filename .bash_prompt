@@ -72,6 +72,10 @@ function git_status {
 		state="${color_dirty}dirty${color_reset}"
 	fi
 
+	if [[ -n $(git ls-files --others --exclude-standard 2>/dev/null) ]]; then
+		state="${color_dirty}dirty${color_reset}"
+	fi
+
 	special_state=""
 
 	if [[ -f "$git_root/.git/MERGE_HEAD" ]]; then
