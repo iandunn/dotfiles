@@ -89,7 +89,7 @@ function git_status {
 			special_state="merging $branch_name (conflicts fixed)"
 
 		else
-			special_state="merging $branch_name"
+			special_state="merging $branch_name (conflicts)"
 		fi
 	fi
 
