@@ -15,7 +15,7 @@ if [ "$PROCESSOR" = "arm64" ]; then
     PROCESSOR_DIRECTORY_SUFFIX="-arm64"
 fi
 
-export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/mysql-8.0.35+2/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
+export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/mysql-8.0.35+4/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
 export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.2.27+1/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
 export PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix:$PATH"
 export PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/composer/posix:$PATH"
