@@ -27,6 +27,7 @@
 		# use `git-svn` ref for git-svn
 	brm		= branch --delete
 		# breaks autocomplete of branch name. can i extend the autocomplete to include it?
+	brmf	= branch --delete --force
 	bmv		= branch --move
 	bmerged = branch --merged
 
