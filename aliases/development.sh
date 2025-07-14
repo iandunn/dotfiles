@@ -1,11 +1,12 @@
 
 # LocalWP shells
-alias shcomics='sh "$HOME/dotfiles/localwp/ssh-entry/PI403ONHm.sh"'
-alias shdmv='sh  "$HOME/dotfiles/localwp/ssh-entry/O1BOJvLsA.sh"'
-alias shfhl='sh  "$HOME/dotfiles/localwp/ssh-entry/HOgy-WCkG.sh"'
+alias shcdcr='sh     "$HOME/dotfiles/localwp/ssh-entry/vBmBenAQS.sh"'
+alias shcomics='sh   "$HOME/dotfiles/localwp/ssh-entry/PI403ONHm.sh"'
+alias shcore='sh     "$HOME/dotfiles/localwp/ssh-entry/eAU6ubHdw.sh"'
+alias shdmv='sh      "$HOME/dotfiles/localwp/ssh-entry/O1BOJvLsA.sh"'
+alias shfhl='sh      "$HOME/dotfiles/localwp/ssh-entry/HOgy-WCkG.sh"'
 alias shharvard='sh  "$HOME/dotfiles/localwp/ssh-entry/khX5aUhRW.sh"'
 alias shwilliams='sh "$HOME/dotfiles/localwp/ssh-entry/_Zl_GvPds.sh"'
-alias shcore='sh "$HOME/dotfiles/localwp/ssh-entry/eAU6ubHdw.sh"'
 
 # npm / yarn
 alias nr='npm run'

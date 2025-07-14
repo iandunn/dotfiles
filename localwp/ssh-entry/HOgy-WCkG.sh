@@ -9,11 +9,7 @@ export WP_CLI_DISABLE_AUTO_CHECK_UPDATE=1
 
 # Add PHP, MySQL, and WP-CLI to $PATH
 echo "Setting Local environment variables..."
-PROCESSOR=$(uname -m)
-PROCESSOR_DIRECTORY_SUFFIX=""
-if [ "$PROCESSOR" = "arm64" ]; then
-    PROCESSOR_DIRECTORY_SUFFIX="-arm64"
-fi
+source "$(dirname "$0")/common.sh"
 
 export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/mysql-8.0.35+4/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
 export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.2.23+0/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
