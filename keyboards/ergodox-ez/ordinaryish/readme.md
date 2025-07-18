@@ -9,7 +9,7 @@ The secondary goal is to stay as close to an "ordinary" keyboard layout as possi
 
 * Similar to [Ordinary](https://github.com/qmk/qmk_firmware/blob/7eb6f86bc0aac3ff83abe4365cd11c5c195dc403/layouts/community/ergodox/ordinary/readme.md), including arrow keys on the right thumb cluster.
 * [Colemak](https://colemak.com/).
-* Remove some hard-to-reach keys to avoid twisting and stretching hands. I'd like to remove more so that all keys are 1 distance from the home row and thumb cluster, but haven't a layout I'm happy with.
+* Remove some hard-to-reach keys to avoid twisting and stretching hands. I'd like to remove more so that all keys are 1 distance from the home row and thumb cluster, but haven't found a layout I'm happy with.
 * [One shot modifiers](https://github.com/qmk/qmk_firmware/blob/7eb6f86bc0aac3ff83abe4365cd11c5c195dc403/docs/one_shot_keys.md). Use these whenever possible, because chording contributes to RSI, and most of the modifiers are on hard to reach keys.
 
 ## Layer 1: Navigation, Mouse, Macros, Miscellaneous
