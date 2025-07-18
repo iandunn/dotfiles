@@ -94,7 +94,25 @@ function git_status {
 	fi
 
 	if [[ -d "$git_root/.git/rebase-apply" || -d "$git_root/.git/rebase-merge" ]]; then
-		special_state="rebasing"
+		# todo this hasn't been fully tested
+		if [[ -f "$git_root/.git/rebase-apply/head-name" ]]; then
+			branch_name=$(cat "$git_root/.git/rebase-apply/head-name")
+		elif [[ -f "$git_root/.git/rebase-merge/head-name" ]]; then
+			branch_name=$(cat "$git_root/.git/rebase-merge/head-name")
+		fi
+
+		rebase_conflicts=$(git diff --name-only --diff-filter=U 2>/dev/null)
+
+		if [[ -z "$rebase_conflicts" ]]; then
+			# this might assume that there were conflicts and they were fixed, but it could also be that there were no conflicts
+			conflict_state=" (conflicts fixed)"
+		else
+			conflict_state=" (conflicts)"
+		fi
+
+		against=$(git rev-parse --short HEAD 2>/dev/null)
+		branch_name=$(echo "$branch_name" | sed 's|refs/heads/||')
+		special_state="rebasing $branch_name against $against$conflict_state"
 	fi
 
 	if [[ -f "$git_root/.git/CHERRY_PICK_HEAD" ]]; then
