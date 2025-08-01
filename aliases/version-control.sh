@@ -56,3 +56,5 @@ alias pushdeploy='push-deploy'
 
 # cd to Git repo and `pr 510` to checkout the branch for that PR
 alias prc='git fetch && gh pr checkout'
+
+alias glmrc='glab mr create --fill --fill-commit-body --web'
