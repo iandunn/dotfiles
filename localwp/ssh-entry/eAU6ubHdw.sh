@@ -15,6 +15,7 @@ export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services
 export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.3.23+0/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
 export PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix:$PATH"
 export PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/composer/posix:$PATH"
+export PATH="$SITE_PATH/vendor/bin:$PATH"
 
 export MAGICK_CODER_MODULE_PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.3.23+0/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/ImageMagick/modules-Q16/coders"
 
@@ -28,6 +29,7 @@ echo "----"
 # Ian's customizations
 cd $SITE_PATH
 export LOCALWP_SHELL="Core"
+export LOCALWP_PHP_PATH="$(dirname "$(which php)")"
 
 echo "Launching shell: $SHELL ..."
 exec $SHELL

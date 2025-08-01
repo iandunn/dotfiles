@@ -31,6 +31,7 @@ echo "----"
 # Ian's customizations
 cd $SITE_PATH
 export LOCALWP_SHELL="CDCR"
+export LOCALWP_PHP_PATH="$(dirname "$(which php)")"
 
 echo "Launching shell: $SHELL ..."
 exec $SHELL

@@ -30,6 +30,7 @@ echo "----"
 # Ian's customizations
 cd $SITE_PATH/themes/fhlbank-boston
 export LOCALWP_SHELL="FHL"
+export LOCALWP_PHP_PATH="$(dirname "$(which php)")"
 
 echo "Launching shell: $SHELL ..."
 exec $SHELL

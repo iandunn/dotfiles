@@ -28,6 +28,7 @@ echo "----"
 # Ian's customizations
 cd $SITE_PATH/themes/dmv
 export LOCALWP_SHELL="DMV"
+export LOCALWP_PHP_PATH="$(dirname "$(which php)")"
 
 echo "Launching shell: $SHELL ..."
 exec $SHELL

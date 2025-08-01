@@ -19,7 +19,6 @@ export PATH="$SITE_PATH/vendor/bin:$PATH"
 
 export MAGICK_CODER_MODULE_PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.3.23+0/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/ImageMagick/modules-Q16/coders"
 
-
 echo "----"
 echo "WP-CLI:   $(wp --version)"
 echo "Composer: $(composer --version | cut -f3-4 -d" ")"
@@ -30,6 +29,7 @@ echo "----"
 # Ian's customizations
 cd $SITE_PATH/themes/williams-2019
 export LOCALWP_SHELL="Williams"
+export LOCALWP_PHP_PATH="$(dirname "$(which php)")"
 
 echo "Launching shell: $SHELL ..."
 exec $SHELL

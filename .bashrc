@@ -12,11 +12,17 @@ export SVN_EDITOR="micro"
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
 # Need to hardcode /usr/local/bin for `brew` on Intel, and `/opt/homebrew/bin` for Silicone
-export PATH="$PATH:$HOME/bin:$DOTFILES_DIR/bin:\
-/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:"
+export PATH="$PATH:$HOME/bin:$DOTFILES_DIR/bin"
+export PATH="$PATH:/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.composer/vendor/bin"
 
 export HOMEBREW_PREFIX=$(brew --prefix) # Different on laptop and desktop because intel vs silicon
 eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
+
+# This makes it so that LocalWP sites will use their version of php instead of the global one
+# This has to come after "brew shellenv" above
+if [ -n "$LOCALWP_PHP_PATH" ]; then
+	export PATH="$LOCALWP_PHP_PATH:$PATH"
+fi
 
 # Fix git-svn, see https://github.com/Homebrew/homebrew-core/issues/52490#issuecomment-792604853
 # will need to update when perl version changes
