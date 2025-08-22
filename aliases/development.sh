@@ -6,6 +6,7 @@ alias shcore='sh     "$HOME/dotfiles/localwp/ssh-entry/eAU6ubHdw.sh"'
 alias shdmv='sh      "$HOME/dotfiles/localwp/ssh-entry/O1BOJvLsA.sh"'
 alias shfhl='sh      "$HOME/dotfiles/localwp/ssh-entry/HOgy-WCkG.sh"'
 alias shharvard='sh  "$HOME/dotfiles/localwp/ssh-entry/khX5aUhRW.sh"'
+alias shmisc='sh     "$HOME/dotfiles/localwp/ssh-entry/adAGViECs.sh"'
 alias shwilliams='sh "$HOME/dotfiles/localwp/ssh-entry/_Zl_GvPds.sh"'
 
 # npm / yarn
