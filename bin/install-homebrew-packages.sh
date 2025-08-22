@@ -3,9 +3,11 @@
 packages=(
   autojump
   composer
+  colordiff
   coreutils
   fswatch
   ImageOptim
+  git-svn
   gh
   glab	# Remove if haven't been using
   jq
