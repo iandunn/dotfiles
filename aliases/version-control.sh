@@ -58,3 +58,4 @@ alias pushdeploy='push-deploy'
 alias prc='git fetch && gh pr checkout'
 
 alias glmrc='glab mr create --fill --fill-commit-body --web'
+alias ghprc='gh pr create --web --fill'
