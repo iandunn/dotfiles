@@ -3,15 +3,20 @@
 # https://www.reddit.com/r/git/comments/6mll23/is_it_possible_to_clear_the_screen_for_each_hunk/
 # workaround for now is to just hit <return> if it's not obvious, because that'll spit out the help menu followed by the hunk
 
-[user]
-	name  = Ian Dunn
-	email = ian@iandunn.name
-	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAvXI+G3RVUpDMEHQowHW3lz/HfO9rlI74Aa4ZhYBK/ ian@iandunn.name
-	useConfigOnly = true
+[branch]
+	autosetuprebase = always
+
+[color]
+	ui = true
+
+[commit]
+	gpgsign = true
+
+[core]
+	excludesfile = ~/.gitignore_global
 
 [credential]
 	helper = osxkeychain
-
 
 [diff]
 	# relative = true
@@ -26,52 +31,10 @@
 [difftool]
 	prompt = false
 
-[branch]
-	autosetuprebase = always
-
 [format]
-	# Want this for `log`, but not `show`. Doesn't seem like there's a way to do that, and I use `log` much more than `show`, so just created `showm` alias as workaround.
+	# Want this for `log`, but not `show`. Doesn't seem like there's a way to do that, and I use `log` much more than `show`,
+	# so I just created `showm` alias as workaround.
 	pretty = oneline
-
-[log]
-	# The full hash is unnecessary in most contexts, and clutters the screen.
-	abbrevCommit = true
-
-[merge]
-	ff = false
-
-[core]
-	excludesfile = ~/.gitignore_global
-
-[push]
-	default = current
-	forceWithLease = true
-	autoSetupRemote = true
-
-[pull]
-	rebase = true
-
-[rebase]
-	abbreviateCommands = true
-	#autostash = true
-		# seems like would be convenience, but could be dangerous. need to research/test first
-
-[color]
-	ui = true
-
-[status]
-	short = true
-	showStash = true
-
-[stash]
-	showStat = false
-	showPatch = true
-
-[commit]
-	gpgsign = true
-
-[tag]
-	gpgsign = true
 
 [gpg]
 	format = ssh
@@ -79,13 +42,6 @@
 [gpg "ssh"]
 	# $HOME doesn't work here, but you could `[include ".gitconfig.local"]` to set it on different systems.
 	allowedSignersFile = /Users/iandunn/.ssh/allowed_signers
-
-[svn]
-	rmdir = true
-
-[init]
-	# Some other options: production, stable, release, base, default, trunk, main, primary.
-	defaultBranch = develop
 
 [include]
 	path = ~/dotfiles/.gitconfig.aliases
@@ -98,3 +54,47 @@
 [includeIf "gitdir:~/local-sites/10up/"]
 	# Make sure 10up sites are created in this folder
 	path = ~/.gitconfig.10up
+
+[init]
+	# Some other options: production, stable, release, base, default, trunk, main, primary.
+	defaultBranch = develop
+
+[log]
+	# The full hash is unnecessary in most contexts, and clutters the screen.
+	abbrevCommit = true
+
+[merge]
+	ff = false
+
+[pull]
+	rebase = true
+
+[push]
+	default = current
+	forceWithLease = true
+	autoSetupRemote = true
+
+[rebase]
+	abbreviateCommands = true
+	#autostash = true
+		# seems like would be convenience, but could be dangerous. need to research/test first
+
+[stash]
+	showStat = false
+	showPatch = true
+
+[status]
+	short = true
+	showStash = true
+
+[svn]
+	rmdir = true
+
+[tag]
+	gpgsign = true
+
+[user]
+	name  = Ian Dunn
+	email = ian@iandunn.name
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAvXI+G3RVUpDMEHQowHW3lz/HfO9rlI74Aa4ZhYBK/ ian@iandunn.name
+	useConfigOnly = true
