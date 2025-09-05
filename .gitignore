@@ -1,4 +1,6 @@
 .gitconfig.local
+.gitconfig.10up
+.gitconfig.cadmv
 .config/micro/buffers
 .ssh/config-personal
 .ssh/config-10up

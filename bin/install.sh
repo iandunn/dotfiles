@@ -45,10 +45,9 @@ ln -sf $DOTFILES_DIR/.bash_profile	$HOME/.bash_profile
 ln -sf $DOTFILES_DIR/.bash_prompt	$HOME/.bash_prompt
 ln -sf $DOTFILES_DIR/.bash_aliases	$HOME/.bash_aliases
 
-ln -sf $DOTFILES_DIR/.gitconfig			$HOME/.gitconfig
-ln -sf $DOTFILES_DIR/.gitignore			$HOME/.gitignore
-ln -sf $DOTFILES_DIR/.gitignore_global	$HOME/.gitignore_global
-ln -sf $DOTFILES_DIR/.config/gh			$HOME/.config/gh
+ln -sf $DOTFILES_DIR/git/.gitconfig			$HOME/.gitconfig
+ln -sf $DOTFILES_DIR/git/.gitignore_global	$HOME/.gitignore_global
+ln -sf $DOTFILES_DIR/.config/gh				$HOME/.config/gh
 
 ln -sf $DOTFILES_DIR/.inputrc		$HOME/.inputrc
 ln -sf $DOTFILES_DIR/.config/micro/bindings.json	$HOME/.config/micro/bindings.json

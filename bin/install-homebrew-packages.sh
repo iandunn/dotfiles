@@ -7,9 +7,10 @@ packages=(
   coreutils
   fswatch
   ImageOptim
+  git-delta
   git-svn
   gh
-  glab	# Remove if haven't been using
+  glab
   jq
   lnav
   micro

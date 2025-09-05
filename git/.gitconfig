@@ -34,17 +34,18 @@
 	pretty = oneline
 
 [include]
-	path = ~/dotfiles/.gitconfig.aliases
-	path = ~/dotfiles/.gitconfig.delta
-	path = ~/dotfiles/.gitconfig.signing
-	path = ~/.gitconfig.local
+	path = ~/dotfiles/git/.gitconfig.aliases
+	path = ~/dotfiles/git/.gitconfig.delta
+	path = ~/dotfiles/git/.gitconfig.signing
+	path = ~/dotfiles/git/.gitconfig.local
 
 # Use 10up SSH key for signing commits in their repos.
 # Override `user.email` and `user.signingkey`.
+# This must be included _after_ .gitconfig.signing
 # https://markentier.tech/posts/2021/02/github-with-multiple-profiles-gpg-ssh-keys/
 [includeIf "gitdir:~/local-sites/10up/"]
 	# Make sure 10up sites are created in this folder
-	path = ~/.gitconfig.10up
+	path = ~/dotfiles/git/.gitconfig.10up
 
 [init]
 	# Some other options: production, stable, release, base, default, trunk, main, primary.
