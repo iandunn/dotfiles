@@ -1,0 +1,18 @@
+[commit]
+	gpgsign = true
+
+[gpg]
+	format = ssh
+
+[gpg "ssh"]
+	# $HOME doesn't work here, but you could `[include ".gitconfig.local"]` to set it on different systems.
+	allowedSignersFile = /Users/iandunn/.ssh/allowed_signers
+
+[tag]
+	gpgsign = true
+
+[user]
+	name  = Ian Dunn
+	email = ian@iandunn.name
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAvXI+G3RVUpDMEHQowHW3lz/HfO9rlI74Aa4ZhYBK/ ian@iandunn.name
+	useConfigOnly = true

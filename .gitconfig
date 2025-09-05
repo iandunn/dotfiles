@@ -9,9 +9,6 @@
 [color]
 	ui = true
 
-[commit]
-	gpgsign = true
-
 [core]
 	excludesfile = ~/.gitignore_global
 
@@ -36,16 +33,10 @@
 	# so I just created `showm` alias as workaround.
 	pretty = oneline
 
-[gpg]
-	format = ssh
-
-[gpg "ssh"]
-	# $HOME doesn't work here, but you could `[include ".gitconfig.local"]` to set it on different systems.
-	allowedSignersFile = /Users/iandunn/.ssh/allowed_signers
-
 [include]
 	path = ~/dotfiles/.gitconfig.aliases
 	path = ~/dotfiles/.gitconfig.delta
+	path = ~/dotfiles/.gitconfig.signing
 	path = ~/.gitconfig.local
 
 # Use 10up SSH key for signing commits in their repos.
@@ -64,6 +55,7 @@
 	abbrevCommit = true
 
 [merge]
+	# Turning it on will overwrite local changes during a merge
 	ff = false
 
 [pull]
@@ -77,7 +69,7 @@
 [rebase]
 	abbreviateCommands = true
 	#autostash = true
-		# seems like would be convenience, but could be dangerous. need to research/test first
+		# seems like would be convenient, but could be dangerous. need to research/test first
 
 [stash]
 	showStat = false
@@ -89,12 +81,3 @@
 
 [svn]
 	rmdir = true
-
-[tag]
-	gpgsign = true
-
-[user]
-	name  = Ian Dunn
-	email = ian@iandunn.name
-	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAvXI+G3RVUpDMEHQowHW3lz/HfO9rlI74Aa4ZhYBK/ ian@iandunn.name
-	useConfigOnly = true
