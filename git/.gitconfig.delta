@@ -9,11 +9,19 @@
 
 	# ui-theme doesn't seem to work. If you get it working, though, these these might be good options:
 	# gruvbox-fang, platypus, arctic-fox, collared-trogon. Maybe a solarized one too.
+	# It probably needs to use `features` instead of `ui-theme`, but didn't notice much/any difference there either.
+	# Maybe it's just very subtle? Try w/ light themes just to make sure it's working.
 
 	syntax-theme = gruvbox-dark
 	line-numbers = true
 	file-style = yellow bold
 	tabs = 4
+
+	# Add space between files, and remove space before 1st hunk in file.
+	# https://github.com/dandavison/delta/issues/1517
+	# https://github.com/dandavison/delta/issues/1944
+	# https://github.com/dandavison/delta/pull/2028
+
 
 [interactive]
 	diffFilter = delta --color-only
