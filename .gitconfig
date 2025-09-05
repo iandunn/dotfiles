@@ -94,10 +94,6 @@
 		# not working
 #	diffs = !/usr/bin/diff -y -W 250
 
-	# note: for this to work, deltawalker has to be configured to follow symlinks
-	#difftool = difftool --dir-diff
-		# huh not working
-
 	#
 	# log
 	#
@@ -203,25 +199,17 @@
 
 
 [diff]
-#	tool = dw
-#	noprefix = true
-	#external = '/Applications/DeltaWalker.app/Contents/Resources/git-diff'
+	# relative = true
+	# not working
 
-#	relative = true
-		# not working
+	#	wordRegex="[A-Za-z0-9. ]|[^[:space:]]"
+	# useful in some scenarios, but really bad in others
 
-#	wordRegex="[A-Za-z0-9. ]|[^[:space:]]"
-		# useful in some scenarios, but really bad in others
-
-# trying to make word diff the default
-#external = "git diff --word-diff=color"
+	# trying to make word diff the default
+	#external = "git diff --word-diff=color"
 
 [difftool]
 	prompt = false
-
-[difftool "dw"]
-	cmd = '/Applications/DeltaWalker.app/Contents/Resources/git-diff' "$LOCAL" "$REMOTE"
-	# remote doesn't show up
 
 [branch]
 	autosetuprebase = always
@@ -235,12 +223,7 @@
 	abbrevCommit = true
 
 [merge]
-	tool = deltawalker
 	ff = false
-
-# Note: PHPStorm's diff tool seems better for resolving merge conflicts. Need Git plugin enabled.
-[mergetool "deltawalker"]
-	cmd = '/Applications/DeltaWalker.app/Contents/Resources/git-merge' "$LOCAL" "$REMOTE" "$BASE" "$MERGED"
 
 [core]
 	excludesfile = ~/.gitignore_global
