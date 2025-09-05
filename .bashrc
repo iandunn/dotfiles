@@ -14,6 +14,7 @@ export BASH_SILENCE_DEPRECATION_WARNING=1
 # Need to hardcode /usr/local/bin for `brew` on Intel, and `/opt/homebrew/bin` for Silicone
 export PATH="$PATH:$HOME/bin:$DOTFILES_DIR/bin"
 export PATH="$PATH:/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.composer/vendor/bin"
+export PATH="$PATH:/opt/elasticsearch/bin/"
 
 export HOMEBREW_PREFIX=$(brew --prefix) # Different on laptop and desktop because intel vs silicon
 eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
