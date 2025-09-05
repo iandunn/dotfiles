@@ -1,0 +1,194 @@
+[alias]
+	#
+	# add
+	#
+	ap = add -p
+		# todo add one with word-diff=color
+
+	#
+	# branch
+	#
+	bmain	= !git remote show origin | grep 'HEAD branch' | cut -d' ' -f5
+		# todo working now, use in commands below
+		# use `git-svn` ref for git-svn
+	brm		= branch --delete
+		# breaks autocomplete of branch name. can i extend the autocomplete to include it?
+	brmf	= branch --delete --force
+	bmv		= branch --move
+	bmerged = branch --merged
+
+	#rmmerged = !git branch -d $(git branch --merged=develop | grep -v develop) && git fetch --prune
+		# this makes asssumptions about workflow that aren't true of all projects
+		# probably shouldn't delete automatically, only list and you check before deleting
+		# todo test -- https://medium.com/@FlorentDestrema/a-simple-way-to-clean-up-your-git-project-branches-283b87478fbc
+		# make sure this is only ran from the main branch.
+
+	# rename this to just `branch` if git every starts allowing aliases to override commands
+	tracking = branch -vv
+
+	# e.g., git track origin/28-elasticsearch
+	track = branch -u
+
+
+	#
+	# checkout
+	#
+	co  = checkout
+	cob = checkout -b
+	cop = checkout -p
+	# Document what this does because it's not obvious.
+	cos = !sh -c \"git branch -a | grep -v remotes | grep $1 | head -n 1 | xargs git checkout\"
+
+
+	#
+	# commit
+	#
+	ci   = commit
+	cia  = commit --amend
+	cianv = commit --amend --no-verify
+	cinv = commit --no-verify
+	cia  = commit --amend
+	cianv  = commit --amend --no-verify
+	cim  = commit --message
+	cimnv = commit --no-verify --message
+
+
+	#
+	# diff
+	#
+	diffc   = diff --cached
+	diffno	= diff --name-only
+		# detect main branch automatically
+		# git remote show origin | sed -n '/HEAD branch/s/.*: //p'
+			# https://stackoverflow.com/questions/28666357/git-how-to-get-default-branch works but is slow b/c http request
+		# maybe set some kind of variable based on path, or switch case?
+		# git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@' works and is local, but isn't reliable
+		# git rev-parse --abbrev-ref origin/HEAD works but need to strip out origin/ can do with bash if make this a ! command
+	diffnob = !git diff |grep -v build
+
+	# in general, this is better for diffing a string of text, especially longer strings
+	# it's often better for seeing code changes too, but sometimes the standard line-by-line is better
+	diffw = diff --word-diff=color
+		# this doesn't show trailing whitespace. can you make it do that?
+	diffwc = diffw --cached
+
+	# this is sometimes better than `diffw`, but is often much worse
+	diffwr = diff --word-diff=color --word-diff-regex="[A-Za-z0-9. ]|[^[:space:]]"
+		# try this as the default for awhile
+		# if don't want it majorty of time, then change it to `worddiff` alias
+		#
+		# is there a way to get this git `add -p` ?
+
+#	diffs = ! GIT_EXTERNAL_DIFF=/usr/bin/diff GIT_DIFF_OPTS="-y -W 250" git diff 	# s for "split"
+		# not working
+#	diffs = !/usr/bin/diff -y -W 250
+
+
+	#
+	# log
+	#
+	logdef = log ...production
+		# use `defbranch` alias once working
+		# see comments around `phpcs-changed-git` for notes on getting default
+	logorg = log ...origin
+		# should compare current local branch to current remote branch. might works on production, might not work on untracked branches
+	logm   = log --no-abbrev-commit --format=medium
+	logsvn = log ...git-svn
+
+
+	#
+	# merge
+	#
+	mera	= merge --abort
+	merf	= merge --ff-only
+
+
+	#
+	# misc
+	#
+	cherp 	  = cherry-pick
+	reshh 	  = reset --hard HEAD
+	resp      = reset -p
+	showm     = show --show-signature --no-abbrev-commit --format=medium  # Appending `m` for `medium` because can't overwrite default `show` command :( -- see https://stackoverflow.com/questions/3538774/is-it-possible-to-override-git-command-by-git-alias
+	amshow    = am --show-current-patch   # Useful for understanding the context when resolving merge conflicts.
+
+	# include -i to avoid `the following untracked working tree files would be overwritten by checkout...` annoyance.
+	# test this out before committing though to make sure it doesn't end up including stuff you don't wanna delete in other situations
+	cleanid    = clean -id
+
+	# ideally want this to automatically run on every commit whenever it's modified in any way.
+	# e.g., want the date of the commit to be the _modified_ date, not the _created_ date
+	# otherwise i create a commit in a branch, the feature gets de-prioritized, then i come back a few months later and continue working
+	# i squash everything down to that first few commits, but their dates are months in the past, so viewing the commit history doesn't make sense
+	# you see older commits appearing before newer commits
+	#
+	# could try a `post-rewrite` hook. is there a way to make it apply to all repos, like how gitignore_global does?
+	#	worst case could put hook in dotfiles/bin or whatever, and add symnlikn anywhere you wanna use it
+	#
+	# this is a step towards that, but only applies to HEAD. look for way to automate for all modified commits:
+	# git rebase -i production
+	# replace `pick` with `edit` for all commits
+	# for each
+	#   git newdate
+	#   git rebase --continue
+	# there's probably a better way, though
+	newdate = commit --amend --date=now --no-edit
+
+
+	#
+	# pull
+	#
+	pullas = pull --autostash
+	# push = todo a bash function that checks if the current folder is wordcamp.test. if it is, then show a prompt asking if want to run pre-commit githooks.
+	# defaults to no (b/c working on branch). can answer yes if ready to run over entire branch for pr, or before pushing to production branch
+	pullu     = pull --set-upstream
+	# what to name this? maybe better to just memorize. for deleting remote branches. need origin name maybe. rbranchrm = push -d
+	pullreb  = pull --rebase
+	#pullreb  = !git co production && git pull && git co - && git rebase production
+		# use `defbranch` once working
+		# also stash before, and pop after
+
+
+	#
+	# push
+	#
+	pushnv	  = push --no-verify
+
+
+	#
+	# rebase
+	#
+	reba	 = rebase --abort
+	rebc	 = rebase --continue
+	rebi     = rebase -i
+	rebio    = rebase -i origin
+	rebisvn  = rebase -i git-svn
+	rebten	 = rebase -i HEAD~10
+	svnrebase = !git stash && git svn rebase --log-window-size=100000 && git stash pop
+		# todo don't do ^ if there's already something in stash, b/c when have conflicts it gets all messed up. er, or is it because left in stash after fix conflict? i think it's the latter
+	svnrebasemirror = !git checkout master && git pull origin master && git svn rebase && git push origin master
+	squash-all = "!f(){ git reset $(git commit-tree HEAD^{tree} -m \"${1:-Squashed all commits}\");};f"
+
+	# rebase current branch against given branch, and override any conflicts with the code in the current branch. note that "theirs" in this context refers to the current branch, which is the opposite of what it means in the context of a merge.
+	#rebtheirs = rebase -Xtheirs
+		# er, no, that resulted in lost changes
+		# maybe do `git rebase production`, then run `git co <file> --ours` for each conflict that comes up?
+		# that's less convenient, but didn't result in same lots of losses
+		# it did result in some minor losses], though, which still is a dealbreaker. need to udnerstand more and try in other contexts before start using it blindly
+
+
+	#
+	# stash
+	#
+	pop		= stash pop
+	sshow	= stash show
+	sdrop	= stash drop
+
+
+	#
+	# status
+	#
+	st 		 = status
+	stat     = status
+		# make ^ default to current directory only, then create alias for all files
+	statlong = status --long
