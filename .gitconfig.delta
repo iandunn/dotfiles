@@ -1,0 +1,23 @@
+# https://dandavison.github.io/delta/configuration.html
+
+[core]
+	pager = delta
+
+[delta]
+	# --{foo}-style '{foreground color} { blink | bold | dim | hidden | italic | reverse | strike | ul | omit } {background color}'
+	# colors can be names or hex codes
+
+	# ui-theme doesn't seem to work. If you get it working, though, these these might be good options:
+	# gruvbox-fang, platypus, arctic-fox, collared-trogon. Maybe a solarized one too.
+
+	syntax-theme = gruvbox-dark
+	line-numbers = true
+	file-style = yellow bold
+	tabs = 4
+
+[interactive]
+	diffFilter = delta --color-only
+
+[merge]
+	# TODO: What other options are there?
+	conflictStyle = zdiff3

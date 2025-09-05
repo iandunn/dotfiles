@@ -197,7 +197,6 @@
 		# make ^ default to current directory only, then create alias for all files
 	statlong = status --long
 
-
 [diff]
 	# relative = true
 	# not working
@@ -273,6 +272,7 @@
 	defaultBranch = develop
 
 [include]
+	path = ~/dotfiles/.gitconfig.delta
 	path = ~/.gitconfig.local
 
 # Use 10up SSH key for signing commits in their repos.
