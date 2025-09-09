@@ -7,7 +7,7 @@ These are my config files for various programs. They implement my preferences, t
 These are some things that might be useful to others:
 
 * [bin\generate-config-files](./bin/generate-config-files.sh) - Concatenates public and private SSH config files into `~/.ssh/config`. This lets you track your foundational and non-sensitive configuation, without disclosing private information.
-* [.gitconfig](./.gitconfig) - Configuration for commit signing, and per-repository overrides. Also has lots of aliases and general configuation.
+* [git](./git) - Configuration for commit signing with per-repository overrides; lots of aliases; and general configuation.
 * [docs](./docs) - Processes and best practices for development flow and basic project management.
 * [git-hooks](./git-hooks/) - Boilerplate for good commit messages, and scripts for helping to write them. One example is how `pre-commit-msg-wordcamp` pulls previous commit messages to help follow repository conventions for the files that are being changed. There are also pre-commit and pre-push hooks to run linters etc.
 * [ordinaryish](./keyboards/ergodox-ez/ordinaryish) - My custom keyboard layout for the [Ergodox EZ](https://ergodox-ez.com/) and [Colemak](https://colemak.com/) layout. Built with [QMK](https://qmk.fm/) firmware.
