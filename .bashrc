@@ -136,6 +136,8 @@ complete -F _complete_ssh_hosts ssh
 
 # find all files in the current folder and below, then grep each of them for the given string
 # this could _almost_ be an alias, but then $QUERY would have to be at the end of the command, so you couldn't remove the binary files
+#
+# TODO this could maybe be replaced by `grep -R` or `rgrep`. Need to test.
 function findgrep {
 	local QUERY=$1
 	local MATCHES=$(find . -type f ! -name "*.svn*" ! -name "*.git*" -follow |xargs grep --ignore-case --line-number --no-messages $QUERY)
