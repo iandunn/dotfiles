@@ -12,12 +12,12 @@ echo "Setting Local environment variables..."
 source "$(dirname "$0")/common.sh"
 
 export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/mysql-8.0.35+4/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
-export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.3.23+0/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
+export PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.2.29+0/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
 export PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix:$PATH"
 export PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/composer/posix:$PATH"
 export PATH="$SITE_PATH/vendor/bin:$PATH"
 
-export MAGICK_CODER_MODULE_PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.3.23+0/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/ImageMagick/modules-Q16/coders"
+export MAGICK_CODER_MODULE_PATH="/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.2.29+0/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/ImageMagick/modules-Q16/coders"
 
 echo "----"
 echo "WP-CLI:   $(wp --version)"
