@@ -1,0 +1,155 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json
+
+# https://ohmyposh.dev/docs/installation/customize
+# https://ohmyposh.dev/docs/configuration/general
+# https://www.nerdfonts.com/cheat-sheet
+
+# TODO
+# high priority
+  # command up/down navigation isn't always working, despite adding to .inputrc
+    # maybe it is, just not when typing bash a bunch to test changes
+  # parity w/ old prompt like git conflicts, bisecting, etc
+  # add spaces and newlines in various places
+  # better colors, see below
+  # bubbles theme - this is an interesting idea, maybe play around w/ it. minimal on the left, info on the right
+
+  # !!! oh-my-posh disable reload when done to speed things up
+
+# low priority
+  # add screenshots of this and delta diff to the readme. update the prompt descripiont in feature list
+  # the background colors of the diamonds etc fade differently than the main segments when they're dimmed b/c they're not the active pane in iterm
+  # show git-scm icon if not github or gitlab remote
+  # font uninstall 3270 - how? theres no unsinstall command
+  # compare to default theme for any config you might want. check a few others too
+    # console_title_template: '{{ .Shell }} in {{ .Folder }}'
+    # folder_separator_icon: '  '
+    # branch_template: '{{ trunc 25 .Branch }}'
+
+version: 3
+final_space: true
+
+palette:
+    # test these out
+    # m365princess the light and dark blues from
+    # cert - red/green/blue
+    # chips - path yellow
+    # cinnamon - user@host green/blue
+    # cloudnativeazure - checkmark
+    # dracula - runner blue
+    # powerline path blue
+    # rudolpsdask green and blue
+    # takula shellblue
+    # stelbent blue and green
+    # thecyberden green
+
+    white: '#FFFFFF'
+    black: '#000000'
+      # probably make this more like a dark grey
+      # need another foreground color to go with things like sky_blue that are lighter. check other themes
+
+    sky_blue: '#86BBD8'
+    red_orange: '#CC3802'
+    green_blue: '#047E84'
+    salmon: '#FCA17D'
+
+    # i want something that doesn't feel like such a harsh error. being dirty is the normal state, so it shoudn't feel bad
+    # maybe a color that's more like a transition or something
+    # red: '#E06C75'
+    # red: '#FF6B6B'
+    # red: '#F75F5F'
+    # red: '#BE5046'
+    # red: '#9D3A33'
+    red: '#BE5046'
+
+    # green: '#98C379'
+    # green: '#8BE9B0'
+    # green: '#7FC9A6'
+    # green: '#6A9955'
+    # green: '#4B7043'
+    # green: '#3F6B3A'
+    # green: '#2F5230'
+    # green: '#1F3D26'
+    green: '#00C853'
+
+    # blue: '#61AFEF'
+    # blue: '#4FA3F7'
+    # blue: '#3B82F6'
+    # blue: '#3A77B4'
+    # blue: '#2C528B'
+    # blue: '#2C528B'
+    blue: '#33658A'
+
+    # grey: '#ABB2BF'
+    # grey: '#6E738D'
+    # grey: '#3B4252'
+    # grey: '#5C6370'
+    # grey: '#3E4451'
+    grey: '#3E4451'
+
+    # orange: '#D19A66'
+    # orange: '#E5A55F'
+    # orange: '#FFB066'
+    # orange: '#B37C4B'
+    # orange: '#8C5A32'
+    orange: '#8C5A32'
+
+upgrade:
+    source: cdn
+    interval: 168h
+    auto: false
+    notice: false
+
+blocks:
+    - type: prompt
+      alignment: left
+      segments:
+        # Shell / username
+        - leading_diamond: 
+          newline: true
+          template: '{{ if .Env.LOCALWP_SHELL }} {{ .Env.LOCALWP_SHELL }} {{else}} {{ .HostName }} {{ end }} '
+          foreground: p:white
+          background_templates:
+            - '{{ if .Env.LOCALWP_SHELL }}p:salmon{{else}}p:grey{{ end }}'
+          type: session
+          style: diamond
+
+        # Path
+        - properties:
+            style: folder
+          template: ' {{ .AbsolutePWD }} '
+          powerline_symbol: 
+          foreground: p:white
+          background: p:blue
+          type: path
+          style: powerline
+
+        # Git
+        - type: git
+          style: powerline
+          powerline_symbol: 
+          trailing_diamond: 
+            # this isn't working
+          foreground: p:grey
+            # ^ want a little darker
+          background_templates:
+            - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:sky_blue{{ else }}p:green{{ end }}"
+            # maybe a light grey or something for clean b/c that's when it's at rest/boring, but disty should still feel calm
+
+          template: >-
+            {{ .UpstreamIcon }}  {{ .HEAD }}
+            {{ if .BranchStatus }}{{ .BranchStatus }}{{ end }}
+            {{ if gt .StashCount 0 }} {{ .StashCount }}{{end}}
+          properties:
+            fetch_status: true
+            fetch_upstream_icon: true
+            source: cli
+
+    # Prompt
+    - type: prompt
+      newline: true
+      alignment: left
+      segments:
+        - template: ''
+          foreground: p:teal_blue
+          type: text
+          style: plain

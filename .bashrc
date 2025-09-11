@@ -50,7 +50,6 @@ export WORDPRESS_DB_NAME=wordpress_develop_tests
 export WORDPRESS_DB_USER=wp_tests
 export WORDPRESS_DB_PASSWORD=wp_tests
 
-
 # Host-specific overrides
 case $(hostname) in
 	"durin" )
@@ -95,9 +94,14 @@ source ~/.bash_aliases
 if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
 	source ~/.iterm2_shell_integration.bash
 fi
-source ~/.bash_prompt
 
 source $HOMEBREW_PREFIX/etc/profile.d/autojump.sh
+
+# Have to edit install Bash v5, edit `/etc/shells`, then `chsh`` in order for this to work.
+# See https://github.com/JanDeDobbeleer/oh-my-posh/discussions/3429#discussioncomment-4910228
+# See https://github.com/JanDeDobbeleer/oh-my-posh/issues/3430
+eval "$(oh-my-posh init bash --config '/Users/iandunn/dotfiles/bash/iandunn.omp.yml')"
+# TODO make this portable across machines, probably with echo home
 
 
 ####

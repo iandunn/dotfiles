@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO delete this after you've got parity w/ oh-my-posh
+
 #
 # Bash is fundamentally awful, but this probably needs to be written in Bash instead of a modern
 # scripting language for performance. Don't want to load PHP on top of everything else.
@@ -126,7 +128,8 @@ function git_status {
 	fi
 
 	if [[ -f "$git_root/.git/BISECT_LOG" ]]; then
-		special_state="${special_state} (bisecting)"
+		# todo branch name / location doesn't show up when bisecting
+		special_state=" (bisecting)"
 	fi
 
 	# todo add entry for "detached HEAD" state

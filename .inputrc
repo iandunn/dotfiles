@@ -9,3 +9,7 @@ set mark-symlinked-directories on
 
 # If there are more than n possible completions for a word, ask to show them all
 set completion-query-items 200
+
+# Use up/down arrows to navigate command history
+"\e[A": previous-history
+"\e[B": next-history
