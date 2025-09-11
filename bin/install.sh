@@ -40,20 +40,21 @@ else
 fi
 
 # Overwrite existing files, because the defaults are unlikely to be useful or important.
-ln -sf $DOTFILES_DIR/.bashrc		$HOME/.bashrc
-ln -sf $DOTFILES_DIR/.bash_profile	$HOME/.bash_profile
-ln -sf $DOTFILES_DIR/.bash_prompt	$HOME/.bash_prompt
-ln -sf $DOTFILES_DIR/.bash_aliases	$HOME/.bash_aliases
+ln -sf $DOTFILES_DIR/bash/.bashrc		$HOME/.bashrc
+ln -sf $DOTFILES_DIR/bash/.bash_profile	$HOME/.bash_profile
+ln -sf $DOTFILES_DIR/bash/.bash_aliases	$HOME/.bash_aliases
 
 ln -sf $DOTFILES_DIR/git/.gitconfig			$HOME/.gitconfig
 ln -sf $DOTFILES_DIR/git/.gitignore_global	$HOME/.gitignore_global
 ln -sf $DOTFILES_DIR/.config/gh				$HOME/.config/gh
+	# todo ^ is installing to .config/gh/gh and keeps nesting
 
 ln -sf $DOTFILES_DIR/.inputrc		$HOME/.inputrc
 ln -sf $DOTFILES_DIR/.config/micro/bindings.json	$HOME/.config/micro/bindings.json
 ln -sf $DOTFILES_DIR/.config/micro/settings.json	$HOME/.config/micro/settings.json
 
 ln -sf $DOTFILES_DIR/localwp/ssh-entry "/Users/iandunn/Library/Application Support/Local/ssh-entry"
+	# todo ^ is installing to localwp/ssh-entry/ssh-entry and keeps nesting
 
 # iTerm2 has an option to load preferences from a file, but it isn't working.
 # If can get it working then won't need this. Using this may cause issues since it's not standard.

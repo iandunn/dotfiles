@@ -6,8 +6,6 @@
 
 # TODO
 # high priority
-  # command up/down navigation isn't always working, despite adding to .inputrc
-    # maybe it is, just not when typing bash a bunch to test changes
   # parity w/ old prompt like git conflicts, bisecting, etc
   # add spaces and newlines in various places
   # better colors, see below
