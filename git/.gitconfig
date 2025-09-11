@@ -48,8 +48,8 @@
 	path = ~/dotfiles/git/.gitconfig.10up
 
 [init]
-	# Some other options: production, stable, release, base, default, trunk, main, primary.
-	defaultBranch = develop
+	# Some other non-cringy options: production, develop, stable, release, base, default, trunk, primary.
+	defaultBranch = main
 
 [log]
 	# The full hash is unnecessary in most contexts, and clutters the screen.
