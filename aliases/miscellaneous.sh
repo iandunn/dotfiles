@@ -20,3 +20,7 @@ alias fix-camera='sudo killall VDCAssistant'
 # todo see if there's one for the headset mic too
 # try sudo pkill coreaudiod
 # that didn't work, is there anything else?
+
+# This is insane that OSX makes you do this any time you want to open a file in an app
+# alias unquarantine='xattr -d com.apple.quarantine'
+# need to test more, make sure this doesn't open up vulnerabilities beyond just files i download yourself (and therefore trust)
