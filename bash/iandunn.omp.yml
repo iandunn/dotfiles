@@ -1,17 +1,29 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json
 
+#
+# ⚠️
+# `oh-my-posh enable reload` to make changes take effect immeadiately, or `rm -rf ~/.cache/oh-my-posh` after each save.
+# `oh-my-posh disable reload` when finished making changes, to speed things up.
+#
+
+
+#
+# Docs
+#
 # https://ohmyposh.dev/docs/installation/customize
 # https://ohmyposh.dev/docs/configuration/general
 # https://www.nerdfonts.com/cheat-sheet
 
+
+#
 # TODO
+#
 # high priority
   # parity w/ old prompt like git conflicts, bisecting, etc
-  # add spaces and newlines in various places
+  # add spaces in various places
   # better colors, see below
   # bubbles theme - this is an interesting idea, maybe play around w/ it. minimal on the left, info on the right
-
-  # !!! oh-my-posh disable reload when done to speed things up
+  # !!! `oh-my-posh disable reload` when done to speed things up
 
 # low priority
   # add screenshots of this and delta diff to the readme. update the prompt descripiont in feature list
@@ -22,6 +34,10 @@
     # console_title_template: '{{ .Shell }} in {{ .Folder }}'
     # folder_separator_icon: '  '
     # branch_template: '{{ trunc 25 .Branch }}'
+  # add more vertical padding around text
+    # can't do through oh-my-posh, need to do in iterm. there's a vertical padding setting, but it doesn't affecct leading/trailing diamonds
+  # make the order of attributes consistent, like alphabetical or from most fundamental to least
+
 
 version: 3
 final_space: true
@@ -45,13 +61,17 @@ palette:
       # probably make this more like a dark grey
       # need another foreground color to go with things like sky_blue that are lighter. check other themes
 
+    blue: '#33658A'
     sky_blue: '#86BBD8'
     red_orange: '#CC3802'
     green_blue: '#047E84'
     salmon: '#FCA17D'
+    peach: '#FFB066'
 
-    # i want something that doesn't feel like such a harsh error. being dirty is the normal state, so it shoudn't feel bad
-    # maybe a color that's more like a transition or something
+    grey: '#3B4252'
+    dark_grey: '#1C1F26'
+
+    # dont want this for git dirty status, but maybe for stash/conflicts/etc. maybe orange better there though
     # red: '#E06C75'
     # red: '#FF6B6B'
     # red: '#F75F5F'
@@ -59,37 +79,12 @@ palette:
     # red: '#9D3A33'
     red: '#BE5046'
 
-    # green: '#98C379'
-    # green: '#8BE9B0'
-    # green: '#7FC9A6'
-    # green: '#6A9955'
-    # green: '#4B7043'
-    # green: '#3F6B3A'
-    # green: '#2F5230'
-    # green: '#1F3D26'
-    green: '#00C853'
-
-    # blue: '#61AFEF'
-    # blue: '#4FA3F7'
-    # blue: '#3B82F6'
-    # blue: '#3A77B4'
-    # blue: '#2C528B'
-    # blue: '#2C528B'
-    blue: '#33658A'
-
-    # grey: '#ABB2BF'
-    # grey: '#6E738D'
-    # grey: '#3B4252'
-    # grey: '#5C6370'
-    # grey: '#3E4451'
-    grey: '#3E4451'
-
-    # orange: '#D19A66'
-    # orange: '#E5A55F'
-    # orange: '#FFB066'
-    # orange: '#B37C4B'
-    # orange: '#8C5A32'
-    orange: '#8C5A32'
+    #green: '#98C379'
+    #green: '#7FC9A6'
+    #green: '#6A9955'
+    #green: '#4B7043'
+    #green: '#3F6B3A'
+    green: '#2F5230'
 
 upgrade:
     source: cdn
@@ -98,24 +93,31 @@ upgrade:
     notice: false
 
 blocks:
+    # New line before every prompt, to improve readability
+    - type: text
+      force: true
+      newline: true
+
+    # Context & State
     - type: prompt
       alignment: left
       segments:
         # Shell / username
-        - leading_diamond: 
+        - style: diamond
+          leading_diamond: ''
           newline: true
           template: '{{ if .Env.LOCALWP_SHELL }} {{ .Env.LOCALWP_SHELL }} {{else}} {{ .HostName }} {{ end }} '
-          foreground: p:white
+          foreground_templates:
+            - '{{ if .Env.LOCALWP_SHELL }}p:dark_grey{{else}}p:white{{ end }}'
           background_templates:
-            - '{{ if .Env.LOCALWP_SHELL }}p:salmon{{else}}p:grey{{ end }}'
+            - '{{ if .Env.LOCALWP_SHELL }}p:peach{{else}}p:green{{ end }}'
           type: session
-          style: diamond
 
         # Path
         - properties:
             style: folder
           template: ' {{ .AbsolutePWD }} '
-          powerline_symbol: 
+          powerline_symbol: ''
           foreground: p:white
           background: p:blue
           type: path
@@ -124,23 +126,26 @@ blocks:
         # Git
         - type: git
           style: powerline
-          powerline_symbol: 
-          trailing_diamond: 
-            # this isn't working
-          foreground: p:grey
-            # ^ want a little darker
+          powerline_symbol: ''
+          foreground_templates:
+            - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:dark_grey{{ else }}p:white{{ end }}"
           background_templates:
-            - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:sky_blue{{ else }}p:green{{ end }}"
-            # maybe a light grey or something for clean b/c that's when it's at rest/boring, but disty should still feel calm
+            # Not red/green because dirty is the normal state, it should feel calm, not harsh or bad.
+            # Clean is the boring state, so it should feel neutral.
+            - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:sky_blue{{ else }}p:grey{{ end }}"
 
           template: >-
-            {{ .UpstreamIcon }}  {{ .HEAD }}
+            {{ if .Upstream }} {{ .UpstreamIcon }} {{ else }} 󰊢 {{ end }}
+            {{ .HEAD }}
             {{ if .BranchStatus }}{{ .BranchStatus }}{{ end }}
             {{ if gt .StashCount 0 }} {{ .StashCount }}{{end}}
+          # make the stashcount orange - probably need to create a new proprety for that
+          # also show conflicts, rebasing, bisecting, etc. maybe also in orange
           properties:
             fetch_status: true
             fetch_upstream_icon: true
             source: cli
+            branch_icon: ''
 
     # Prompt
     - type: prompt
@@ -148,6 +153,6 @@ blocks:
       alignment: left
       segments:
         - template: ''
-          foreground: p:teal_blue
+          foreground: p:blue
           type: text
           style: plain
