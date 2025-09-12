@@ -13,6 +13,8 @@
 # https://ohmyposh.dev/docs/installation/customize
 # https://ohmyposh.dev/docs/configuration/general
 # https://www.nerdfonts.com/cheat-sheet
+# https://quickref.me/yaml
+#
 
 
 #
@@ -22,7 +24,7 @@
   # parity w/ old prompt like git conflicts, bisecting, etc
   # add spaces in various places
   # better colors, see below
-  # bubbles theme - this is an interesting idea, maybe play around w/ it. minimal on the left, info on the right
+  # bubbles theme - this is an interesting idea, maybe play around w/ it. minimal on the left, info on the right. need to use ble.sh for rprompt to work though?
   # !!! `oh-my-posh disable reload` when done to speed things up
 
 # low priority
@@ -50,30 +52,32 @@ palette:
     # cinnamon - user@host green/blue
     # cloudnativeazure - checkmark
     # dracula - runner blue '#6272a4'
+    # nu4a lightgrey
     # powerline path blue
     # rudolpsdask green and blue
     # takula shellblue
     # stelbent blue and green
     # thecyberden green
 
+    # Active colors
     white: '#FFFFFF'
-    black: '#000000'
-      # probably make this more like a dark grey
-      # need another foreground color to go with things like sky_blue that are lighter. check other themes
-
+      # need another foreground color to go with things like sky_blue that are lighter.
+      # check other themes. something like an off-white?
     blue: '#33658A'
     sky_blue: '#86BBD8'
-    red_orange: '#CC3802'
     green_blue: '#047E84'
-    salmon: '#FCA17D'
-    peach: '#FFB066'
 
-    #yellow: '#FFB066'
-    #yellow: '#FFFF8D'
-    #yellow: '#FFF64F'
-    #yellow: '#FFC400'
+    grey: '#3B4252'
+    dark_grey: '#1C1F26'
+    dark_red: '#491515'
 
-    # nu4a lightgrey
+    #green: '#98C379'
+    #green: '#7FC9A6'
+    #green: '#6A9955'
+    #green: '#4B7043'
+    #green: '#3F6B3A'
+    green: '#2F5230'
+
 
     #purple: '#9D7CD8'
     #purple: '#6A4C93'
@@ -82,20 +86,19 @@ palette:
     #purple: '#83769c'
     purple: '#5F4B8B'
 
+    # Unused colors
+    # Leaveing because it took awhile to pick them and might want them later.
+    red_orange: '#CC3802'
+    black: '#000000'
 
+    salmon: '#FCA17D'
+    peach: '#FFB066'
     brown: '#7c553b'
 
-    grey: '#3B4252'
-    dark_grey: '#1C1F26'
-    dark_red: '#491515'
-
-
-    #green: '#98C379'
-    #green: '#7FC9A6'
-    #green: '#6A9955'
-    #green: '#4B7043'
-    #green: '#3F6B3A'
-    green: '#2F5230'
+    #yellow: '#FFB066'
+    #yellow: '#FFFF8D'
+    #yellow: '#FFF64F'
+    #yellow: '#FFC400'
 
 upgrade:
     source: cdn
@@ -105,11 +108,14 @@ upgrade:
 
 blocks:
     # New line before every prompt, to improve readability
-    - type: text
+    - type: prompt
+      alignment: left
       force: true
-      newline: true
+      segments:
+        - template: '{{ printf "\n\n" }}'
+          type: session
 
-    # Context & State
+    # Context
     # Colors should go from darkest to lightest, to create a visual hierarchy.
     - type: prompt
       alignment: left
@@ -117,14 +123,11 @@ blocks:
         # Shell / username
         - style: diamond
           leading_diamond: ''
-          template: '{{ if .Env.LOCALWP_SHELL }} {{ .Env.LOCALWP_SHELL }} {{else}} {{ .HostName }} {{ end }}'
+          template: '{{ if .Env.LOCALWP_SHELL }} {{ .Env.LOCALWP_SHELL }} {{ else }} {{ .HostName }} {{ end }}'
           foreground: p:white
-          # foreground_templates:
-          #   - '{{ if .Env.LOCALWP_SHELL }}p:dark_grey{{else}}p:white{{ end }}'
-
           # TODO: Don't love the purple, but it's the best so far
           background_templates:
-            - '{{ if .Env.LOCALWP_SHELL }}p:green{{else}}p:purple{{ end }}'
+            - '{{ if .Env.LOCALWP_SHELL }}p:green{{ else }}p:purple{{ end }}'
           type: session
 
         # Path
@@ -139,6 +142,7 @@ blocks:
 
     # Git
     # Colors should go from darkest to lightest, to create a visual hierarchy.
+    # todo maybe wanna change colors now that its on a diff line. maybe 2nd line colors match top line?
     - type: prompt
       newline: true
       alignment: left
@@ -147,15 +151,6 @@ blocks:
         - type: git
           style: diamond
           leading_diamond: ''
-
-          #foreground_templates:
-          #  - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:dark_grey{{ else }}p:white{{ end }}"
-          # if just doing branch name then don't need to change color
-          #background_templates:
-            # Not red/green because dirty is the normal state, it should feel calm, not harsh or bad.
-            # Clean is the boring state, so it should feel neutral.
-          #  - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:sky_blue{{ else }}p:grey{{ end }}"
-
           foreground: p:white
           background: p:green_blue
 
@@ -167,7 +162,7 @@ blocks:
           template: >-
             {{ if .Upstream }} {{ .UpstreamIcon }}{{ else }} 󰊢{{ end }}
             {{ printf " " }}{{ .HEAD }}{{ printf " " }}
-          # .HEAD shows into foo when detached, but maybe that's ok
+          # .HEAD shows 'into foo' when detached, but maybe that's ok? seems weird though, should be "foo (merging master)" or something. foo is the current branch, master is what's being merged in
           #  {{ if .UpstreamGone }} 󰊢 this shows up when merge conflict not when no remote{{ end }}
 
           properties:
@@ -191,48 +186,10 @@ blocks:
             {{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}
             {{ if or (.Working.Changed) (.Staging.Changed) }} {{ end }}
             {{ .Working.String }}
-            {{ if gt .StashCount 0 }} {{end}}
+            {{ if gt .StashCount 0 }} {{ end }}
           properties:
             fetch_status: true
-            fetch_upstream_icon: false
             source: cli
-
-        # # Git status
-        # - type: git
-        #   style: powerline
-        #   powerline_symbol: ''
-        #   foreground: p:white
-        #   background: p:green_blue
-
-        #   # if just doing branch name then don't need to change color
-        #   # foreground_templates:
-        #   #  - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:white{{ else }}p:white{{ end }}"
-
-        #   # Not red/green because dirty is the normal state, it should feel calm, not harsh or bad.
-        #   # Clean is the boring state, so it should feel neutral.
-        #   # background_templates:
-        #   #   - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:green_blue{{ else }}p:grey{{ end }}"
-
-        #   # want this to not show up at all if there's no stashes / changes / etc, rather than being grey
-        #   template: >-
-        #     {{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}
-        #     {{ .Working.String }}
-        #     {{ if gt .StashCount 0 }} {{end}}{{ printf " " }}
-        #     {{ if .Working.Changed }} {{end}}
-        #   #  if merging 
-        #   #  {{ if .Untracked.Count }} untracked {{ .Untracked.Count }} {{end}}
-        #   #  {{ if .Untracked.Count }} untracked {{ .Untracked.Count }} {{end}}
-        #   #  {{ if .Rebase }} {{(rebasing)}} {{end}}
-        #   #  {{rebase_icon}} {{cherry_pick_icon}} {{merge_icon}}
-
-        #   #{{ if .Rebasing }} {{end}}
-        #   #{{rebase_icon}} {{cherry_pick_icon}} {{merge_icon}}
-        #   # also show conflicts, rebasing, bisecting, etc. maybe also in orange
-        #   #{{branch_ahead_icon}} x{{branch_behind_icon}}
-
-        #   # {{ if .Working.Changed }}●{{end}}
-        #   # {{ if .Staging.Changed }}●{{end}}
-        #   # {{ if .Untracked.Count }}…{{end}}
 
         # Git problems
         - type: git
@@ -241,32 +198,18 @@ blocks:
           foreground: p:white
           background: p:dark_red
 
-          # want to show if conflict resolved but still in merge state
+          # TODO: want to show if conflict resolved but still in merge state
+          # TODO: add bisecting too, although maybe it should be in status b/c it's not necessarily a problem. maybe partially covered by .detached
+          # TODO how to strip the extra spaces that come from the line breaks?
           template: >-
-            {{ if .Detached }} detached {{ end }}
-            {{ if .Merge }} merge conflict {{ end }}
-            {{ if .CherryPick }} cherry-picking {{ end }}
-            {{ if .Revert }} reverting {{ end }}
-            {{ if .Rebase }} rebasing {{ end }}
+            {{ if .Detached }} detached{{ end }}
+            {{ if .Merge }} merge conflict{{ end }}
+            {{ if .CherryPick }} cherry-picking{{ end }}
+            {{ if .Revert }} reverting{{ end }}
+            {{ if .Rebase }} rebasing{{ end }}
           properties:
             fetch_status: true
-            fetch_upstream_icon: false
             source: cli
-
-        # Third segment: only shows if problems
-        # - type: git
-        #   style: powerline
-        #   powerline_symbol: ""
-        #   foreground: p:white
-        #   background: p:red_orange
-        #   template: >-
-        #     {{ if or (and .Unmerged (gt .Unmerged.Count 0)) (and .Rebasing (gt .Rebasing.Count 0)) }}
-        #       merge conflicts
-        #     {{ end }}
-        #   properties:
-        #     fetch_status: true
-        #     fetch_upstream_icon: false
-        #     source: cli
 
     # Prompt
     - type: prompt
