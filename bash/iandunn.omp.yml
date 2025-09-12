@@ -26,7 +26,6 @@
   # !!! `oh-my-posh disable reload` when done to speed things up
 
 # low priority
-  # add screenshots of this and delta diff to the readme. update the prompt descripiont in feature list
   # the background colors of the diamonds etc fade differently than the main segments when they're dimmed b/c they're not the active pane in iterm
   # show git-scm icon if not github or gitlab remote
   # font uninstall 3270 - how? theres no unsinstall command
@@ -37,6 +36,7 @@
   # add more vertical padding around text
     # can't do through oh-my-posh, need to do in iterm. there's a vertical padding setting, but it doesn't affecct leading/trailing diamonds
   # make the order of attributes consistent, like alphabetical or from most fundamental to least
+  # svn status similar to git - need to write a custom feature or something? or just use `command`?
 
 
 version: 3
@@ -49,7 +49,7 @@ palette:
     # chips - path yellow
     # cinnamon - user@host green/blue
     # cloudnativeazure - checkmark
-    # dracula - runner blue
+    # dracula - runner blue '#6272a4'
     # powerline path blue
     # rudolpsdask green and blue
     # takula shellblue
@@ -67,6 +67,23 @@ palette:
     green_blue: '#047E84'
     salmon: '#FCA17D'
     peach: '#FFB066'
+
+    #yellow: '#FFB066'
+    #yellow: '#FFFF8D'
+    #yellow: '#FFF64F'
+    #yellow: '#FFC400'
+
+    # nu4a lightgrey
+
+    #purple: '#9D7CD8'
+    #purple: '#6A4C93'
+    #purple: '#4E4B8B'
+    #purple: '#8a62da'
+    #purple: '#83769c'
+    purple: '#5F4B8B'
+
+
+    brown: '#7c553b'
 
     grey: '#3B4252'
     dark_grey: '#1C1F26'
@@ -93,20 +110,21 @@ blocks:
       newline: true
 
     # Context & State
+    # Colors should go from darkest to lightest, to create a visual hierarchy.
     - type: prompt
       alignment: left
       segments:
         # Shell / username
         - style: diamond
           leading_diamond: ''
-          newline: true
           template: '{{ if .Env.LOCALWP_SHELL }} {{ .Env.LOCALWP_SHELL }} {{else}} {{ .HostName }} {{ end }}'
-          foreground_templates:
-            - '{{ if .Env.LOCALWP_SHELL }}p:dark_grey{{else}}p:white{{ end }}'
+          foreground: p:white
+          # foreground_templates:
+          #   - '{{ if .Env.LOCALWP_SHELL }}p:dark_grey{{else}}p:white{{ end }}'
 
-          # TODO: Want a better color than this. Try the colors above from other themes.
+          # TODO: Don't love the purple, but it's the best so far
           background_templates:
-            - '{{ if .Env.LOCALWP_SHELL }}p:peach{{else}}p:green{{ end }}'
+            - '{{ if .Env.LOCALWP_SHELL }}p:green{{else}}p:purple{{ end }}'
           type: session
 
         # Path
@@ -119,10 +137,16 @@ blocks:
           type: path
           style: powerline
 
+    # Git
+    # Colors should go from darkest to lightest, to create a visual hierarchy.
+    - type: prompt
+      newline: true
+      alignment: left
+      segments:
         # Git branch
         - type: git
-          style: powerline
-          powerline_symbol: ''
+          style: diamond
+          leading_diamond: ''
 
           #foreground_templates:
           #  - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:dark_grey{{ else }}p:white{{ end }}"
@@ -158,9 +182,14 @@ blocks:
           powerline_symbol: ""
           foreground: p:dark_grey
           background: p:sky_blue
+
+          # TODO pencil icon shows up even when no changes
+          # TODO ≢ icon shows up when everything committed. maybe because not in sync w/ remote?
+          # TODO up arrow icon not rhowing up when ahead of remote anymore
+          # Showing things individually instead of .Working.String so can put spaces between them.
           template: >-
-            {{ if or (.Working.Changed) (.Staging.Changed) }}  {{ end }}
-            {{ if .BranchStatus }}{{ .BranchStatus }}{{ end }}
+            {{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}
+            {{ if or (.Working.Changed) (.Staging.Changed) }} {{ end }}
             {{ .Working.String }}
             {{ if gt .StashCount 0 }} {{end}}
           properties:
@@ -238,6 +267,7 @@ blocks:
         #     fetch_status: true
         #     fetch_upstream_icon: false
         #     source: cli
+
     # Prompt
     - type: prompt
       newline: true
