@@ -70,14 +70,8 @@ palette:
 
     grey: '#3B4252'
     dark_grey: '#1C1F26'
+    dark_red: '#491515'
 
-    # dont want this for git dirty status, but maybe for stash/conflicts/etc. maybe orange better there though
-    # red: '#E06C75'
-    # red: '#FF6B6B'
-    # red: '#F75F5F'
-    # red: '#BE5046'
-    # red: '#9D3A33'
-    red: '#BE5046'
 
     #green: '#98C379'
     #green: '#7FC9A6'
@@ -106,9 +100,11 @@ blocks:
         - style: diamond
           leading_diamond: ''
           newline: true
-          template: '{{ if .Env.LOCALWP_SHELL }} {{ .Env.LOCALWP_SHELL }} {{else}} {{ .HostName }} {{ end }} '
+          template: '{{ if .Env.LOCALWP_SHELL }} {{ .Env.LOCALWP_SHELL }} {{else}} {{ .HostName }} {{ end }}'
           foreground_templates:
             - '{{ if .Env.LOCALWP_SHELL }}p:dark_grey{{else}}p:white{{ end }}'
+
+          # TODO: Want a better color than this. Try the colors above from other themes.
           background_templates:
             - '{{ if .Env.LOCALWP_SHELL }}p:peach{{else}}p:green{{ end }}'
           type: session
@@ -123,30 +119,125 @@ blocks:
           type: path
           style: powerline
 
-        # Git
+        # Git branch
         - type: git
           style: powerline
           powerline_symbol: ''
-          foreground_templates:
-            - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:dark_grey{{ else }}p:white{{ end }}"
-          background_templates:
+
+          #foreground_templates:
+          #  - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:dark_grey{{ else }}p:white{{ end }}"
+          # if just doing branch name then don't need to change color
+          #background_templates:
             # Not red/green because dirty is the normal state, it should feel calm, not harsh or bad.
             # Clean is the boring state, so it should feel neutral.
-            - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:sky_blue{{ else }}p:grey{{ end }}"
+          #  - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:sky_blue{{ else }}p:grey{{ end }}"
 
+          foreground: p:white
+          background: p:green_blue
+
+          # TODO: the else isn't working to show the git icon when no remote. remotegone not working either
+          # want to show the git icon if no remote, but not github/gitlab
+          # it's showing the correct icon when on main branch, but then switches to fallback icon on new branch
+          #
+          # TODO: this seems like it's taking a lot more room than the old prompt. figure out why and maybe adjust.
           template: >-
-            {{ if .Upstream }} {{ .UpstreamIcon }} {{ else }} 󰊢 {{ end }}
-            {{ .HEAD }}
-            {{ if .BranchStatus }}{{ .BranchStatus }}{{ end }}
-            {{ if gt .StashCount 0 }} {{ .StashCount }}{{end}}
-          # make the stashcount orange - probably need to create a new proprety for that
-          # also show conflicts, rebasing, bisecting, etc. maybe also in orange
+            {{ if .Upstream }} {{ .UpstreamIcon }}{{ else }} 󰊢{{ end }}
+            {{ printf " " }}{{ .HEAD }}{{ printf " " }}
+          # .HEAD shows into foo when detached, but maybe that's ok
+          #  {{ if .UpstreamGone }} 󰊢 this shows up when merge conflict not when no remote{{ end }}
+
           properties:
             fetch_status: true
             fetch_upstream_icon: true
             source: cli
             branch_icon: ''
 
+        # Git status
+        - type: git
+          style: powerline
+          powerline_symbol: ""
+          foreground: p:dark_grey
+          background: p:sky_blue
+          template: >-
+            {{ if or (.Working.Changed) (.Staging.Changed) }}  {{ end }}
+            {{ if .BranchStatus }}{{ .BranchStatus }}{{ end }}
+            {{ .Working.String }}
+            {{ if gt .StashCount 0 }} {{end}}
+          properties:
+            fetch_status: true
+            fetch_upstream_icon: false
+            source: cli
+
+        # # Git status
+        # - type: git
+        #   style: powerline
+        #   powerline_symbol: ''
+        #   foreground: p:white
+        #   background: p:green_blue
+
+        #   # if just doing branch name then don't need to change color
+        #   # foreground_templates:
+        #   #  - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:white{{ else }}p:white{{ end }}"
+
+        #   # Not red/green because dirty is the normal state, it should feel calm, not harsh or bad.
+        #   # Clean is the boring state, so it should feel neutral.
+        #   # background_templates:
+        #   #   - "{{ if or (.Working.Changed) (.Staging.Changed) }}p:green_blue{{ else }}p:grey{{ end }}"
+
+        #   # want this to not show up at all if there's no stashes / changes / etc, rather than being grey
+        #   template: >-
+        #     {{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}
+        #     {{ .Working.String }}
+        #     {{ if gt .StashCount 0 }} {{end}}{{ printf " " }}
+        #     {{ if .Working.Changed }} {{end}}
+        #   #  if merging 
+        #   #  {{ if .Untracked.Count }} untracked {{ .Untracked.Count }} {{end}}
+        #   #  {{ if .Untracked.Count }} untracked {{ .Untracked.Count }} {{end}}
+        #   #  {{ if .Rebase }} {{(rebasing)}} {{end}}
+        #   #  {{rebase_icon}} {{cherry_pick_icon}} {{merge_icon}}
+
+        #   #{{ if .Rebasing }} {{end}}
+        #   #{{rebase_icon}} {{cherry_pick_icon}} {{merge_icon}}
+        #   # also show conflicts, rebasing, bisecting, etc. maybe also in orange
+        #   #{{branch_ahead_icon}} x{{branch_behind_icon}}
+
+        #   # {{ if .Working.Changed }}●{{end}}
+        #   # {{ if .Staging.Changed }}●{{end}}
+        #   # {{ if .Untracked.Count }}…{{end}}
+
+        # Git problems
+        - type: git
+          style: powerline
+          powerline_symbol: ""
+          foreground: p:white
+          background: p:dark_red
+
+          # want to show if conflict resolved but still in merge state
+          template: >-
+            {{ if .Detached }} detached {{ end }}
+            {{ if .Merge }} merge conflict {{ end }}
+            {{ if .CherryPick }} cherry-picking {{ end }}
+            {{ if .Revert }} reverting {{ end }}
+            {{ if .Rebase }} rebasing {{ end }}
+          properties:
+            fetch_status: true
+            fetch_upstream_icon: false
+            source: cli
+
+        # Third segment: only shows if problems
+        # - type: git
+        #   style: powerline
+        #   powerline_symbol: ""
+        #   foreground: p:white
+        #   background: p:red_orange
+        #   template: >-
+        #     {{ if or (and .Unmerged (gt .Unmerged.Count 0)) (and .Rebasing (gt .Rebasing.Count 0)) }}
+        #       merge conflicts
+        #     {{ end }}
+        #   properties:
+        #     fetch_status: true
+        #     fetch_upstream_icon: false
+        #     source: cli
     # Prompt
     - type: prompt
       newline: true
