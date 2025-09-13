@@ -153,6 +153,7 @@
 	# push
 	#
 	pushnv	  = push --no-verify
+	psu = "!git push --set-upstream ${1-origin} HEAD"	# try this and see it it works instaed of having to type out branch name and origin etc
 
 
 	#
