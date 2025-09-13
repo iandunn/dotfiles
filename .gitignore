@@ -5,4 +5,5 @@
 .ssh/config-personal
 .ssh/config-10up
 .ssh/config-cadmv
+bash/omp-testing
 keyboards/ergodox-ez/ordinaryish/keymap.json

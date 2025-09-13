@@ -26,7 +26,6 @@
   # !!! `oh-my-posh disable reload` when done to speed things up
 
 # low priority
-  # the background colors of the diamonds etc fade differently than the main segments when they're dimmed b/c they're not the active pane in iterm
   # show git-scm icon if not github or gitlab remote
   # font uninstall 3270 - how? theres no unsinstall command
   # compare to default theme for any config you might want. check a few others too
@@ -34,7 +33,7 @@
     # folder_separator_icon: '  '
     # branch_template: '{{ trunc 25 .Branch }}'
   # add more vertical padding around text
-    # can't do through oh-my-posh, need to do in iterm. there's a vertical padding setting, but it doesn't affecct leading/trailing diamonds
+    # can't do through oh-my-posh, need to do in iterm. there's a vertical padding setting, but it doesn't affecct leading/trailing powerline symbols
   # make the order of attributes consistent, like alphabetical or from most fundamental to least
 
 
@@ -119,8 +118,8 @@ blocks:
       alignment: left
       segments:
         # Shell / username
-        - style: diamond
-          leading_diamond: ''
+        - style: powerline
+          leading_powerline_symbol: ''
           template: '{{ if .Env.LOCALWP_SHELL }} {{ .Env.LOCALWP_SHELL }} {{ else }} {{ .HostName }} {{ end }}'
           foreground: p:white
           # TODO: Don't love the purple, but it's the best so far
@@ -147,14 +146,15 @@ blocks:
       segments:
         # Git branch
         - type: git
-          style: diamond
-          leading_diamond: ''
+          style: powerline
+          leading_powerline_symbol: ''
           foreground: p:white
           background: p:green_blue
 
           # TODO: the else isn't working to show the git icon when no remote. remotegone not working either
           # want to show the git icon if no remote, but not github/gitlab
           # it's showing the correct icon when on main branch, but then switches to fallback icon on new branch
+          # TODO show SVN icon if it's a git-svn remote (so know to use dcommit etc). how to detect?
           template: >-
             {{ if .Upstream }} {{ .UpstreamIcon }}{{ else }} 󰊢{{ end }}
             {{ printf " " }}{{ .HEAD }}{{ printf " " }}
@@ -170,7 +170,7 @@ blocks:
         # Git status
         - type: git
           style: powerline
-          powerline_symbol: ""
+          powerline_symbol: ''
           foreground: p:dark_grey
           background: p:sky_blue
 
@@ -190,7 +190,7 @@ blocks:
         # Git problems
         - type: git
           style: powerline
-          powerline_symbol: ""
+          powerline_symbol: ''
           foreground: p:white
           background: p:dark_red
 
@@ -199,11 +199,12 @@ blocks:
           # TODO how to strip the extra spaces that come from the line breaks?
           # todo if reverting then show "reverting {hash}"
           template: >-
-            {{ if .Detached }} detached{{ end }}
             {{ if .Merge }} merge conflict{{ end }}
-            {{ if .CherryPick }} cherry-picking{{ end }}
-            {{ if .Revert }} reverting{{ end }}
-            {{ if .Rebase }} rebasing{{ end }}
+            {{ if .Detached }} detached{{ end }}
+            {{ if .CherryPick }} cherry-picking conflict{{ end }}
+            {{ if .Revert }} reverting conflict{{ end }}
+            {{ if .Rebase }} rebasing conflict{{ end }}
+          #  {{ if .??? }} stash pop conflict{{ end }} how to identify this?
           properties:
             fetch_status: true
             source: cli
@@ -220,8 +221,9 @@ blocks:
       segments:
         # SVN branch
         - type: svn
-          style: diamond
-          leading_diamond: ''
+          style: powerline
+          leading_powerline_symbol: ''
+          powerline_symbol: ''
           foreground: p:white
           background: p:green_blue
 
@@ -237,7 +239,7 @@ blocks:
         # SVN status
         - type: svn
           style: powerline
-          powerline_symbol: ""
+          powerline_symbol: '
           foreground: p:dark_grey
           background: p:sky_blue
           template: >-
@@ -248,7 +250,7 @@ blocks:
         # SVN problems
         # - type: svn
         #   style: powerline
-        #   powerline_symbol: ""
+        #   powerline_symbol: ''
         #   foreground: p:white
         #   background: p:dark_red
 
