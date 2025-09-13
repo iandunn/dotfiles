@@ -2,6 +2,7 @@
 
 packages=(
   autojump
+  bat
   bash # oh-my-posh requires bash 4+
   composer
   colordiff
