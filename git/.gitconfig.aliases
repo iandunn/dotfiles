@@ -8,9 +8,8 @@
 	#
 	# branch
 	#
-	bmain	= !git remote show origin | grep 'HEAD branch' | cut -d' ' -f5
-		# todo working now, use in commands below
-		# use `git-svn` ref for git-svn
+	bmain	= !basename $(git symbolic-ref refs/remotes/origin/HEAD)
+		# todo use `git-svn` ref for git-svn
 	brm		= branch --delete
 		# breaks autocomplete of branch name. can i extend the autocomplete to include it?
 	brmf	= branch --delete --force
@@ -87,13 +86,11 @@
 	#
 	# log
 	#
-	logdef = log ...production
-		# use `defbranch` alias once working
-		# see comments around `phpcs-changed-git` for notes on getting default
-	logorg = log ...origin
-		# should compare current local branch to current remote branch. might works on production, might not work on untracked branches
+	logmain = !git log $(basename git symbolic-ref refs/remotes/origin/HEAD)..
+		# not working
+	logori = log origin..
 	logm   = log --no-abbrev-commit --format=medium
-	logsvn = log ...git-svn
+	logsvn = log git-svn..
 
 
 	#
@@ -145,7 +142,7 @@
 	# what to name this? maybe better to just memorize. for deleting remote branches. need origin name maybe. rbranchrm = push -d
 	pullreb  = pull --rebase
 	#pullreb  = !git co production && git pull && git co - && git rebase production
-		# use `defbranch` once working
+		# todo can use `git bmain` now to get main branch name instead of assuming its production
 		# also stash before, and pop after
 
 
