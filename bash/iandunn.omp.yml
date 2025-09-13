@@ -239,7 +239,7 @@ blocks:
         # SVN status
         - type: svn
           style: powerline
-          powerline_symbol: '
+          powerline_symbol: ''
           foreground: p:dark_grey
           background: p:sky_blue
           template: >-
