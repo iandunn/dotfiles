@@ -1,5 +1,12 @@
 # https://dandavison.github.io/delta/configuration.html
 
+#
+# ⚠️ There's a bug that breaks syntax-highlighting in PHP files, unless the _hunk_ contains a <?php tag.
+# See https://github.com/dandavison/delta/issues/162
+#
+# To make it work, you need to set the workaround at https://github.com/dandavison/delta/issues/162#issuecomment-625952288
+#
+
 [core]
 	pager = delta
 
