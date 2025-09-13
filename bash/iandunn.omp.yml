@@ -10,8 +10,7 @@
 #
 # Docs
 #
-# https://ohmyposh.dev/docs/installation/customize
-# https://ohmyposh.dev/docs/configuration/general
+# https://ohmyposh.dev/docs/
 # https://www.nerdfonts.com/cheat-sheet
 # https://quickref.me/yaml
 #
@@ -21,7 +20,6 @@
 # TODO
 #
 # high priority
-  # parity w/ old prompt like git conflicts, bisecting, etc
   # add spaces in various places
   # better colors, see below
   # bubbles theme - this is an interesting idea, maybe play around w/ it. minimal on the left, info on the right. need to use ble.sh for rprompt to work though?
@@ -38,7 +36,7 @@
   # add more vertical padding around text
     # can't do through oh-my-posh, need to do in iterm. there's a vertical padding setting, but it doesn't affecct leading/trailing diamonds
   # make the order of attributes consistent, like alphabetical or from most fundamental to least
-  # svn status similar to git - need to write a custom feature or something? or just use `command`?
+
 
 
 version: 3
@@ -157,8 +155,6 @@ blocks:
           # TODO: the else isn't working to show the git icon when no remote. remotegone not working either
           # want to show the git icon if no remote, but not github/gitlab
           # it's showing the correct icon when on main branch, but then switches to fallback icon on new branch
-          #
-          # TODO: this seems like it's taking a lot more room than the old prompt. figure out why and maybe adjust.
           template: >-
             {{ if .Upstream }} {{ .UpstreamIcon }}{{ else }} 󰊢{{ end }}
             {{ printf " " }}{{ .HEAD }}{{ printf " " }}
@@ -199,8 +195,9 @@ blocks:
           background: p:dark_red
 
           # TODO: want to show if conflict resolved but still in merge state
-          # TODO: add bisecting too, although maybe it should be in status b/c it's not necessarily a problem. maybe partially covered by .detached
+          # TODO: add bisecting too, although maybe it should be in status b/c it's not necessarily a problem. maybe partially covered by .detached. add state of current bisect
           # TODO how to strip the extra spaces that come from the line breaks?
+          # todo if reverting then show "reverting {hash}"
           template: >-
             {{ if .Detached }} detached{{ end }}
             {{ if .Merge }} merge conflict{{ end }}
@@ -210,6 +207,58 @@ blocks:
           properties:
             fetch_status: true
             source: cli
+
+
+
+    # SVN
+    # todo maybe wanna change colors now that its on a diff line. maybe 2nd line colors match top line?
+    # todo auto cleanup when slow, like old prompt did. not possible with omp? or need custom command or?
+    # todo show whether repo is public or private? to help avoid accidentally commiting private to public. need an array of hostnames for each then some yaml logic.
+    - type: prompt
+      newline: true
+      alignment: left
+      segments:
+        # SVN branch
+        - type: svn
+          style: diamond
+          leading_diamond: ''
+          foreground: p:white
+          background: p:green_blue
+
+          # can use status_formats to say "M" instead of "~" ?
+          # todo not working
+          # status_formats:
+          #   - "Added": "Added: %d"
+
+          # todo don't want the relative url, just the branch. this may be specific to how svn.w.org is setup
+          template: >-
+            {{ " " }} {{ " " }}{{.Branch}} {{ " " }}
+
+        # SVN status
+        - type: svn
+          style: powerline
+          powerline_symbol: ""
+          foreground: p:dark_grey
+          background: p:sky_blue
+          template: >-
+            {{ " " }}{{ .Working.String }}{{ " " }}
+          properties:
+            fetch_status: true
+
+        # SVN problems
+        # - type: svn
+        #   style: powerline
+        #   powerline_symbol: ""
+        #   foreground: p:white
+        #   background: p:dark_red
+
+        #   # dunno why this isn't working - https://ohmyposh.dev/docs/segments/scm/svn#status
+        #   template: >-
+        #     {{ if and .HasConflicts (eq .HasConflicts true) }}hasconflicts{{ end }}
+        #   #  {{ if .HasConflicts }} hasconflicts{{ end }}
+        #   #  {{ " " }}problems{{ " " }}
+        #   properties:
+        #     fetch_status: true # can be false?
 
     # Prompt
     - type: prompt
