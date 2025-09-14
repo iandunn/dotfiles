@@ -148,14 +148,10 @@ blocks:
           foreground: p:white
           background: p:green_blue
 
-          # TODO: the else isn't working to show the git icon when no remote. remotegone not working either
-          # want to show the git icon if no remote, but not github/gitlab
-          # it's showing the correct icon when on main branch, but then switches to fallback icon on new branch
           # TODO show SVN icon if it's a git-svn remote (so know to use dcommit etc). how to detect?
           template: >-
-            {{ if .Upstream }} {{ .UpstreamIcon }}{{ else }} 󰊢{{ end }}
+            {{ if .UpstreamIcon }} {{ .UpstreamIcon }}{{ else }} 󰊢{{ end }}
             {{ printf " " }}{{ .HEAD }}{{ printf " " }}
-          #  {{ if .UpstreamGone }} 󰊢 this shows up when merge conflict not when no remote{{ end }}
 
           properties:
             fetch_upstream_icon: true
