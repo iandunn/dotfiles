@@ -222,9 +222,16 @@ blocks:
           # status_formats:
           #   - "Added": "Added: %d"
 
-          # todo don't want the relative url, just the branch. this may be specific to how svn.w.org is setup
+          # Strip out the repository name, so only the branch is shown.
+          # This works for plugins.svn.w.org, and core|meta.svn.w.org (as long as you check out the `trunk` branch and not its parent directory).
+          # TODO: Can't indent the if/else or get unwanted line breaks
           template: >-
-            {{ " " }} {{ " " }}{{.Branch}} {{ " " }}
+            {{ " " }}
+            {{ if contains "/" .Branch }}
+            {{ join "/" (slice (splitList "/" .Branch) 1) }}
+            {{ else }}
+            {{ .Branch }}
+            {{ end }}
 
         # SVN status
         - type: svn
@@ -244,13 +251,14 @@ blocks:
         #   foreground: p:white
         #   background: p:dark_red
 
-        #   # dunno why this isn't working - https://ohmyposh.dev/docs/segments/scm/svn#status
-        #   template: >-
-        #     {{ if and .HasConflicts (eq .HasConflicts true) }}hasconflicts{{ end }}
-        #   #  {{ if .HasConflicts }} hasconflicts{{ end }}
-        #   #  {{ " " }}problems{{ " " }}
+        #   # this works, so the problem isn't somewhere else in the segment
+        #   # template: ' hello '
+
+        #   # this doesn't work
+        #   template: '{{ if gt .Conflicted 0 }} svn has conflicts {{ end }}'
+
         #   properties:
-        #     fetch_status: true # can be false?
+        #     fetch_status: true # once this segment is working, see if it'll still work when this is false
 
     # Prompt
     - type: prompt
