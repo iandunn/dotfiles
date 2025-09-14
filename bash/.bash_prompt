@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# create bash-functions file and move bashrc functions there
-# also move aliases to that folder
-
-
 # TODO delete this after you've got parity w/ oh-my-posh
 
 #

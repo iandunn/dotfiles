@@ -53,7 +53,7 @@ ln -sf $DOTFILES_DIR/.inputrc		$HOME/.inputrc
 ln -sf $DOTFILES_DIR/.config/micro/bindings.json	$HOME/.config/micro/bindings.json
 ln -sf $DOTFILES_DIR/.config/micro/settings.json	$HOME/.config/micro/settings.json
 
-ln -sf $DOTFILES_DIR/localwp/ssh-entry "/Users/iandunn/Library/Application Support/Local/ssh-entry"
+ln -sf $DOTFILES_DIR/localwp/ssh-entry "$HOME/Library/Application Support/Local/ssh-entry"
 	# todo ^ is installing to localwp/ssh-entry/ssh-entry and keeps nesting
 
 # iTerm2 has an option to load preferences from a file, but it isn't working.
