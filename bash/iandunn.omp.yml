@@ -20,12 +20,11 @@
 # TODO
 #
 # high priority
-  # add spaces in various places
-  # better colors, see below
-  # bubbles theme - this is an interesting idea, maybe play around w/ it. minimal on the left, info on the right. need to use ble.sh for rprompt to work though?
   # !!! `oh-my-posh disable reload` when done to speed things up
 
 # low priority
+  # bubbles theme - this is an interesting idea, maybe play around w/ it. minimal on the left, info on the right. need to use ble.sh for rprompt to work though?
+  # tweak colors more, see notes in `palette` section
   # show git-scm icon if not github or gitlab remote
   # font uninstall 3270 - how? theres no unsinstall command
   # compare to default theme for any config you might want. check a few others too
@@ -35,8 +34,6 @@
   # add more vertical padding around text
     # can't do through oh-my-posh, need to do in iterm. there's a vertical padding setting, but it doesn't affecct leading/trailing powerline symbols
   # make the order of attributes consistent, like alphabetical or from most fundamental to least
-
-
 
 version: 3
 final_space: true
@@ -75,7 +72,6 @@ palette:
     #green: '#3F6B3A'
     green: '#2F5230'
 
-
     #purple: '#9D7CD8'
     #purple: '#6A4C93'
     #purple: '#4E4B8B'
@@ -87,7 +83,6 @@ palette:
     # Leaveing because it took awhile to pick them and might want them later.
     red_orange: '#CC3802'
     black: '#000000'
-
     salmon: '#FCA17D'
     peach: '#FFB066'
     brown: '#7c553b'
@@ -117,12 +112,12 @@ blocks:
     - type: prompt
       alignment: left
       segments:
-        # Shell / username
+        # Hostname / LocalWP shell
         - style: powerline
           leading_powerline_symbol: ''
           template: '{{ if .Env.LOCALWP_SHELL }} {{ .Env.LOCALWP_SHELL }} {{ else }} {{ .HostName }} {{ end }}'
           foreground: p:white
-          # TODO: Don't love the purple, but it's the best so far
+          # TODO: Don't love the purple, but it's the best so far. Well, it's kind of growing on me.
           background_templates:
             - '{{ if .Env.LOCALWP_SHELL }}p:green{{ else }}p:purple{{ end }}'
           type: session
@@ -158,11 +153,9 @@ blocks:
           template: >-
             {{ if .Upstream }} {{ .UpstreamIcon }}{{ else }} 󰊢{{ end }}
             {{ printf " " }}{{ .HEAD }}{{ printf " " }}
-          # .HEAD shows 'into foo' when detached, but maybe that's ok? seems weird though, should be "foo (merging master)" or something. foo is the current branch, master is what's being merged in
           #  {{ if .UpstreamGone }} 󰊢 this shows up when merge conflict not when no remote{{ end }}
 
           properties:
-            fetch_status: true
             fetch_upstream_icon: true
             source: cli
             branch_icon: ''
@@ -175,9 +168,7 @@ blocks:
           background: p:sky_blue
 
           # TODO pencil icon shows up even when no changes
-          # TODO ≢ icon shows up when everything committed. maybe because not in sync w/ remote?
-          # TODO up arrow icon not rhowing up when ahead of remote anymore
-          # Showing things individually instead of .Working.String so can put spaces between them.
+          # TODO ≢ icon shows up when everything committed. maybe because not in sync w/ remote? but there's already the up arrow for that.
           template: >-
             {{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}
             {{ if or (.Working.Changed) (.Staging.Changed) }} {{ end }}
@@ -198,22 +189,21 @@ blocks:
           # TODO: add bisecting too, although maybe it should be in status b/c it's not necessarily a problem. maybe partially covered by .detached. add state of current bisect
           # TODO how to strip the extra spaces that come from the line breaks?
           # todo if reverting then show "reverting {hash}"
+          # todo how to show stash pop conflicts?
+          # todo are there situations where this will show the error even if not in conflict, like in a merge state for some other reason?
           template: >-
             {{ if .Merge }} merge conflict{{ end }}
             {{ if .Detached }} detached{{ end }}
             {{ if .CherryPick }} cherry-picking conflict{{ end }}
             {{ if .Revert }} reverting conflict{{ end }}
             {{ if .Rebase }} rebasing conflict{{ end }}
-          #  {{ if .??? }} stash pop conflict{{ end }} how to identify this?
           properties:
             fetch_status: true
             source: cli
 
-
-
     # SVN
     # todo maybe wanna change colors now that its on a diff line. maybe 2nd line colors match top line?
-    # todo auto cleanup when slow, like old prompt did. not possible with omp? or need custom command or?
+    # todo auto cleanup when slow, like old prompt did. not possible with omp? or need custom command? not high priority
     # todo show whether repo is public or private? to help avoid accidentally commiting private to public. need an array of hostnames for each then some yaml logic.
     - type: prompt
       newline: true
