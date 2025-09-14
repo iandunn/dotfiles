@@ -11,8 +11,10 @@
 # Docs
 #
 # https://ohmyposh.dev/docs/
-# https://www.nerdfonts.com/cheat-sheet
 # https://quickref.me/yaml
+# https://go-language.org/go-docs/text/template/
+# https://masterminds.github.io/sprig/strings.html
+# https://www.nerdfonts.com/cheat-sheet
 #
 
 
@@ -37,6 +39,12 @@
 
 version: 3
 final_space: true
+
+upgrade:
+    source: cdn
+    interval: 168h
+    auto: false
+    notice: false
 
 palette:
     # test these out
@@ -91,12 +99,6 @@ palette:
     #yellow: '#FFFF8D'
     #yellow: '#FFF64F'
     #yellow: '#FFC400'
-
-upgrade:
-    source: cdn
-    interval: 168h
-    auto: false
-    notice: false
 
 blocks:
     # New line before every prompt, to improve readability
