@@ -222,14 +222,17 @@ blocks:
 
           # Strip out the repository name, so only the branch is shown.
           # This works for plugins.svn.w.org, and core|meta.svn.w.org (as long as you check out the `trunk` branch and not its parent directory).
-          # TODO: Can't indent the if/else or get unwanted line breaks
+          # Note: Need to use funky - syntax to avoid unwanted spaces. See https://go-language.org/go-docs/text/template/
           template: >-
-            {{ " " }}
-            {{ if contains "/" .Branch }}
-            {{ join "/" (slice (splitList "/" .Branch) 1) }}
-            {{ else }}
-            {{ .Branch }}
-            {{ end }}
+            {{ "  " }}
+            {{ if empty .Branch }}
+              {{- "/" }}
+            {{- else if contains "/" .Branch }}
+              {{- join "/" (slice (splitList "/" .Branch) 1) }}
+            {{- else }}
+              {{- .Branch }}
+            {{- end }}
+            {{""}}
 
         # SVN status
         - type: svn
