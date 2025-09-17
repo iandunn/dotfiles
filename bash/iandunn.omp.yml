@@ -167,11 +167,13 @@ blocks:
 
           # TODO pencil icon shows up even when no changes
           # TODO ≢ icon shows up when everything committed. maybe because not in sync w/ remote? but there's already the up arrow for that.
+          # TODO nothing changes betwwen when have changed staged and when not. should have a icon dedicated to the # of staged changes.
+          #   maybe use separate icons for .working and .staging? use counts next to each icon so can tell difference between commands
           template: >-
             {{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}
             {{ if or (.Working.Changed) (.Staging.Changed) }} {{ end }}
             {{ .Working.String }}
-            {{ if gt .StashCount 0 }} {{ end }}
+            {{ if gt .StashCount 0 }} {{.StashCount}} {{ end }}
           properties:
             fetch_status: true
             source: cli
