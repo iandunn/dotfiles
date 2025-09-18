@@ -89,7 +89,6 @@ _wp_complete() {
 complete -o nospace -F _wp_complete wp
 complete -o nospace -F _wp_complete wpdev
 
-source ~/.bash_aliases
 
 if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
 	source ~/.iterm2_shell_integration.bash
@@ -102,4 +101,7 @@ source $HOMEBREW_PREFIX/etc/profile.d/autojump.sh
 # See https://github.com/JanDeDobbeleer/oh-my-posh/issues/3430
 eval "$(oh-my-posh init bash --config "$HOME/dotfiles/bash/iandunn.omp.yml")"
 
+# These should run last so that poorly-written functions don't use them (e.g., something using `grep`
+# instead of `command grep`) errors because `grep` is aliased to "use rg instead"
 source ~/dotfiles/bash/functions.sh
+source ~/.bash_aliases
