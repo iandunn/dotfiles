@@ -1,7 +1,6 @@
 #!/bin/bash
 
 packages=(
-  autojump
   bat
   bash # oh-my-posh requires bash 4+
   composer
@@ -11,6 +10,7 @@ packages=(
   font-caskaydia-cove-nerd-font # for iTerm and VS Code terminal (with oh-my-posh)
   font-fira-code-nerd-font # VS Code editor (not currently working, so remove this if don't end up using it)
   fswatch
+  fzf # needed for zoxide
   ImageOptim
   jandedobbeleer/oh-my-posh/oh-my-posh
   git-delta
@@ -37,6 +37,7 @@ packages=(
   telnet
   wget
   wp-cli-completion
+  zoxide
 )
 
 for package in "${packages[@]}"; do

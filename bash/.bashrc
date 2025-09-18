@@ -94,12 +94,12 @@ if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
 	source ~/.iterm2_shell_integration.bash
 fi
 
-source $HOMEBREW_PREFIX/etc/profile.d/autojump.sh
-
 # Have to edit install Bash v5, edit `/etc/shells`, then `chsh`` in order for this to work.
 # See https://github.com/JanDeDobbeleer/oh-my-posh/discussions/3429#discussioncomment-4910228
 # See https://github.com/JanDeDobbeleer/oh-my-posh/issues/3430
 eval "$(oh-my-posh init bash --config "$HOME/dotfiles/bash/iandunn.omp.yml")"
+
+eval "$(zoxide init bash)"
 
 # These should run last so that poorly-written functions don't use them (e.g., something using `grep`
 # instead of `command grep`) errors because `grep` is aliased to "use rg instead"

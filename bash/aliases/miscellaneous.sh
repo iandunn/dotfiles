@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# I'm using autojump instead of z, but this is more ergonomic on Colemak, and I'm already used to it from using rupa/z.
-alias z='j'
-alias zinc='j --increase'
+alias zinc='zoxide add .'
 
 # Usage: watch curl -iks https://misc.wordcamp.test/2016/tmp/ |grep WordCampBlocks
 # Note this will watch the current working directory and rerun the command when any file changes.
