@@ -7,7 +7,6 @@ alias zinc='zoxide add .'
 alias watch='fswatch -o $(pwd) |xargs -n1 -I{} $1'
 
 alias mic='micro'
-alias omp='oh-my-posh'
 alias soal='source ~/.bash_aliases'
 alias soba='source ~/.bashrc'
 
