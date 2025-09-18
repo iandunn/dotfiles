@@ -33,6 +33,9 @@ complete -F _complete_ssh_hosts ssh
 #
 # TODO this could maybe be replaced by `grep -R` or `rgrep`. Need to test.
 function findgrep {
+	echo "use ripgrep instead"
+	exit
+
 	local QUERY=$1
 	local MATCHES=$(find . -type f ! -name "*.svn*" ! -name "*.git*" -follow |xargs grep --ignore-case --line-number --no-messages $QUERY)
 	# ! -path '*/.svn/*' ! -path '*/.git/*' might be better ?

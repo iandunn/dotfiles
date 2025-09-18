@@ -149,6 +149,7 @@ blocks:
           background: p:green_blue
 
           # TODO show SVN icon if it's a git-svn remote (so know to use dcommit etc). how to detect?
+          # TODO when detached this shows `9540bc5` but it should just be `9540bc5`.
           template: >-
             {{ if .UpstreamIcon }} {{ .UpstreamIcon }}{{ else }} 󰊢{{ end }}
             {{ printf " " }}{{ .HEAD }}{{ printf " " }}

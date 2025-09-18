@@ -9,7 +9,10 @@ alias lessn='less -N'
 alias tail='tail -n40'
 alias df='df -h'
 alias du='du -h'
-alias grep='grep --ignore-case --color=always'
+alias find='echo "use fd instead" && false' # is the original still needed sometimes? leave this here for now and revisit if needed
+alias fd='fd --hidden'
+alias grep='grep --ignore-case --color=always' # rg is better in most cases, but grep is still needed for piping to
+alias rg='rg --ignore-case --hidden --line-number'
 alias rm='rm -i'
 alias diff='diff -u'
 alias diffsplit='/usr/bin/diff -y -W 250' # full path b/c -y conflicts w/ -u alias

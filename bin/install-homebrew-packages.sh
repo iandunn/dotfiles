@@ -7,6 +7,7 @@ packages=(
   composer
   colordiff
   coreutils
+  fd
   font-caskaydia-cove-nerd-font # for iTerm and VS Code terminal (with oh-my-posh)
   font-fira-code-nerd-font # VS Code editor (not currently working, so remove this if don't end up using it)
   fswatch
@@ -31,6 +32,7 @@ packages=(
   phpunit
   psysh
   qmk/qmk/qmk
+  ripgrep
   svn
   telnet
   wget
