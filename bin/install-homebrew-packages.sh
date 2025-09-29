@@ -46,8 +46,6 @@ done
 
 printf "\nYou will need to run 'install-wpcli-packages.sh' inside a WP installation (and maybe a LocalWP shell) in order to get 'wp shell' to use psysh.\n"
 
-printf "\nEdit $HOMEBREW_PREFIX/share/autojump/autojump.bash and comment out the line in j() that echos the directory.\n"
-
 # telnet
 # gunpg openssl
 # svn
