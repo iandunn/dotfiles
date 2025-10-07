@@ -12,6 +12,7 @@ function share_ssh_agent {
 
 	# maybe all this is no longer needed after running `ssh-add --apple-use-keychain` instead of plain `ssh-add`?
 	# ran that for 10up/personal/cadmv on 9/5/2025, see if still need to enter pw after rebooting
+	# note, that didn't fix it
 
 	ssh-add -l 2>/dev/null >/dev/null
 
