@@ -1,9 +1,9 @@
 export DISABLE_AUTO_TITLE="true"
-export SITE_PATH="$HOME/local-sites/10up/cdcr/app/public/wp-content"
-echo -n -e "\033]0;cdcr Shell\007"
+export SITE_PATH="$HOME/local-sites/10up/publix/app/public/wp-content"
+echo -n -e "\033]0;publix Shell\007"
 
-export MYSQL_HOME="$HOME/Library/Application Support/Local/run/vBmBenAQS/conf/mysql"
-export PHPRC="$HOME/Library/Application Support/Local/run/vBmBenAQS/conf/php"
+export MYSQL_HOME="$HOME/Library/Application Support/Local/run/pbHMiVI43/conf/mysql"
+export PHPRC="$HOME/Library/Application Support/Local/run/pbHMiVI43/conf/php"
 export WP_CLI_CONFIG_PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/config.yaml"
 export WP_CLI_DISABLE_AUTO_CHECK_UPDATE=1
 
@@ -30,8 +30,13 @@ echo "----"
 
 # Ian's customizations
 cd $SITE_PATH
-export LOCALWP_SHELL="CDCR"
+export LOCALWP_SHELL="Publix"
 export LOCALWP_PHP_PATH="$(dirname "$(which php)")"
+
+# Stops the spawned shell from inheriting NODE_ENV=production from Electron in
+# production builds of Local. Users expect NODE_ENV to be unset by default. This
+# does not prevent them from overriding NODE_ENV in their own shell config.
+unset NODE_ENV
 
 echo "Launching shell: $SHELL ..."
 exec $SHELL
