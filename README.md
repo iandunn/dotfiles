@@ -2,8 +2,6 @@
 
 These are my config files for various programs. They implement my preferences, tweaks, and workflow optimizations.
 
-> There are many like it, but this one is mine
-
 These are some things that might be useful to others:
 
 * [bash](./bash/) - Custom theme for [Oh My Posh](https://ohmyposh.dev/) (see screenshot below); aliases; helper functions, SSH tab completion, deploy script wrapper, and general configuation.

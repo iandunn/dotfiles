@@ -8,3 +8,4 @@ RGBLIGHT_ENABLE = no
 DYNAMIC_TAPPING_TERM_ENABLE = yes
 	# todo tmp, set to no when done
 	# enables the DT_(PRNT|UP|DOWN) codes
+MOUSEKEY_ENABLE = yes

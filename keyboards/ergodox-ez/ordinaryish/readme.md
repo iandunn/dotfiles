@@ -27,7 +27,7 @@ The secondary goal is to stay as close to an "ordinary" keyboard layout as possi
 
 ## Installation
 
-1. [Setup QMK](https://docs.qmk.fm/#/newbs_getting_started). The latest release I've tested is `0.19.6`, but it may work on newer ones.
+1. [Setup QMK](https://docs.qmk.fm/#/newbs_getting_started). The latest release I've tested is `0.30.6`, but it may work on newer ones too.
 1. Symlink this folder to `{qmk checkout}/keyboards/ergodox_ez/keymaps/iandunn/`
 1. Set these config values
 	```sh
@@ -37,8 +37,11 @@ The secondary goal is to stay as close to an "ordinary" keyboard layout as possi
 	user.keymap=iandunn
 	```
 1. `cd {qmk checkout}`
-1. `qmk lint && qmk flash`
+1. `qmk lint`
+1. `qmk compile`
+1. `qmk flash`
 1. (optional) The [US No Dead Keys](https://github.com/iandunn/dotfiles/tree/master/keyboards/US%20No%20Dead%20Keys) can be used to avoid accidentally typing accents etc, but isn't necessary.
+1. Test with [QMK Configurator's test mode](https://config.qmk.fm/#/test/)
 
 
 ## Visualization
@@ -46,3 +49,4 @@ The secondary goal is to stay as close to an "ordinary" keyboard layout as possi
 1. `qmk c2json -km default -kb ergodox_ez --no-cpp -o keymap.json keymap.c`
 1. Upload to the [QMK Configurator with the Ergodox-EZ layout](https://config.qmk.fm/#/ergodox_ez/base/LAYOUT_ergodox_pretty)
 1. Choose `GMK Camping` theme
+1. `rm -f keymap.json` (otherwise it'll take precedence over `keymap.c`, and changes to the latter won't take effect during `qmk compile`)
