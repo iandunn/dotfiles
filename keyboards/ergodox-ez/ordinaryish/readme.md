@@ -24,6 +24,7 @@ The secondary goal is to stay as close to an "ordinary" keyboard layout as possi
 
 ![Image of layer 2](./images/layer-2.png)
 
+* Volume up/down uses the option and shift modifiers, so that macOS steps it more granularly than the default.
 
 ## Installation
 

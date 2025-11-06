@@ -58,8 +58,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	// Misc rarely used
 	[2] = LAYOUT_ergodox_pretty(
 		_______, _______, _______, _______, _______, _______, _______,                                                      _______, _______, DT_PRNT, DT_UP, DT_DOWN, _______, _______,
-		_______, _______, _______, _______, _______, _______, _______,                                                      _______, _______, KC_BRIGHTNESS_UP, KC_AUDIO_VOL_UP, _______, _______, _______,
-		_______, KC_MEDIA_PREV_TRACK, KC_MEDIA_REWIND, KC_MEDIA_PLAY_PAUSE, KC_MEDIA_FAST_FORWARD, KC_MEDIA_NEXT_TRACK,     _______, KC_BRIGHTNESS_DOWN, KC_AUDIO_VOL_DOWN, _______, _______, _______,
+		_______, _______, _______, _______, _______, _______, _______,                                                      _______, _______, KC_BRIGHTNESS_UP, RSFT(RALT(KC_AUDIO_VOL_UP)), _______, _______, _______,
+		_______, KC_MEDIA_PREV_TRACK, KC_MEDIA_REWIND, KC_MEDIA_PLAY_PAUSE, KC_MEDIA_FAST_FORWARD, KC_MEDIA_NEXT_TRACK,     _______, KC_BRIGHTNESS_DOWN, RSFT(RALT(KC_AUDIO_VOL_DOWN)), _______, _______, _______,
 		_______, _______, _______, _______, _______, _______, WEBUSB_PAIR,                                                  WEBUSB_PAIR, _______, _______, KC_AUDIO_MUTE, _______, _______, _______,
 		_______, _______, _______, _______, _______,                                                                        _______, _______, _______, _______, _______,
 
