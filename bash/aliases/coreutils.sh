@@ -2,6 +2,7 @@
 
 # ls --group-directories-first requires `coreutils` from Homebrew on OS X b/c native `ls` doesn't support sorting folders first
 alias cat='bat'
+alias batwn='bat --wrap=never'
 alias ls='gls --almost-all --group-directories-first --color'
 alias ll='ls -lh --time-style="+%b %e %Y %l:%M:%S %P"'	# always show the year, and use 12-hour time
 alias less='less -SR'
