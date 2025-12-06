@@ -10,7 +10,7 @@ alias mic='micro'
 alias soal='source ~/.bash_aliases'
 alias soba='source ~/.bashrc'
 
-alias qmklcf='qmk lint && qmk compile && qmk flash'
+alias qflash='qmk lint && qmk compile && qmk flash'
 
 # When unplug external webcam (like when traveling), then plug back in, it's not recognized until restart service
 alias fix-camera='sudo killall VDCAssistant'
