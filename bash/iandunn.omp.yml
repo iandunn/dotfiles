@@ -249,20 +249,8 @@ blocks:
             fetch_status: true
 
         # SVN problems
-        # - type: svn
-        #   style: powerline
-        #   powerline_symbol: ''
-        #   foreground: p:white
-        #   background: p:dark_red
-
-        #   # this works, so the problem isn't somewhere else in the segment
-        #   # template: ' hello '
-
-        #   # this doesn't work
-        #   template: '{{ if gt .Conflicted 0 }} svn has conflicts {{ end }}'
-
-        #   properties:
-        #     fetch_status: true # once this segment is working, see if it'll still work when this is false
+        # Couldn't get this working, but it's not worth the time unless I start using SVN regularly again.
+        # @link https://github.com/JanDeDobbeleer/oh-my-posh/discussions/6776
 
     # Prompt
     - type: prompt
