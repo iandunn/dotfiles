@@ -19,12 +19,14 @@ The secondary goal is to stay as close to an "ordinary" keyboard layout as possi
 * Home row arrow keys on the right hand. These are comfortable when you don't need to combine them with any modifiers. When you need to do things like `alt-left` to jump words though, the arrows on the base layer are sometimes easier to work with. The tradeoff is that you have to move your hand to get there, since the Ergodox thumb cluster so big that not all the thumb keys are accessible with a thumb.
 * Tab navigation
 * Home row mouse keys on the left hand.
+* `backspace + {any alphanumeric or symbol key}` holds that key down until another key is pressed. This can help avoid RSI pain while playing games that require holding down keys for long periods of time (like `w` to run forward).
 
 ## Layer 2: Volume, Play/Pause, etc
 
 ![Image of layer 2](./images/layer-2.png)
 
 * Volume up/down uses the option and shift modifiers, so that macOS steps it more granularly than the default.
+
 
 ## Installation
 

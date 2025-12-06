@@ -16,6 +16,42 @@ enum custom_keycodes {
 	ST_MACRO_YAHOO
 };
 
+static bool key_lock_waiting   = false;
+static bool key_lock_active    = false;
+static uint16_t locked_keycode = KC_NO;
+
+// Check if a keycode can be locked (alphanumeric, symbols, and arrow keys only)
+bool is_lockable_key( uint16_t keycode ) {
+	if ( keycode >= KC_A && keycode <= KC_Z ) {
+		return true;
+	}
+
+	if ( keycode >= KC_1 && keycode <= KC_0 ) {
+		return true;
+	}
+
+	switch ( keycode ) {
+		case KC_MINUS:
+		case KC_EQUAL:
+		case KC_LEFT_BRACKET:
+		case KC_RIGHT_BRACKET:
+		case KC_BACKSLASH:
+		case KC_SEMICOLON:
+		case KC_QUOTE:
+		case KC_GRAVE:
+		case KC_COMMA:
+		case KC_DOT:
+		case KC_SLASH:
+		case KC_UP:
+		case KC_DOWN:
+		case KC_LEFT:
+		case KC_RIGHT:
+			return true;
+	}
+
+	return false;
+}
+
 // Enable the constant to see output in QMK Toolkit.
 // Mac's on-screen keyboard viewer is also useful, and works even when not active application.
 void keyboard_post_init_user( void ) {
@@ -35,7 +71,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 		KC_GRAVE,        KC_Q, KC_W, KC_F, KC_P, KC_G,       KC_LCBR,            KC_RCBR,          KC_J, KC_L, KC_U, KC_Y, KC_SEMICOLON, KC_BACKSLASH,
 		KC_TAB,          KC_A, KC_R, KC_S, KC_T, KC_D,                                             KC_H, KC_N, KC_E, KC_I, KC_O,         KC_QUOTE,
 		OSM( MOD_LSFT ), KC_Z, KC_X, KC_C, KC_V, KC_B,       KC_LEFT_BRACKET,    KC_RIGHT_BRACKET, KC_K, KC_M, KC_COMMA, KC_DOT, KC_SLASH, OSM( MOD_RSFT ),
-		_______,  OSM( MOD_LCTL ), _______, OSM( MOD_LALT ), OSM( MOD_LGUI ),    OSM( MOD_RGUI ), OSM( MOD_RALT ), _______, OSM( MOD_RCTL ), _______,
+		_______, OSM( MOD_LCTL ), _______, OSM( MOD_LALT ), OSM( MOD_LGUI ),    OSM( MOD_RGUI ), OSM( MOD_RALT ), _______, OSM( MOD_RCTL ), _______,
 
 					 OSL(2), KC_PAGE_UP,       KC_LEFT, KC_RIGHT,
 					       KC_PAGE_DOWN,       KC_UP,
@@ -69,6 +105,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	),
 };
 
+/*
+ * Custom logic for keydown/up events.
+ *
+ * This gets called on every key press, and every release.
+ * Returning `true` allows normal processing to continue, `false` stops it.
+ */
 bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 	dprintf(
 		"keycode: %u, layer_state: %u, pressed: %u \n",
@@ -109,13 +151,59 @@ bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 				SEND_STRING( "ian_dunn@yahoo.com" );
 			}
 			break;
+
+		case KC_BACKSPACE:
+			if ( record->event.pressed && layer_state_is(1) ) {
+				key_lock_waiting = true;
+
+				// Backspace is just triggering the lock key, it shouldn't be sent.
+				return false;
+			}
+			break;
 	}
 
-	return true; // Continue processing the key event
+	if ( key_lock_waiting ) {
+		if ( record->event.pressed ) {
+			if ( is_lockable_key( keycode ) ) {
+				key_lock_waiting = false;
+				key_lock_active  = true;
+				locked_keycode   = keycode;
+
+				register_code( keycode );
+
+				return false;
+
+			} else {
+				key_lock_waiting = false;
+			}
+		}
+
+		// Ignore key releases while waiting
+		return false;
+	}
+
+	if ( key_lock_active ) {
+		if ( keycode == locked_keycode ) {
+			// Ignore all events for the locked key itself
+			return false;
+		}
+
+		if ( record->event.pressed ) {
+			// Release the locked key when any other key is pressed
+			unregister_code( locked_keycode );
+
+			key_lock_active = false;
+			locked_keycode  = KC_NO;
+		}
+	}
+
+	return true;
 }
 
+// Layer indicator lights
 layer_state_t layer_state_set_user( layer_state_t state ) {
 	uint8_t layer = biton32( state );
+
 	ergodox_board_led_off();
 	ergodox_right_led_1_off();
 	ergodox_right_led_2_off();
