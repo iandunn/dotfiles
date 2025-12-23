@@ -36,6 +36,11 @@ export KUBECONFIG=~/.kube/comicskingdom.yml
 
 #export WP_TESTS_DIR="$HOME/vhosts/localhost/wp-develop.test/public_html/tests/phpunit"
 # export MH_OUTGOING_SMTP="/usr/local/etc/mailhog/outgoing-smtp.json"   this isn't working, not sure why
+export WP_TESTS_DIR="/Users/iandunn/local-sites/wordpress-tests-lib"
+export WP_CORE_DIR="/Users/iandunn/local-sites/wordpress-tests-app"
+export WORDPRESS_DB_NAME=wordpress_develop_tests
+export WORDPRESS_DB_USER=wp_tests
+export WORDPRESS_DB_PASSWORD=wp_tests
 
 export NVM_DIR="$HOME/.nvm"
 \. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
@@ -44,11 +49,6 @@ export NVM_DIR="$HOME/.nvm"
 
 export GPG_TTY=$(tty)
 export GITLEAKS_CONFIG=~/.config/gitleaks/gitleaks.toml
-
-# For Two Factor plugin
-export WORDPRESS_DB_NAME=wordpress_develop_tests
-export WORDPRESS_DB_USER=wp_tests
-export WORDPRESS_DB_PASSWORD=wp_tests
 
 # Host-specific overrides
 case $(hostname) in
