@@ -105,17 +105,6 @@ alias es8='/opt/elasticsearch-8.15.3/bin/elasticsearch'
 # tweak the -n option, but this is really more here just to remind yourself that `nice` is available to throttle commands that hog a lot of resources
 alias slurp='nice -n 19 ~/vhosts/tools/wordpress-plugin-directory-slurper/update'
 
-alias curl='curl --location'
-alias curl-time='curl -w "
-DNS Lookup:    %{time_namelookup}
-TCP connect:   %{time_connect}
-TLS handshake: %{time_appconnect}
-Pre-transfer:  %{time_pretransfer}
-Redirection:   %{time_redirect}
-First byte:    %{time_starttransfer}
-Total:         %{time_total}
-"'
-
 alias dcomp='docker-compose'
 
 # It crashed more than it should, and when it does, it can't be re-opened until this file is deleted.
