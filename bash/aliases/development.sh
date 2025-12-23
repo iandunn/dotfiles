@@ -93,6 +93,10 @@ alias skipinst='WP_TESTS_SKIP_INSTALL=1 phpunit '
 alias devdown="brew services stop  nginx && brew services stop  php@8.0 && brew services stop  mailhog && brew services stop  mysql && brew services list"
 alias devup="  brew services start nginx && brew services start php@8.0 && brew services start mailhog && brew services start mysql && brew services list"
 
+alias es7='/opt/elasticsearch-7.9.3/bin/elasticsearch'
+alias es8='/opt/elasticsearch-8.15.3/bin/elasticsearch'
+
+
 
 ###
 ### misc
