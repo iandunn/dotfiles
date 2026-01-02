@@ -32,6 +32,7 @@ alias stat='stat -x'
 alias which='which -a'
 alias locate='locate -i'
 alias zip='zip -r'
+alias untar='tar -xvf'
 
 alias date='gdate "+%b %e %Y %l:%M:%S %P"' # use GNU date instead of BSD date for consistency across machines
 alias timeutc='gdate --utc --date="@$1"'
