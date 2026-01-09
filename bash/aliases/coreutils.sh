@@ -18,7 +18,6 @@ alias ls='gls --almost-all --group-directories-first --color'
 alias ll='ls -lh --time-style="+%b %e %Y %l:%M:%S %P"'	# always show the year, and use 12-hour time
 alias less='less -SR'
 alias lessn='less -N'
-alias tail='tail -n40'
 alias df='df -h'
 alias du='du -h'
 alias find='echo "use fd instead" && false' # is the original still needed sometimes? leave this here for now and revisit if needed
