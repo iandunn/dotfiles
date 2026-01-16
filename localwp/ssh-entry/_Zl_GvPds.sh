@@ -27,7 +27,7 @@ echo "MySQL:    $(mysql --version)"
 echo "----"
 
 # Ian's customizations
-cd $SITE_PATH/themes/williams-2019
+cd $SITE_PATH/themes/williams-2026
 export LOCALWP_SHELL="Williams"
 export LOCALWP_PHP_PATH="$(dirname "$(which php)")"
 
