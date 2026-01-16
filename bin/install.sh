@@ -52,6 +52,7 @@ ln -sf $DOTFILES_DIR/.config/gh				$HOME/.config/gh
 	# todo ^ is installing to .config/gh/gh and keeps nesting
 
 ln -sf $DOTFILES_DIR/.inputrc		$HOME/.inputrc
+ln -sf $DOTFILES_DIR/.curlrc						$HOME/.curlrc
 ln -sf $DOTFILES_DIR/.config/micro/bindings.json	$HOME/.config/micro/bindings.json
 ln -sf $DOTFILES_DIR/.config/micro/settings.json	$HOME/.config/micro/settings.json
 

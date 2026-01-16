@@ -2,7 +2,6 @@
 
 # ls --group-directories-first requires `coreutils` from Homebrew on OS X b/c native `ls` doesn't support sorting folders first
 alias cat='bat'
-alias curl='curl --include --location --silent'
 alias curl-time='curl -w "
 DNS Lookup:    %{time_namelookup}
 TCP connect:   %{time_connect}
