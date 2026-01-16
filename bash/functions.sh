@@ -371,3 +371,17 @@ function devnote {
 	cp "$template" "$dest"
 	printf "\nCopied to $dest\n"
 }
+
+
+listening() {
+	[ -z "$1" ] && {
+		echo "usage: listening <port>"
+		return 1
+	}
+
+	pid=$(lsof -ti:"$1") || return
+
+	lsof -i:"$1"
+	echo ""
+	ps -fp "$pid"
+}
