@@ -20,3 +20,5 @@ printf "####\n#### config-cadmv\n####\n\n" >> $HOME/.ssh/config
 # This should be last because it contains the `Host *` section
 printf "\n\n####\n#### config-public\n####\n\n" >> $HOME/.ssh/config
 /bin/cat $HOME/dotfiles/.ssh/config-public >> $HOME/.ssh/config
+
+printf "\nDone ✅\n"
