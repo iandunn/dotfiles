@@ -141,6 +141,10 @@ defaults write com.apple.screensaver askForPasswordDelay -int $SCREEN_SAVER_LOCK
 # Save screenshots to the Downloads directory instead of the Desktop
 defaults write com.apple.screencapture location ~/Downloads/
 
+# Don't show a preview when a screenshot is taken, and then save it to private folder
+# Always save it to the Downloads folder immediately
+defaults write com.apple.screencapture show-thumbnail -bool false
+
 # Don't change spaces when closing an application
 defaults write com.apple.Dock workspaces-auto-swoosh -bool NO
 
