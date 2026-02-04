@@ -70,6 +70,10 @@ defaults write com.apple.finder EmptyTrashSecurely -bool true
 # Turn off startup sound because it wakes people up in the middle of the night, at libraries, etc.
 sudo nvram StartupMute=%01
 
+# Open new Finder windows to the Downloads folder
+defaults write com.apple.finder NewWindowTarget -string "PfLo"
+defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/Downloads/"
+
 # Reduce transparency of the Finder sidebar
 #defaults write com.apple.universalaccess reduceTransparency -boolean true
 #  get error: 2021-03-16 07:37:11.901 defaults[8022:3831499] Could not write domain com.apple.universalaccess; exiting
