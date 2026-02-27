@@ -2,6 +2,14 @@
 
 # ls --group-directories-first requires `coreutils` from Homebrew on OS X b/c native `ls` doesn't support sorting folders first
 alias cat='bat'
+
+# Skip .curlrc when don't want to include headers etc
+# Sometimes using this will avoid intall scripts breaking b/c the --inlude directive adds un-executable output to the script
+# But other times the script itself calls curl, which doesn't won't use this alias
+# In those cases, you have to temporarily comment out --include in ~/.curlrc
+# See https://claude.ai/chat/c6c65377-b47f-4a65-82b8-e9f7b1838c81
+alias curlq='curl -q'
+
 alias curl-time='curl -w "
 DNS Lookup:    %{time_namelookup}
 TCP connect:   %{time_connect}
