@@ -22,10 +22,18 @@ packages=(
   micro
 
   # Avast will flag, see https://github.com/ngrok/homebrew-ngrok/issues/21.
-  # To install it, open Avast and go to Core Shields and turn off File Shield, run the install, then turn File Shield back on.
+  # To install it:
+  # 	* Oopen Avast and go to Core Shields and turn off File Shield
+  #		* Run the install
+  # 	* Turn File Shield back on.
   # Then open ngrok. Avast will block it, but allow you to add it to the exceptions.
   # To use it, run `ngrok http --host-header=foo.test 80`
   ngrok
+
+  # can also use this as an alternative to ngrok that might not be flagged by avast
+  # works like this:
+  # cloudflared tunnel --url https://www.williams.test --http-host-header www.williams.test
+  cloudflared
 
   nvm
   #php@8.2 # probably remove this b/c localwp installs its own php. when this is linked, it overrides the localwp php and throws errors about extensions not being found etc. have to run `brew unlink php` every time homebrew updates.
