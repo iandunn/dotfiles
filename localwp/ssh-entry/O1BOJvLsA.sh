@@ -1,5 +1,5 @@
 export DISABLE_AUTO_TITLE="true"
-export SITE_PATH="$HOME/local-sites/10up/dmv/app/public/wp-content"
+export SITE_PATH="$HOME/local-sites/10up/dmv/app/public/wp-content/themes/dmv"
 echo -n -e "\033]0;dmv Shell\007"
 
 export MYSQL_HOME="$HOME/Library/Application Support/Local/run/O1BOJvLsA/conf/mysql"
