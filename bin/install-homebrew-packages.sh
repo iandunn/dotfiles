@@ -36,9 +36,6 @@ packages=(
   cloudflared
 
   nvm
-  #php@8.2 # probably remove this b/c localwp installs its own php. when this is linked, it overrides the localwp php and throws errors about extensions not being found etc. have to run `brew unlink php` every time homebrew updates.
-  phpunit
-  psysh
   qmk/qmk/qmk
   ripgrep
   svn
