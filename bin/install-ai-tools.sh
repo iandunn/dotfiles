@@ -1,6 +1,13 @@
+section() {
+    printf "\n\033[1;33;40m %s \033[0m\n" "$1"
+}
+
+
 #
 # WP Agent Skills
 #
+section "WP Agent Skills"
+
 SKILLS_DIR="$HOME/vhosts/tools/wp-agent-skills"
 
 if [ -d "$SKILLS_DIR" ]; then
@@ -17,8 +24,10 @@ node shared/scripts/skillpack-install.mjs --global --skills=wp-playground,wp-abi
 
 
 #
-# 10up Agent Skills
+# Misc
 #
+section "10up Agent Skills"
 npx @10up/agent-skills --global
 
-# what else? custom subagents?
+section "10up Spark Plugins"
+claude plugin marketplace add 10up/spark-plugins
