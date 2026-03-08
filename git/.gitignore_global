@@ -8,6 +8,7 @@
 sandbox-functionality.php
 sandbox-functionality/
 node_modules
+vendor
 npm-debug.log
 .yalc
 yalc.lock
