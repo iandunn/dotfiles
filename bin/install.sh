@@ -45,13 +45,14 @@ ln -sf $DOTFILES_DIR/bash/.bash_profile	$HOME/.bash_profile
 ln -sf $DOTFILES_DIR/bash/.bash_aliases	$HOME/.bash_aliases
 ln -sf $DOTFILES_DIR/bash/.fdignore		$HOME/.fdignore
 ln -sf $DOTFILES_DIR/bash/.fdignore		$HOME/.rgignore
+ln -sf $DOTFILES_DIR/claude.md			$HOME/claude.md
 
 ln -sf $DOTFILES_DIR/git/.gitconfig			$HOME/.gitconfig
 ln -sf $DOTFILES_DIR/git/.gitignore_global	$HOME/.gitignore_global
 ln -sf $DOTFILES_DIR/.config/gh				$HOME/.config/gh
 	# todo ^ is installing to .config/gh/gh and keeps nesting
 
-ln -sf $DOTFILES_DIR/.inputrc		$HOME/.inputrc
+ln -sf $DOTFILES_DIR/.inputrc						$HOME/.inputrc
 ln -sf $DOTFILES_DIR/.curlrc						$HOME/.curlrc
 ln -sf $DOTFILES_DIR/.config/micro/bindings.json	$HOME/.config/micro/bindings.json
 ln -sf $DOTFILES_DIR/.config/micro/settings.json	$HOME/.config/micro/settings.json
