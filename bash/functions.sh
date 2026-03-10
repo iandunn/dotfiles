@@ -24,8 +24,27 @@ _complete_ssh_hosts ()
     COMPREPLY=( $(compgen -W "${comp_ssh_hosts}" -- "$cur") )
     return 0
 }
-complete -F _complete_ssh_hosts ssh
 
+_wp_complete() {
+	local OLD_IFS="$IFS"
+	local cur=${COMP_WORDS[COMP_CWORD]}
+
+	IFS=$'\n';  # want to preserve spaces at the end
+	local opts="$(wp cli completions --line="$COMP_LINE" --point="$COMP_POINT")"
+
+	if [[ "$opts" =~ \<file\>\s* ]]
+	then
+		COMPREPLY=( $(compgen -f -- $cur) )
+	elif [[ $opts = "" ]]
+	then
+		COMPREPLY=( $(compgen -f -- $cur) )
+	else
+		COMPREPLY=( ${opts[*]} )
+	fi
+
+	IFS="$OLD_IFS"
+	return 0
+}
 
 
 # find all files in the current folder and below, then grep each of them for the given string

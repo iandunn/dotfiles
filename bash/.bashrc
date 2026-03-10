@@ -66,30 +66,6 @@ source /Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bas
 source $HOMEBREW_PREFIX/etc/bash_completion.d/gh
 source $HOMEBREW_PREFIX/etc/bash_completion.d/wp
 
-_wp_complete() {
-	local OLD_IFS="$IFS"
-	local cur=${COMP_WORDS[COMP_CWORD]}
-
-	IFS=$'\n';  # want to preserve spaces at the end
-	local opts="$(wp cli completions --line="$COMP_LINE" --point="$COMP_POINT")"
-
-	if [[ "$opts" =~ \<file\>\s* ]]
-	then
-		COMPREPLY=( $(compgen -f -- $cur) )
-	elif [[ $opts = "" ]]
-	then
-		COMPREPLY=( $(compgen -f -- $cur) )
-	else
-		COMPREPLY=( ${opts[*]} )
-	fi
-
-	IFS="$OLD_IFS"
-	return 0
-}
-complete -o nospace -F _wp_complete wp
-complete -o nospace -F _wp_complete wpdev
-
-
 if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
 	source ~/.iterm2_shell_integration.bash
 fi
@@ -101,7 +77,14 @@ eval "$(oh-my-posh init bash --config "$HOME/dotfiles/bash/iandunn.omp.yml")"
 
 eval "$(zoxide init bash)"
 
+source ~/.bashrc-private
+
 # These should run last so that poorly-written functions don't use them (e.g., something using `grep`
 # instead of `command grep`) errors because `grep` is aliased to "use rg instead"
 source ~/dotfiles/bash/functions.sh
+
+complete -F _complete_ssh_hosts ssh
+complete -o nospace -F _wp_complete wp
+complete -o nospace -F _wp_complete wpdev
+
 source ~/.bash_aliases
