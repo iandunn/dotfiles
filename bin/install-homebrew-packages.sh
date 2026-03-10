@@ -1,5 +1,9 @@
 #!/bin/bash
 
+source ~/dotfiles/bash/functions.sh
+
+section "Installing Homebrew packages"
+
 packages=(
   bat
   bash # oh-my-posh requires bash 4+
@@ -77,3 +81,5 @@ printf "\nYou will need to run 'install-wpcli-packages.sh' inside a WP installat
 
 # php-code-sniffer phpmd phpunit sass - installed via composer into local packages, not used globally?
 #
+
+printf "\n\n✅ Done"

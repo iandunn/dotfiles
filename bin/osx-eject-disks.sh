@@ -17,5 +17,5 @@ for volume in $mounted_volumes; do
     diskutil eject "$volume"
 done
 
-printf "\nAll external disks have been ejected.\n"
+printf "\n\n✅ All external disks have been ejected.\n"
 afplay /System/Library/Sounds/Funk.aiff

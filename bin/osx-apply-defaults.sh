@@ -212,3 +212,5 @@ launchctl unload -w /System/Library/LaunchAgents/com.apple.rcd.plist
 
 killall Dock
 killall Finder
+
+printf "\n\n✅ Done"

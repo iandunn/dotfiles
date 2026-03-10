@@ -1,7 +1,4 @@
-section() {
-    printf "\n\033[1;33;40m %s \033[0m\n" "$1"
-}
-
+source ~/dotfiles/bash/functions.sh
 
 #
 # WP Agent Skills

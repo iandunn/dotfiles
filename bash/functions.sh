@@ -46,6 +46,10 @@ _wp_complete() {
 	return 0
 }
 
+# Prints a section header, to help make script output more readable
+section() {
+    printf "\n\033[1;33;40m %s \033[0m\n" "$1"
+}
 
 # find all files in the current folder and below, then grep each of them for the given string
 # this could _almost_ be an alias, but then $QUERY would have to be at the end of the command, so you couldn't remove the binary files

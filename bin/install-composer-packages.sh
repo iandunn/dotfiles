@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-section() {
-    printf "\n\033[1;33;40m %s \033[0m\n" "$1"
-}
+source ~/dotfiles/bash/functions.sh
 
 section "Installing Composer Packages"
 
@@ -15,6 +13,8 @@ packages=(
     php-stubs/wp-cli-stubs:^2
     php-stubs/wordpress-stubs:^6
 	psy/psysh:^0
+
+	# This is the latest version compatible with WP 6.9
 	phpunit/phpunit:^9
 )
 
