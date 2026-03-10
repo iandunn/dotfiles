@@ -28,3 +28,7 @@ npx @10up/agent-skills --global
 
 section "10up Spark Plugins"
 claude plugin marketplace add 10up/spark-plugins
+
+section "Daryll Doc Skills"
+claude plugin marketplace add darylldoyle/docs-skills
+claude plugin install docs-skills@docs-skills-marketplace
