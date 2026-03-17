@@ -430,7 +430,7 @@ git_fuzzy_checkout() {
 
 	local branch
 
-	branch=$(echo "$branches" | fzf --query="$query")
+	branch=$(echo "$branches" | fzf --exact --query="$query")
 
 	[[ -n "$branch" ]] && git checkout "$branch"
 }
