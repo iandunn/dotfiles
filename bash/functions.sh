@@ -69,14 +69,14 @@ function findgrep {
 }
 
 # especiallly helpful when git and svn checked out side by side, like w/ gutenberg plugin
-function svn-rm-untracked {
+function svn_rm_untracked {
 	local FILES=$(svn status | egrep '^\?' | awk '{print $2}')
 
 	 rm -rf ${FILES[@]}
 }
 
 # todo describe
-function wordcamp-diff() {
+function wordcamp_diff() {
 	exit
 	# not done yet
 
@@ -116,11 +116,11 @@ function wordcamp-diff() {
 #      This is useful when you want to update several externals in a row, then commit them all at once.
 #
 # Examples:
-# svn-bump-ext akismet 3.2
-# svn-bump-ext twentyfifteen 1.6 local
+# svn_bump_ext akismet 3.2
+# svn_bump_ext twentyfifteen 1.6 local
 #
-function svn-bump-ext {
-	svn-bump-ext-update-property $1 $2
+function svn_bump_ext {
+	svn_bump_ext_update_property $1 $2
 
 	if [[ 'local' == $3 ]]; then
 		return
@@ -130,14 +130,14 @@ function svn-bump-ext {
 	svn up
 	printf "\nDone fetching, you can test the new externals now."
 
-	svn-bump-ext-commit $1 $2
+	svn_bump_ext_commit $1 $2
 }
 
 # svn-bump-ext helper for updating svn:externals
 #
 # $1 - The plugin/theme slug
 # $2 - The version to bump to
-function svn-bump-ext-update-property {
+function svn_bump_ext_update_property {
 	# Use printf to avoid adding a trailing newline
 	printf %s "$(svn propget svn:externals)" > externals.tmp
 
@@ -155,7 +155,7 @@ function svn-bump-ext-update-property {
 #
 # $1 - The plugin/theme slug
 # $2 - The version to bump to
-function svn-bump-ext-commit {
+function svn_bump_ext_commit {
 	printf "\nExternal differences:\n\n"
 	svn diff --depth empty
 
