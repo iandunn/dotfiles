@@ -408,3 +408,29 @@ listening() {
 	echo ""
 	ps -fp "$pid"
 }
+
+git_fuzzy_checkout() {
+	local query="$1"
+	local branches
+
+	branches=$(git branch --no-color | tr -d ' *')
+
+	if [[ -n "$query" ]]; then
+		local matches
+		local count
+
+		matches=$(echo "$branches" | grep --color=never -i "$query")
+		count=$(echo "$matches" | grep --color=never -c .)
+
+		if [[ "$count" -eq 1 ]]; then
+			git checkout "$matches"
+			return
+		fi
+	fi
+
+	local branch
+
+	branch=$(echo "$branches" | fzf --query="$query")
+
+	[[ -n "$branch" ]] && git checkout "$branch"
+}
