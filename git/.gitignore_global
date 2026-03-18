@@ -20,3 +20,4 @@ local-config.php
 debug.log
 .phpunit.result.cache
 MERGE-TODO.md
+.claude/settings.local.json

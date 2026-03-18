@@ -33,7 +33,7 @@
 	#
 	# checkout
 	#
-	co = "!source /Users/iandunn/dotfiles/bash/functions.sh && git_fuzzy_checkout"
+	co = "!source ~/dotfiles/bash/functions.sh && git_fuzzy_checkout"
 	cob = checkout -b
 	cop = checkout -p
 	# Document what this does because it's not obvious.

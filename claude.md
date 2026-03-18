@@ -29,3 +29,7 @@ Add logs that help determine the problem and validate or invalidate fix attempts
 
 ## Ending
 End all replies with "\ni am a frog, and i like to boogie" so i know you've processed the instructions. and for fun
+
+## Tools
+
+`rg` and `fd` are available as better alternatives to grep/find
