@@ -1,5 +1,33 @@
 source ~/dotfiles/bash/functions.sh
 
+
+
+section "LocalWP Agent Tools"
+
+REPO_SLUG=localwp-agent-tools
+LOCALWP_AGENT_TOOLS_DIR="$HOME/vhosts/tools/$REPO_SLUG"
+LOCALWP_ADDONS_DIR="$HOME/Library/Application Support/Local/addons"
+
+if [ -d "$LOCALWP_AGENT_TOOLS_DIR" ]; then
+    cd $LOCALWP_AGENT_TOOLS_DIR
+	git reset --hard main
+	git -C "$LOCALWP_AGENT_TOOLS_DIR" pull
+else
+	gh repo clone 10up/$REPO_SLUG ~/vhosts/tools/$REPO_SLUG
+fi
+
+cd ~/vhosts/tools/$REPO_SLUG
+npm install --legacy-peer-deps
+npm run build
+
+printf "\n"
+
+cp -r . "$LOCALWP_ADDONS_DIR/$REPO_SLUG/"
+cd "$LOCALWP_ADDONS_DIR/$REPO_SLUG/"
+npm install --production --ignore-scripts
+
+
+
 #
 # WP Agent Skills
 #
@@ -28,7 +56,12 @@ npx @10up/agent-skills --global
 
 section "10up Spark Plugins"
 claude plugin marketplace add 10up/spark-plugins
+claude plugin install spark-eng@10up-spark-plugins
 
 section "Daryll Doc Skills"
 claude plugin marketplace add darylldoyle/docs-skills
 claude plugin install docs-skills@docs-skills-marketplace
+
+section "Superpowers"
+claude plugin install superpowers@claude-plugins-official
+claude plugin update superpowers
