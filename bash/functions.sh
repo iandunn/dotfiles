@@ -413,7 +413,18 @@ git_fuzzy_checkout() {
 	local query="$1"
 	local branches
 
+	if [[ "$query" == "-" ]]; then
+		git checkout -
+		return
+	fi
+
 	branches=$(git branch --no-color | tr -d ' *')
+
+	# Skip fuzzy search when there's an exact match
+	if echo "$branches" | grep --color=never -qx "$query"; then
+		git checkout "$query"
+		return
+	fi
 
 	if [[ -n "$query" ]]; then
 		local matches
