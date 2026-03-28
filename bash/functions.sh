@@ -409,6 +409,13 @@ listening() {
 	ps -fp "$pid"
 }
 
+
+# todo is there a way to integrate this with autocomple so can `git co tru` and it'll show fzf list of `trunk`, `truncate/foo`, etc?
+# but then if there's only 1 match it'll just autocomplete it
+#
+# todo `git co feature/19770620-newsroom-press-releases` which is a remote branch that doesn't exist locally, check it out instead of showing fzf screen with 0 results
+#
+# todo do this same thing for `git merge`. separate generic part into a separate function that both can use
 git_fuzzy_checkout() {
 	local query="$1"
 	local branches
@@ -444,4 +451,43 @@ git_fuzzy_checkout() {
 	branch=$(echo "$branches" | fzf --exact --query="$query")
 
 	[[ -n "$branch" ]] && git checkout "$branch"
+}
+
+# Force Claude to open in the root folder of a project
+#
+# Claude annoying treats the folder it was launched from as the project root. If the root is ~/local-sites/core/
+# and that's where the CLAUDE.md file is, but you launch claude from ~/local-sites/core/app/public/wp-content or
+# ~/local-sites/core/app/public/wp-content/mu-plugins, then it'll created .claude/settings.local.json files in
+# those subdirectories, and have separate conversation history from each other and from the project root.
+#
+# This scans for a CLAUDE.md at the project root and launches claude from there. $HOME also has a global CLAUDE.md,
+# though, so this stops before that, to avoid $HOME being treated as a project root.
+#
+# This assumes that all projects should have a CLAUDE.md file at the root folder that identifies it as a project
+# and provides project-specific instructions.
+function claude() {
+	if [[ -f "$PWD/CLAUDE.md" ]]; then
+		command claude
+		return
+	fi
+
+	local dir="$PWD"
+	local root=""
+
+	# Walk up to find CLAUDE.md, stopping before $HOME to avoid the global one
+	while [[ "$dir" != "$HOME" && "$dir" != "/" ]]; do
+		if [[ -f "$dir/CLAUDE.md" ]]; then
+			root="$dir"
+			break
+		fi
+		dir="$(dirname "$dir")"
+	done
+
+	if [[ -n "$root" ]]; then
+		printf "\n⚠️ Project root found at $root, launching from that folder\n\n"
+		cd "$root" && command claude "$@"
+	else
+		printf "\n⚠️ No project root found, launching from current folder\n\n"
+		command claude "$@"
+	fi
 }
