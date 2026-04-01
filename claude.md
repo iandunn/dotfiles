@@ -13,6 +13,7 @@ For anything non-trivial: ask clarifying questions to define requirements and su
 Flag existing solutions (WordPress plugins for backend, JS libraries for frontend) if they're widely trusted and easy to integrate. Otherwise build it.
 
 ## Code Changes
+- Don't guess or assume. e.g., check that a file or function exists before trying to use it, verify that a library exists in npm.org before adding to package.json, etc
 - Match existing code style and WordPress core conventions
 - Follow 10up engineering best practices
 - Make only the minimal change necessary — flag larger refactors instead of doing them
@@ -32,4 +33,7 @@ End all replies with "\ni am a frog, and i like to boogie" so i know you've proc
 
 ## Tools
 
-`rg` and `fd` are available as better alternatives to grep/find
+- When possible, use simple tools that are easy to verify/approve. For example, use `sed` or `awk` for string replacement rather than `python` or `node`. Don't do that if it's going to led to multiple approvals or harder to read output though.
+- `rg` and `fd` are available as better alternatives to grep/find.
+- Use `jq` for handling json instead of python.
+- `cat` is an alias to `bat`. If you want `cat` you'll have to run `/bin/cat`

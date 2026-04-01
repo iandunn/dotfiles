@@ -40,6 +40,7 @@ packages=(
   cloudflared
 
   nvm
+  node
   qmk/qmk/qmk
   ripgrep
   svn

@@ -96,6 +96,10 @@ defaults write com.apple.dock autohide-delay -float 2500
 # Show the window switcher on both monitors
 defaults write com.apple.Dock appswitcher-all-displays -bool true
 
+# Double clicking on windows maximizes them so they take up the viewport instead of only make them only big enough to show contents
+# But of course native Mac apps don't respect that 🙄
+defaults write NSGlobalDomain AppleActionOnDoubleClick -string "Zoom"
+
 
 ###
 ### Screen Saver / Energy / Lock time
