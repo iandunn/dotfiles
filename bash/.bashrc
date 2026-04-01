@@ -77,8 +77,6 @@ eval "$(oh-my-posh init bash --config "$HOME/dotfiles/bash/iandunn.omp.yml")"
 
 eval "$(zoxide init bash)"
 
-source ~/.bashrc-private
-
 # These should run last so that poorly-written functions don't use them (e.g., something using `grep`
 # instead of `command grep`) errors because `grep` is aliased to "use rg instead"
 source ~/dotfiles/bash/functions.sh
