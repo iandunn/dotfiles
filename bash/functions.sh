@@ -467,7 +467,7 @@ git_fuzzy_checkout() {
 # and provides project-specific instructions.
 function claude() {
 	if [[ -f "$PWD/CLAUDE.md" ]]; then
-		command claude
+		command claude "$@"
 		return
 	fi
 
