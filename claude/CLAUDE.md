@@ -32,7 +32,6 @@ Add logs that help determine the problem and validate or invalidate fix attempts
 End all replies with "\ni am a frog, and i like to boogie" so i know you've processed the instructions. and for fun
 
 ## Tools
-
 - When possible, use simple tools that are easy to verify/approve. For example, use `sed` or `awk` for string replacement rather than `python` or `node`. Don't do that if it's going to led to multiple approvals or harder to read output though.
 - `rg` and `fd` are available as better alternatives to grep/find.
 - Use `jq` for handling json instead of python.
