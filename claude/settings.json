@@ -1,0 +1,92 @@
+{
+	"attribution": {
+		"commit": "",
+		"pr": ""
+	},
+	"permissions": {
+		"allow": [
+			"Edit",
+			"MultiEdit",
+			"Read",
+			"Bash(/bin/cat:*)",
+			"Bash(awk *)",
+			"Bash(bat:*)",
+			"Bash(cat:*)",
+			"Bash(cd *)",
+			"Bash(composer show:*)",
+			"Bash(composer update:*)",
+			"Bash(cp *)",
+			"Bash(curl -s https://api.wordpress.org/core/version-check/1.7/)",
+			"Bash(diff *)",
+			"Bash(echo *)",
+			"Bash(fd:*)",
+			"Bash(find *)",
+			"Bash(git add bin/install-ai-tools.sh)",
+			"Bash(git fetch:*)",
+			"Bash(grep:*)",
+			"Bash(head *)",
+			"Bash(jq:*)",
+			"Bash(ls:*)",
+			"Bash(mkdir *)",
+			"Bash(npm list:*)",
+			"Bash(pwd)",
+			"Bash(rg:*)",
+			"Bash(sed *)",
+			"Bash(sort *)",
+			"Bash(tail *)",
+			"Bash(test *)",
+			"Bash(touch *)",
+			"Bash(uniq *)",
+			"Bash(wc *)",
+			"mcp__local-wp__read_error_log",
+			"WebFetch(domain:api.wordpress.org)",
+			"WebFetch(domain:docs.acquia.com)",
+			"WebFetch(domain:widenv2.docs.apiary.io)",
+			"WebFetch(domain:wpackagist.org)"
+		]
+	},
+	"enabledPlugins": {
+		"docs-skills@docs-skills-marketplace": true,
+		"superpowers@claude-plugins-official": true,
+		"chrome-devtools-mcp@claude-plugins-official": true
+	},
+	"extraKnownMarketplaces": {
+		"spark-plugins": {
+			"source": {
+				"source": "github",
+				"repo": "10up/spark-plugins"
+			}
+		},
+		"docs-skills-marketplace": {
+			"source": {
+				"source": "github",
+				"repo": "darylldoyle/docs-skills"
+			}
+		},
+		"chrome-devtools-plugins": {
+			"source": {
+				"source": "github",
+				"repo": "ChromeDevTools/chrome-devtools-mcp"
+			}
+		}
+	},
+	"spinnerVerbs": {
+		"mode": "replace",
+		"verbs": [
+			"Working"
+		]
+	},
+	"hooks": {
+		"PreToolUse": [
+			{
+				"matcher": "mcp__local-wp__wp_cli",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "/Users/iandunn/.claude/hooks/wp-cli-permissions.sh"
+					}
+				]
+			}
+		]
+	}
+}
