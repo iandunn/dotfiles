@@ -1,9 +1,10 @@
-.gitconfig.local
-.gitconfig.10up
-.gitconfig.cadmv
-.config/micro/buffers
-.ssh/config-personal
-.ssh/config-10up
-.ssh/config-cadmv
+/CLAUDE.md
+/git/.gitconfig.local
+/git/.gitconfig.10up
+/git/.gitconfig.cadmv
+/.config/micro/buffers
+/.ssh/config-personal
+/.ssh/config-10up
+/.ssh/config-cadmv
 bash/omp-testing
 keyboards/ergodox-ez/ordinaryish/keymap.json

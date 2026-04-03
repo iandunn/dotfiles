@@ -10,7 +10,7 @@ alias shmisc='sh     "$HOME/dotfiles/localwp/ssh-entry/adAGViECs.sh"'
 alias shpublix='sh   "$HOME/dotfiles/localwp/ssh-entry/pbHMiVI43.sh"'
 alias shwilliams='sh "$HOME/dotfiles/localwp/ssh-entry/_Zl_GvPds.sh"'
 
-alias syncmerlin='for i in $(seq 1 10); do wp ck merlinone sync --yes && break; echo "Attempt $i failed, retrying..."; sleep 1; done'
+alias syncmerlin='for i in $(seq 1 50); do wp ck merlinone sync --yes && break; echo "Attempt $i failed, retrying..."; sleep 1; done'
 
 # npm / yarn
 alias nr='npm run'

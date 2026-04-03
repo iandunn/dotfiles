@@ -33,4 +33,7 @@ Password: root
 Database: local
 Port: $port
 
+You should also update wp-config.php, otherwise wp db query won't work
+
+define( 'DB_HOST', '127.0.0.1:$port' );
 SETTINGS
