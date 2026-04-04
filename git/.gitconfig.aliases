@@ -65,6 +65,7 @@
 		# git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@' works and is local, but isn't reliable
 		# git rev-parse --abbrev-ref origin/HEAD works but need to strip out origin/ can do with bash if make this a ! command
 	diffnob = !git diff |grep -v build
+	diffss  = -c delta.side-by-side=true diff
 
 	# in general, this is better for diffing a string of text, especially longer strings
 	# it's often better for seeing code changes too, but sometimes the standard line-by-line is better
