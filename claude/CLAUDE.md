@@ -35,4 +35,3 @@ End all replies with "\ni am a frog, and i like to boogie" so i know you've proc
 - When possible, use simple tools that are easy to verify/approve. For example, use `sed` or `awk` for string replacement rather than `python` or `node`. Don't do that if it's going to led to multiple approvals or harder to read output though.
 - `rg` and `fd` are available as better alternatives to grep/find.
 - Use `jq` for handling json instead of python.
-- `cat` is an alias to `bat`. If you want `cat` you'll have to run `/bin/cat`

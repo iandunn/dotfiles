@@ -1,163 +1,198 @@
 {
-	"attribution": {
-		"commit": "",
-		"pr": ""
-	},
-	"permissions": {
-		"allow": [
-			"Edit",
-			"MultiEdit",
-			"Read",
-			"Bash(/bin/cat:*)",
-			"Bash(awk *)",
-			"Bash(bat:*)",
-			"Bash(cat:*)",
-			"Bash(cd:*)",
-			"Bash(composer --version)",
-			"Bash(composer show:*)",
-			"Bash(composer update:*)",
-			"Bash(composer run test:*)",
-			"Bash(cp *)",
-			"Bash(curl -s https://api.wordpress.org/core/version-check/1.7/)",
-			"Bash(cut:*)",
-			"Bash(diff *)",
-			"Bash(dig:*)",
-			"Bash(du:*)",
-			"Bash(echo *)",
-			"Bash(fd:*)",
-			"Bash(file:*)",
-			"Bash(find *)",
-			"Bash(gh auth status:*)",
-			"Bash(gh issue view:*)",
-			"Bash(gh pr view:*)",
-			"Bash(git add:*)",
-			"Bash(git branch:*)",
-			"Bash(git checkout:*)",
-			"Bash(git diff:*)",
-			"Bash(git fetch:*)",
-			"Bash(git log:*)",
-			"Bash(git show:*)",
-			"Bash(git stash list:*)",
-			"Bash(git status:*)",
-			"Bash(git symbolic-ref:*)",
-			"Bash(grep:*)",
-			"Bash(head:*)",
-			"Bash(jq:*)",
-			"Bash(ls:*)",
-			"Bash(mkdir *)",
-			"Bash(node --version)",
-			"Bash(npm --version)",
-			"Bash(npm list:*)",
-			"Bash(npm ls:*)",
-			"Bash(php --version)",
-			"Bash(php -i)",
-			"Bash(php -v)",
-			"Bash(phpunit:*)",
-			"Bash(pwd)",
-			"Bash(rg:*)",
-			"Bash(sed -n *)",
-			"Bash(sort *)",
-			"Bash(stat:*)",
-			"Bash(tail:*)",
-			"Bash(test *)",
-			"Bash(touch *)",
-			"Bash(tr:*)",
-			"Bash(uniq *)",
-			"Bash(wc *)",
-			"Bash(which:*)",
-			"mcp__chrome-devtools__click",
-			"mcp__chrome-devtools__list_console_messages",
-			"mcp__chrome-devtools__navigate_page",
-			"mcp__chrome-devtools__new_page",
-			"mcp__chrome-devtools__take_screenshot",
-			"mcp__chrome-devtools__take_snapshot",
-			"mcp__chrome-devtools__wait_for",
-			"mcp__local-wp__get_site_info",
-			"mcp__local-wp__read_access_log",
-			"mcp__local-wp__read_error_log",
-			"mcp__local-wp__read_wp_config",
-			"mcp__local-wp__site_health_check",
-			"mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_network_requests",
-			"mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_pages",
-			"mcp__plugin_chrome-devtools-mcp_chrome-devtools__navigate_page",
-			"mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_screenshot",
-			"WebFetch(domain:api.wordpress.org)",
-			"WebFetch(domain:code.visualstudio.com)",
-			"WebFetch(domain:developer.wordpress.org)",
-			"WebFetch(domain:devblogs.microsoft.com)",
-			"WebFetch(domain:docs.acquia.com)",
-			"WebFetch(domain:make.wordpress.org)",
-			"WebFetch(domain:npmjs.com)",
-			"WebFetch(domain:packagist.org)",
-			"WebFetch(domain:widenv2.docs.apiary.io)",
-			"WebFetch(domain:wpackagist.org)",
-			"WebSearch"
-		],
-		"deny": [
-			"Bash(rm *)",
-			"Bash(rmdir *)",
-			"Bash(git push --force*)",
-			"Bash(git push -f*)",
-			"Bash(git reset --hard*)",
-			"Bash(git clean*)",
-			"Bash(git checkout .)",
-			"Bash(git checkout -- .)",
-			"Bash(git branch -D*)",
-			"Bash(git branch -d -f*)",
-			"Bash(npm publish*)",
-			"Bash(npm unpublish*)",
-			"Bash(npm exec*)",
-			"Bash(npx *)",
-			"Bash(composer exec*)",
-			"Bash(source *)"
-		]
-	},
-	"enabledPlugins": {
-		"docs-skills@docs-skills-marketplace": true,
-		"superpowers@claude-plugins-official": true,
-		"chrome-devtools-mcp@claude-plugins-official": true
-	},
-	"enabledMcpjsonServers": [
-		"local-wp",
-		"chrome-devtools"
-	],
-	"extraKnownMarketplaces": {
-		"spark-plugins": {
-			"source": {
-				"source": "github",
-				"repo": "10up/spark-plugins"
-			}
-		},
-		"docs-skills-marketplace": {
-			"source": {
-				"source": "github",
-				"repo": "darylldoyle/docs-skills"
-			}
-		},
-		"chrome-devtools-plugins": {
-			"source": {
-				"source": "github",
-				"repo": "ChromeDevTools/chrome-devtools-mcp"
-			}
-		}
-	},
-	"spinnerVerbs": {
-		"mode": "replace",
-		"verbs": [
-			"Working"
-		]
-	},
-	"hooks": {
-		"PreToolUse": [
-			{
-				"matcher": "mcp__local-wp__wp_cli",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "/Users/iandunn/.claude/hooks/wp-cli-permissions.sh"
-					}
-				]
-			}
-		]
-	}
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Edit",
+      "MultiEdit",
+      "Read",
+	  "Bash(./vendor/bin/phpunit *)",
+      "Bash(/bin/cat:*)",
+      "Bash(awk *)",
+      "Bash(bat:*)",
+      "Bash(cat:*)",
+      "Bash(cd:*)",
+      "Bash(composer --version)",
+      "Bash(composer clear-cache)",
+      "Bash(composer diagnose)",
+      "Bash(composer dump-autoload:*)",
+      "Bash(composer show:*)",
+      "Bash(composer update:*)",
+      "Bash(composer run test:*)",
+      "Bash(cp *)",
+      "Bash(curl -s https://api.wordpress.org/core/version-check/1.7/)",
+      "Bash(curl -s https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request[slug]=*)",
+	  "Bash(curl -s http://localhost:9200)",
+	  "Bash(curl -s http://localhost:9200/*)",
+	  "Bash(curl -s https://localhost:9200)",
+	  "Bash(curl -s https://localhost:9200/*)",
+	  "Bash(curl -s http://*.localhost:3001)",
+	  "Bash(curl -s http://*.localhost:3001/*)",
+	  "Bash(curl -s https://*.localhost:3001)",
+	  "Bash(curl -s https://*.localhost:3001/*)",
+	  "Bash(curl -s http://localhost:3001)",
+	  "Bash(curl -s http://localhost:3001/*)",
+	  "Bash(curl -s https://localhost:3001)",
+	  "Bash(curl -s https://localhost:3001/*)",
+	  "Bash(curl -s http://*.localhost:3000)",
+	  "Bash(curl -s http://*.localhost:3000/*)",
+	  "Bash(curl -s https://*.localhost:3000)",
+	  "Bash(curl -s https://*.localhost:3000/*)",
+	  "Bash(curl -s http://localhost:3000)",
+	  "Bash(curl -s http://localhost:3000/*)",
+	  "Bash(curl -s https://localhost:3000)",
+	  "Bash(curl -s https://localhost:3000/*)",
+      "Bash(cut:*)",
+      "Bash(diff *)",
+      "Bash(dig:*)",
+      "Bash(du:*)",
+      "Bash(echo *)",
+      "Bash(fd:*)",
+      "Bash(file:*)",
+      "Bash(find *)",
+      "Bash(gh auth status:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(git add:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git diff:*)",
+      "Bash(git fetch:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git stash list:*)",
+      "Bash(git status:*)",
+      "Bash(git symbolic-ref:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(jq:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir *)",
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(npm cache:*)",
+      "Bash(npm list:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm view:*)",
+      "Bash(php --version)",
+      "Bash(php -i)",
+      "Bash(php -v)",
+      "Bash(phpunit:*)",
+      "Bash(pwd)",
+      "Bash(rg:*)",
+      "Bash(sed -n *)",
+      "Bash(sort *)",
+      "Bash(stat:*)",
+      "Bash(tail:*)",
+      "Bash(test *)",
+      "Bash(touch *)",
+      "Bash(tr:*)",
+      "Bash(uniq *)",
+      "Bash(wc *)",
+      "Bash(which:*)",
+      "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__click",
+      "mcp__chrome-devtools__list_console_messages",
+      "mcp__chrome-devtools__navigate_page",
+      "mcp__chrome-devtools__new_page",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__wait_for",
+      "mcp__local-wp__get_site_info",
+      "mcp__local-wp__read_access_log",
+      "mcp__local-wp__read_error_log",
+      "mcp__local-wp__read_wp_config",
+      "mcp__local-wp__site_health_check",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_network_requests",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_pages",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__navigate_page",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_screenshot",
+      "WebFetch(domain:api.wordpress.org)",
+      "WebFetch(domain:code.visualstudio.com)",
+      "WebFetch(domain:developer.wordpress.org)",
+      "WebFetch(domain:devblogs.microsoft.com)",
+      "WebFetch(domain:docs.acquia.com)",
+      "WebFetch(domain:make.wordpress.org)",
+      "WebFetch(domain:npmjs.com)",
+      "WebFetch(domain:packagist.org)",
+      "WebFetch(domain:widenv2.docs.apiary.io)",
+      "WebFetch(domain:wpackagist.org)",
+      "WebSearch"
+    ],
+    "deny": [
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean*)",
+      "Bash(git checkout .)",
+      "Bash(git checkout -- .)",
+      "Bash(git branch -D*)",
+      "Bash(git branch -d -f*)",
+      "Bash(npm publish*)",
+      "Bash(npm unpublish*)",
+      "Bash(npm exec*)",
+      "Bash(npx *)",
+      "Bash(composer exec*)",
+      "Bash(source *)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "local-wp",
+    "chrome-devtools"
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__local-wp__wp_cli",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/iandunn/.claude/hooks/wp-cli-permissions.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "npx -y ccstatusline@latest",
+    "padding": 0
+  },
+  "enabledPlugins": {
+    "docs-skills@docs-skills-marketplace": true,
+    "superpowers@claude-plugins-official": true,
+    "chrome-devtools-mcp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "spark-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "10up/spark-plugins"
+      }
+    },
+    "docs-skills-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "darylldoyle/docs-skills"
+      }
+    },
+    "chrome-devtools-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "ChromeDevTools/chrome-devtools-mcp"
+      }
+    }
+  },
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "Working"
+    ]
+  }
 }

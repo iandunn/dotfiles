@@ -83,7 +83,7 @@ SAFE_PREFIXES=(
 
 for prefix in "${SAFE_PREFIXES[@]}"; do
 	if [[ "$ARGS" == "$prefix"* ]]; then
-		echo '{"decision": "approve"}'
+		echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"WP-CLI command matches safe prefix list"}}'
 		exit 0
 	fi
 done
