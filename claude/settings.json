@@ -91,6 +91,7 @@
       "Bash(touch *)",
       "Bash(tr:*)",
       "Bash(uniq *)",
+	  "Bash(wait)",
       "Bash(wc *)",
       "Bash(which:*)",
       "mcp__chrome-devtools__evaluate_script",
@@ -153,6 +154,15 @@
           {
             "type": "command",
             "command": "/Users/iandunn/.claude/hooks/wp-cli-permissions.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /Users/iandunn/.claude/hooks/compound-allow.py"
           }
         ]
       }
