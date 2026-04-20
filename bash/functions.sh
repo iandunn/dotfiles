@@ -413,44 +413,67 @@ listening() {
 # todo is there a way to integrate this with autocomple so can `git co tru` and it'll show fzf list of `trunk`, `truncate/foo`, etc?
 # but then if there's only 1 match it'll just autocomplete it
 #
-# todo `git co feature/19770620-newsroom-press-releases` which is a remote branch that doesn't exist locally, check it out instead of showing fzf screen with 0 results
-#
-# todo do this same thing for `git merge`. separate generic part into a separate function that both can use
-git_fuzzy_checkout() {
+# Resolves a branch name from a query using local exact match, single fuzzy match, remote fallback, then fzf.
+# Outputs the resolved branch name, or nothing if nothing was selected.
+_git_resolve_branch() {
 	local query="$1"
 	local branches
 
 	if [[ "$query" == "-" ]]; then
-		git checkout -
+		echo "-"
 		return
 	fi
 
 	branches=$(git branch --no-color | tr -d ' *')
 
-	# Skip fuzzy search when there's an exact match
+	# Exact local match
 	if echo "$branches" | grep --color=never -qx "$query"; then
-		git checkout "$query"
+		echo "$query"
 		return
 	fi
 
 	if [[ -n "$query" ]]; then
-		local matches
-		local count
+		local matches count
 
+		# Single fuzzy local match
 		matches=$(echo "$branches" | grep --color=never -i "$query")
 		count=$(echo "$matches" | grep --color=never -c .)
 
 		if [[ "$count" -eq 1 ]]; then
-			git checkout "$matches"
+			echo "$matches"
+			return
+		fi
+
+		# Remote branch fallback — avoids fzf showing 0 results for untracked remote branches
+		local remote_match
+		remote_match=$(git ls-remote origin "refs/heads/$query" 2>/dev/null | awk '{print $2}' | sed 's|refs/heads/||')
+		if [[ -n "$remote_match" ]]; then
+			echo "$remote_match"
 			return
 		fi
 	fi
 
 	local branch
-
 	branch=$(echo "$branches" | fzf --exact --query="$query")
+	[[ -n "$branch" ]] && echo "$branch"
+}
 
-	[[ -n "$branch" ]] && git checkout "$branch"
+git_fuzzy_checkout() {
+	local branch
+	branch=$(_git_resolve_branch "$1")
+
+	if [[ "$branch" == "-" ]]; then
+		git checkout -
+	elif [[ -n "$branch" ]]; then
+		git checkout "$branch"
+	fi
+}
+
+git_fuzzy_merge() {
+	local branch
+	branch=$(_git_resolve_branch "$1")
+
+	[[ -n "$branch" && "$branch" != "-" ]] && git merge "$branch"
 }
 
 # Force Claude to open in the root folder of a project
@@ -474,11 +497,14 @@ function claude() {
 	local dir="$PWD"
 	local root=""
 
-	# Walk up to find CLAUDE.md, stopping before $HOME to avoid the global one
+	# Walk up to find CLAUDE.md, stopping before $HOME to avoid the global one.
+	# Keep walking even after finding one, to prefer the highest (personal) CLAUDE.md as root.
+	# This handles the case where a project has a repo-committed CLAUDE.md in wp-content/ and a
+	# personal one higher up (e.g. ~/local-sites/[project]/). Claude Code automatically reads
+	# nested CLAUDE.md files for context, so the repo one is still loaded.
 	while [[ "$dir" != "$HOME" && "$dir" != "/" ]]; do
 		if [[ -f "$dir/CLAUDE.md" ]]; then
 			root="$dir"
-			break
 		fi
 		dir="$(dirname "$dir")"
 	done
