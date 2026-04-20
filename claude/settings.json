@@ -71,6 +71,7 @@
       "Bash(head:*)",
       "Bash(host *)",
       "Bash(jq:*)",
+      "Bash(ll *)",
       "Bash(ls:*)",
       "Bash(mkdir *)",
       "Bash(node --version)",

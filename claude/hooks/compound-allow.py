@@ -153,7 +153,6 @@ def main() -> None:
                     "All subcommands match existing allow rules",
             }
         }))
-        print(f"⚠️ Auto approved: {cmd}", file=sys.stderr)
 
     sys.exit(0)
 
