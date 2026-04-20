@@ -214,7 +214,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /Users/iandunn/.claude/hooks/compound-allow.py"
+            "command": "node /Users/iandunn/.claude/hooks/block-chained-commands.js"
           }
         ]
       }

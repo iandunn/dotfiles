@@ -35,4 +35,4 @@ End all replies with "\ni am a frog, and i like to boogie" so i know you've proc
 - When possible, use simple tools that are easy to verify/approve. For example, use `sed` or `awk` for string replacement rather than `python` or `node`. Don't do that if it's going to led to multiple approvals or harder to read output though.
 - `rg` and `fd` are available as better alternatives to grep/find.
 - Use `jq` for handling json instead of python.
-- Don't use `git -C [path] [command]`. Instead do `cd [path] && git [command]`. That allows `compound-allow.py` to auto-approve the command since both are safelisted.
+- Don't use `git -C [path] [command]` or chain commands with `&&`/`||`. Use a separate `cd [path]` tool call before path-dependent commands. This is to avoid having to review/allow compound commands.
