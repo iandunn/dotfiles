@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # ls --group-directories-first requires `coreutils` from Homebrew on OS X b/c native `ls` doesn't support sorting folders first
-alias cat='bat'
 
 # Skip .curlrc when don't want to include headers etc
 # Sometimes using this will avoid intall scripts breaking b/c the --inlude directive adds un-executable output to the script

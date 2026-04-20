@@ -25,6 +25,7 @@ alias cr='composer run'
 alias comexec='composer exec'
 alias comup='composer update'
 alias comupx='composer update && git checkout composer.lock'
+alias comdump='composer dump-autoload'
 
 # patches
 alias patch='patch --no-backup-if-mismatch'
@@ -125,3 +126,5 @@ alias webxr='web-ext run --firefox=firefoxdeveloperedition --firefox-profile="Ia
 alias ImageOptim='/Applications/ImageOptim.app/Contents/MacOS/ImageOptim'
 
 alias web-ext-run='web-ext run --firefox=/Applications/FirefoxDeveloperEdition.app/Contents/MacOS/firefox-bin --firefox-profile=dev-edition-default'
+
+alias ccstatusline='npx -y ccstatusline@latest'

@@ -98,6 +98,7 @@
 	#
 	# merge
 	#
+	merge	= "!source ~/dotfiles/bash/functions.sh && git_fuzzy_merge"
 	mera	= merge --abort
 	merf	= merge --ff-only
 
