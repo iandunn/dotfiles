@@ -1,9 +1,11 @@
 {
+  "env": {
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false"
+  },
   "attribution": {
     "commit": "",
     "pr": ""
   },
-  "effortLevel": "high",
   "permissions": {
     "allow": [
       "Edit",
@@ -369,9 +371,6 @@
       "Bash(history -c*)"
     ]
   },
-  "env": {
-    "ENABLE_CLAUDEAI_MCP_SERVERS": "false"
-  },
   "enabledMcpjsonServers": [
     "local-wp",
     "chrome-devtools"
@@ -434,5 +433,7 @@
     "verbs": [
       "Working"
     ]
-  }
+  },
+  "effortLevel": "high",
+  "advisorModel": "opus"
 }
