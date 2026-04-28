@@ -41,6 +41,7 @@ packages=(
 
   nvm
   node
+  pipx
   qmk/qmk/qmk
   ripgrep
   svn
