@@ -3,8 +3,7 @@
 # This is a WP-CLI permissions hook script for Claude. It checks the command being run against a list of safe prefixes and allows it if it matches.
 # Otherwise, it falls back to the normal permission prompt.
 
-# ⚠️ This requires `mcp__local-wp__wp_cli` to be enabled in your claude `permissions.allow` settings.
-# If you ever disable this, make sure to also remove this hook or it will auto-approve all WP-CLI commands without prompting.
+# ⚠️ This won't work if `mcp__local-wp__wp_cli` is enabled in your claude `permissions.allow` settings. Make sure it's not there.
 
 # todo: do something similar for git, like `git show`
 
