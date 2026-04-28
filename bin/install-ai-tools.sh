@@ -1,5 +1,7 @@
 source ~/dotfiles/bash/functions.sh
 
+section "Claude Code"
+npm update -g @anthropic-ai/claude-code
 
 
 section "LocalWP Agent Tools"
@@ -64,4 +66,9 @@ claude plugin install docs-skills@docs-skills-marketplace
 
 section "Superpowers"
 claude plugin install superpowers@claude-plugins-official
-claude plugin update superpowers
+
+section "Anthropic frontend-design plugin"
+claude plugin install frontend-design@claude-plugins-official
+
+printf "\n\n⚠️ 10up agent skills not installed, see above"
+printf "\n ⚠️see errors for spark plugins"
