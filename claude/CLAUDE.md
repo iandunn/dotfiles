@@ -18,7 +18,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Follow 10up engineering best practices
 - Make only the minimal change necessary — flag larger refactors instead of doing them
 - Never touch unrelated lines
-- Don't remove comments, TODOs, console.log(), or debugger statements unless I ask
+- Don't remove comments, TODOs, console.log(), or debugger statements unless I ask. Blank lines are often used for readability, don't remove those.
 - Only add comments to explain *why*, not *what* — prefer descriptive naming instead
 - Ignore linting errors rather than getting stuck on them
 - Exclude third-party code when inferring project conventions
