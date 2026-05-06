@@ -68,6 +68,7 @@
       "Bash(git diff *)",
       "Bash(git fetch *)",
       "Bash(git log *)",
+	  "Bash(git remote get-url origin)",
       "Bash(git show *)",
       "Bash(git stash list *)",
       "Bash(git status *)",
@@ -387,6 +388,11 @@
       {
         "matcher": "Bash",
         "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(curl *)",
+            "command": "python3 /Users/iandunn/.claude/hooks/safe-curl-check.py"
+          },
           {
             "type": "command",
             "command": "node /Users/iandunn/.claude/hooks/block-chained-commands.js"
