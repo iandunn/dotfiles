@@ -56,9 +56,9 @@ node shared/scripts/skillpack-install.mjs --global --skills=wp-playground,wp-abi
 section "10up Agent Skills"
 npx @10up/agent-skills --global
 
-section "10up Spark Plugins"
-claude plugin marketplace add 10up/spark-plugins
-claude plugin install spark-eng@10up-spark-plugins
+section "10up Relay Plugins"
+claude plugin marketplace add 10up/relay-plugins
+claude plugin install relay-eng@relay-plugins
 
 section "Daryll Doc Skills"
 claude plugin marketplace add darylldoyle/docs-skills
@@ -67,8 +67,13 @@ claude plugin install docs-skills@docs-skills-marketplace
 section "Superpowers"
 claude plugin install superpowers@claude-plugins-official
 
+# todo need to uninstall before updating?  https://github.com/chromeDevTools/chrome-devtools-mcp/ says
+# [!NOTE] If you already had Chrome DevTools MCP installed previously for Claude Code, make sure to remove it first from your installation and configuration files.
+section "Chrome Dev Tools MCP"
+claude plugin marketplace add ChromeDevTools/chrome-devtools-mcp
+claude plugin install chrome-devtools-mcp
+
 section "Anthropic frontend-design plugin"
 claude plugin install frontend-design@claude-plugins-official
 
 printf "\n\n⚠️ 10up agent skills not installed, see above"
-printf "\n ⚠️see errors for spark plugins"
