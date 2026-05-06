@@ -70,9 +70,13 @@ if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
 	source ~/.iterm2_shell_integration.bash
 fi
 
-# Have to edit install Bash v5, edit `/etc/shells`, then `chsh`` in order for this to work.
+# Have to install Bash v5, edit `/etc/shells`, then `chsh`` in order for this to work.
 # See https://github.com/JanDeDobbeleer/oh-my-posh/discussions/3429#discussioncomment-4910228
 # See https://github.com/JanDeDobbeleer/oh-my-posh/issues/3430
+#
+# iTerm2 may not have set $COLORTERM yet when the shell first sources this, causing OMP to fall
+# back to 256-color mode and render the wrong palette colors. Force it here.
+export COLORTERM=truecolor
 eval "$(oh-my-posh init bash --config "$HOME/dotfiles/bash/iandunn.omp.yml")"
 
 eval "$(zoxide init bash)"
