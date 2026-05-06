@@ -27,7 +27,15 @@ process.stdin.on("end", () => {
       process.stderr.write(
         "Never chain commands with && or ||. " +
         "Run one command per tool call. " +
-        "Use a separate `cd` tool call before any path-dependent command. Use `cd` instead of `git -C` too."
+        "Use a separate `cd` tool call before any path-dependent command."
+      );
+      process.exit(2);
+    }
+
+    if (/\bgit\s+-C\b/.test(command)) {
+      process.stderr.write(
+        "Never use `git -C`. " +
+        "Use a separate `cd` tool call before `git` commands instead."
       );
       process.exit(2);
     }

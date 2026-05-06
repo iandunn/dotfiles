@@ -80,6 +80,8 @@ SAFE_PREFIXES=(
 	"theme list"
 	"theme update"
 	"transient get"
+	"transient delete update_plugins"
+	"transient delete update_themes"
 	"user get"
 	"user list"
 	"user meta get"
