@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /*
- * PreToolUse hook: blocks command chaining (&&/||) in Bash tool calls.
+ * PreToolUse hook: blocks command chaining (&& || ;) and dangerous pipes (| bash/sh/zsh/eval).
  * Tells Claude to retry with separate tool calls instead.
  *
  * Forked from https://github.com/anthropics/claude-code/issues/16561#issuecomment-4276632142
@@ -28,6 +28,14 @@ process.stdin.on("end", () => {
         "Never chain commands with &&, ||, or ;. " +
         "Run one command per tool call. " +
         "Use a separate `cd` tool call before any path-dependent command."
+      );
+      process.exit(2);
+    }
+
+    if (/\|\s*(bash|sh|zsh|eval)\b/.test(unquoted)) {
+      process.stderr.write(
+        "Never pipe output directly into bash, sh, zsh, or eval. " +
+        "Save the output to a temp file, review it, then execute it explicitly."
       );
       process.exit(2);
     }
