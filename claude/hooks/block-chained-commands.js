@@ -4,7 +4,7 @@
  * PreToolUse hook: blocks command chaining (&&/||) in Bash tool calls.
  * Tells Claude to retry with separate tool calls instead.
  *
- * Source: https://github.com/anthropics/claude-code/issues/16561#issuecomment-4276632142
+ * Forked from https://github.com/anthropics/claude-code/issues/16561#issuecomment-4276632142
  *
  * ⚠️ This can and should be removed once this issue is resolved:
  * https://github.com/anthropics/claude-code/issues/29491 — "Compound bash commands should evaluate each command's permissions independently"
@@ -23,9 +23,9 @@ process.stdin.on("end", () => {
     const command = (data.tool_input?.command || "").trim();
     const unquoted = command.replace(/'[^']*'|"[^"]*"/g, "");
 
-    if (/&&|\|\|/.test(unquoted)) {
+    if (/&&|\|\||;/.test(unquoted)) {
       process.stderr.write(
-        "Never chain commands with && or ||. " +
+        "Never chain commands with &&, ||, or ;. " +
         "Run one command per tool call. " +
         "Use a separate `cd` tool call before any path-dependent command."
       );

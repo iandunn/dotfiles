@@ -60,6 +60,29 @@ test("allows || inside double quotes", () => {
   assert.equal(exitCode, ALLOW_EXIT);
 });
 
+// -- ; chaining --
+
+test("blocks ; chain", () => {
+  const { exitCode, stderr } = run("ls foo; ls bar");
+  assert.equal(exitCode, BLOCK_EXIT);
+  assert.match(stderr, /chain/i);
+});
+
+test("blocks ; with spaces", () => {
+  const { exitCode } = run("cd /tmp ; ls");
+  assert.equal(exitCode, BLOCK_EXIT);
+});
+
+test("allows ; inside single quotes", () => {
+  const { exitCode } = run("awk '{print $1; print $2}' file.txt");
+  assert.equal(exitCode, ALLOW_EXIT);
+});
+
+test("allows ; inside double quotes", () => {
+  const { exitCode } = run('grep -E "foo;bar" file.txt');
+  assert.equal(exitCode, ALLOW_EXIT);
+});
+
 // -- git -C --
 
 test("blocks git -C with path", () => {
