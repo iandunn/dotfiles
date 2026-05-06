@@ -24,10 +24,11 @@
       "Bash(composer show *)",
       "Bash(composer update *)",
       "Bash(composer run test *)",
-	  "Bash(composer outdated *)",
+      "Bash(composer run lint *)",
+      "Bash(composer outdated *)",
       "Bash(curl -s https://api.wordpress.org/core/version-check/1.7/)",
       "Bash(curl -s https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request[slug]=*)",
-	  "Bash(curl -s \"https://api.wordpress.org/plugins/info/1.0/wordpress-seo.json\")",
+      "Bash(curl -s \"https://api.wordpress.org/plugins/info/1.0/wordpress-seo.json\")",
       "Bash(curl -s http://localhost:9200)",
       "Bash(curl -s http://localhost:9200/*)",
       "Bash(curl -s https://localhost:9200)",
@@ -84,6 +85,7 @@
       "Bash(npm list *)",
       "Bash(npm ls *)",
       "Bash(npm test *)",
+      "Bash(npm run test 2>&1)",
       "Bash(npm view *)",
       "Bash(yalc publish .)",
       "Bash(php --version)",
@@ -167,6 +169,8 @@
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__wait_for",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__get_network_request",
       "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.salesforce.com)",
       "WebFetch(domain:api.wordpress.org)",
       "WebFetch(domain:code.visualstudio.com)",
       "WebFetch(domain:developer.wordpress.org)",
@@ -378,6 +382,7 @@
       "Bash(history -c*)"
     ]
   },
+  "model": "sonnet",
   "enabledMcpjsonServers": [
     "local-wp",
     "chrome-devtools"
@@ -413,7 +418,8 @@
     "docs-skills@docs-skills-marketplace": true,
     "superpowers@claude-plugins-official": true,
     "chrome-devtools-mcp@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": true,
+    "relay-eng@relay-plugins": true
   },
   "extraKnownMarketplaces": {
     "spark-plugins": {
@@ -432,6 +438,12 @@
       "source": {
         "source": "github",
         "repo": "ChromeDevTools/chrome-devtools-mcp"
+      }
+    },
+    "relay-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "10up/relay-plugins"
       }
     }
   },
