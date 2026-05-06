@@ -30,7 +30,8 @@ LONG_NO_ARG = {
 }
 
 # Long flags that take one argument.
-# Value is None (any value OK), '/dev/null' (must equal that), or 'url' (must be http/https).
+# Value is None (any value OK), '/dev/null' (must equal that),
+# 'stdout_or_null' (- or /dev/null only), or 'url' (must be http/https).
 LONG_WITH_ARG = {
     '--write-out': None, '--header': None, '--user-agent': None,
     '--output': '/dev/null',
@@ -42,6 +43,7 @@ LONG_WITH_ARG = {
     '--user': None, '--limit-rate': None,
     '--cacert': None, '--capath': None, '--cert': None, '--key': None,
     '--url': 'url',
+    '--dump-header': 'stdout_or_null',
 }
 
 # Short flags that take no argument (single chars).
@@ -52,6 +54,16 @@ SHORT_WITH_ARG = {
     'w': '--write-out', 'H': '--header', 'A': '--user-agent',
     'o': '--output', 'm': '--max-time', 'e': '--referer',
     'b': '--cookie', 'u': '--user', 'E': '--cert',
+    'D': '--dump-header',
+}
+
+# Shell redirect tokens that may appear alongside the curl command.
+SAFE_REDIRECTS = {'2>&1', '2>/dev/null', '>/dev/null', '1>/dev/null', '>&/dev/null'}
+
+# Read-only text-processing commands allowed after a pipe.
+SAFE_PIPE_CMDS = {
+    'head', 'tail', 'grep', 'egrep', 'fgrep', 'cat',
+    'wc', 'sort', 'uniq', 'cut', 'tr', 'jq',
 }
 
 
@@ -59,6 +71,8 @@ def value_ok(flag_key, value):
     constraint = LONG_WITH_ARG.get(flag_key)
     if constraint == '/dev/null':
         return value == '/dev/null'
+    if constraint == 'stdout_or_null':
+        return value in ('-', '/dev/null')
     if constraint == 'url':
         return is_safe_url(value)
     # Cookie from file leaks local cookie data.
@@ -67,33 +81,22 @@ def value_ok(flag_key, value):
     return True
 
 
-def main():
-    try:
-        data = json.load(sys.stdin)
-    except (json.JSONDecodeError, ValueError):
-        sys.exit(0)
-
-    command = data.get('tool_input', {}).get('command', '')
-
-    try:
-        tokens = shlex.split(command)
-    except ValueError:
-        sys.exit(0)
-
-    if not tokens or tokens[0] != 'curl':
-        sys.exit(0)
-
-    tokens = tokens[1:]  # skip 'curl'
+def check_curl_segment(tokens):
+    """Validate curl tokens (after the leading 'curl'). Returns True if safe."""
     i = 0
     end_of_flags = False
 
     while i < len(tokens):
         token = tokens[i]
 
+        if token in SAFE_REDIRECTS:
+            i += 1
+            continue
+
         # After '--', remaining tokens must still be http/https URLs.
         if end_of_flags:
             if not is_safe_url(token):
-                sys.exit(0)
+                return False
             i += 1
             continue
 
@@ -112,7 +115,7 @@ def main():
             if flag in LONG_WITH_ARG and value_ok(flag, value):
                 i += 1
                 continue
-            sys.exit(0)
+            return False
 
         # Long flag: --flag [value]
         if token.startswith('--'):
@@ -121,12 +124,12 @@ def main():
                 continue
             if token in LONG_WITH_ARG:
                 if i + 1 >= len(tokens):
-                    sys.exit(0)
+                    return False
                 if not value_ok(token, tokens[i + 1]):
-                    sys.exit(0)
+                    return False
                 i += 2
                 continue
-            sys.exit(0)
+            return False
 
         # Short flag(s): -s, -sSL, -sSo /dev/null, -sSo/dev/null
         # curl allows combining short flags; a with-arg flag consumes the
@@ -160,12 +163,60 @@ def main():
                     ok = False
                     break
             if not ok:
-                sys.exit(0)
+                return False
             i += 1 + extra
             continue
 
-        # Unknown token: not a flag, not an http/https URL.
+        # Unknown token: not a flag, not an http/https URL, not a redirect.
+        return False
+
+    return True
+
+
+def check_pipe_segment(tokens):
+    """Validate a post-pipe segment. Only read-only text-processing commands are allowed."""
+    if not tokens:
+        return True
+    return tokens[0] in SAFE_PIPE_CMDS
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except (json.JSONDecodeError, ValueError):
         sys.exit(0)
+
+    command = data.get('tool_input', {}).get('command', '')
+
+    try:
+        tokens = shlex.split(command)
+    except ValueError:
+        sys.exit(0)
+
+    if not tokens or tokens[0] != 'curl':
+        sys.exit(0)
+
+    # Split token list on '|' into pipe segments.
+    segments = []
+    current = []
+    for token in tokens:
+        if token == '|':
+            segments.append(current)
+            current = []
+        else:
+            current.append(token)
+    segments.append(current)
+
+    curl_segment = segments[0]
+    if not curl_segment or curl_segment[0] != 'curl':
+        sys.exit(0)
+
+    if not check_curl_segment(curl_segment[1:]):
+        sys.exit(0)
+
+    for segment in segments[1:]:
+        if not check_pipe_segment(segment):
+            sys.exit(0)
 
     print('{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow", "permissionDecisionReason": "Read-only curl auto-approved"}}')
 
