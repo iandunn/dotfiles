@@ -6,6 +6,7 @@ section "Installing Homebrew packages"
 
 packages=(
   bat
+  bats-core
   bash # oh-my-posh requires bash 4+
   composer
   colordiff
