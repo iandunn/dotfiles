@@ -502,6 +502,8 @@ function claude() {
 	# This handles the case where a project has a repo-committed CLAUDE.md in wp-content/ and a
 	# personal one higher up (e.g. ~/local-sites/[project]/). Claude Code automatically reads
 	# nested CLAUDE.md files for context, so the repo one is still loaded.
+	#
+	# todo this isn't working for dmv
 	while [[ "$dir" != "$HOME" && "$dir" != "/" ]]; do
 		if [[ -f "$dir/CLAUDE.md" ]]; then
 			root="$dir"
