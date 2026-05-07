@@ -158,6 +158,18 @@ class TestAllowed(unittest.TestCase):
     def test_redirect_2_stdout(self):
         self.assertAllowed('curl -sk -D - https://example.com 2>&1')
 
+    def test_output_to_tmp_file(self):
+        self.assertAllowed('curl -o /tmp/downloaded.txt https://example.com')
+
+    def test_output_long_to_tmp_file(self):
+        self.assertAllowed('curl --output /tmp/downloaded.txt https://example.com')
+
+    def test_output_equals_tmp_file(self):
+        self.assertAllowed('curl --output=/tmp/file.txt https://example.com')
+
+    def test_output_to_tmp_with_query(self):
+        self.assertAllowed('curl -s "https://example.com/api?foo=bar" -o /tmp/result.json 2>&1')
+
 
 class TestNotAllowed(unittest.TestCase):
 
@@ -191,11 +203,11 @@ class TestNotAllowed(unittest.TestCase):
     def test_form_with_file(self):
         self.assertFallthrough('curl -F "file=@/tmp/upload.txt" https://example.com')
 
-    def test_output_to_real_file(self):
-        self.assertFallthrough('curl -o /tmp/downloaded.txt https://example.com')
+    def test_output_to_non_tmp_file(self):
+        self.assertFallthrough('curl -o /var/www/file.txt https://example.com')
 
-    def test_output_long_to_real_file(self):
-        self.assertFallthrough('curl --output /tmp/downloaded.txt https://example.com')
+    def test_output_long_to_non_tmp_file(self):
+        self.assertFallthrough('curl --output /var/www/file.txt https://example.com')
 
     def test_dump_header_to_file(self):
         self.assertFallthrough('curl -D /tmp/headers.txt https://example.com')
@@ -284,8 +296,8 @@ class TestNotAllowed(unittest.TestCase):
     def test_delete_method(self):
         self.assertFallthrough('curl -X DELETE https://example.com')
 
-    def test_output_equals_real_file(self):
-        self.assertFallthrough('curl --output=/tmp/file.txt https://example.com')
+    def test_output_equals_non_tmp_file(self):
+        self.assertFallthrough('curl --output=/var/log/file.txt https://example.com')
 
     def test_combined_with_unknown(self):
         self.assertFallthrough('curl -sX https://example.com')

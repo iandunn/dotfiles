@@ -30,11 +30,11 @@ LONG_NO_ARG = {
 }
 
 # Long flags that take one argument.
-# Value is None (any value OK), '/dev/null' (must equal that),
+# Value is None (any value OK), 'safe_output' (/dev/null or /tmp/),
 # 'stdout_or_null' (- or /dev/null only), or 'url' (must be http/https).
 LONG_WITH_ARG = {
     '--write-out': None, '--header': None, '--user-agent': None,
-    '--output': '/dev/null',
+    '--output': 'safe_output',
     '--max-time': None, '--connect-timeout': None,
     '--retry': None, '--retry-delay': None, '--retry-max-time': None,
     '--referer': None, '--cookie': None,
@@ -69,8 +69,8 @@ SAFE_PIPE_CMDS = {
 
 def value_ok(flag_key, value):
     constraint = LONG_WITH_ARG.get(flag_key)
-    if constraint == '/dev/null':
-        return value == '/dev/null'
+    if constraint == 'safe_output':
+        return value == '/dev/null' or value.startswith('/tmp/')
     if constraint == 'stdout_or_null':
         return value in ('-', '/dev/null')
     if constraint == 'url':

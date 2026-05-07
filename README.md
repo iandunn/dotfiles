@@ -4,6 +4,7 @@ These are my config files for various programs. They implement my preferences, t
 
 These are some things that might be useful to others:
 
+* [claude hooks](./claude/hooks/) to securely prevent nuisance approval prompts
 * [bash](./bash/) - Custom theme for [Oh My Posh](https://ohmyposh.dev/) (see screenshot below); aliases; helper functions, SSH tab completion, deploy script wrapper, and general configuation.
 * [git](./git) - Configuration for commit signing with per-repository overrides; syntax-highlighted diffs with [Delta](https://dandavison.github.io/delta/); hooks for good commit messages, linting, etc; lots of aliases; and general configuation. See screenshot below.
 * [bin\generate-config-files](./bin/generate-config-files.sh) - Concatenates public and private SSH config files into `~/.ssh/config`. This lets you track your foundational and non-sensitive configuation, without disclosing private information.
