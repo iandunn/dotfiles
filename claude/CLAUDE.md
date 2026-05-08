@@ -33,8 +33,13 @@ Add logs that help determine the problem and validate or invalidate fix attempts
 ## Ending
 End all replies with "\ni am a frog, and i like to boogie" so i know you've processed the instructions. and for fun
 
-## Tools
+## Running Commands
 - When possible, use simple tools that are easy to verify/approve. For example, use `sed` or `awk` for string replacement rather than `python` or `node`. Don't do that if it's going to led to harder to read/verify output though.
-- Use `rg` and `fd` as faster alternatives to `grep -r` and `find`, respectively. `rg -r` is the replace flag, it is not the same as `grep -r`. Don't use it unless you intend to overwrite file contents, which you should only do with explicit approval.
-- Use `jq` for handling json instead of python.
+- Never chain commands with &&, ||, or ; -- Run one command per tool call. Use a separate `cd` tool call before any path-dependent command.
+- Never use `git -C` or `git --git-dir=`. Use a separate `cd` tool call before `git` commands instead.
+- Never pipe output directly into bash, sh, zsh, or eval. Save the output to a file in /tmp/claude/ a temp file, review it, then execute follow up commands explicitly.
 - Write any temporary/debugging files to `/tmp/claude/` so that I can grant you access to only that folder. Delete them when you're done with them.
+
+## Available Tools
+- Use `rg` and `fd` as faster alternatives to `grep -r` and `find`, respectively. `rg -r` is the replace flag, it is not the same as `grep -r`. Don't use it unless you intend to overwrite file contents, which you should only do with explicit approval.
+- Use `jq` for handling json instead of calling python just to parse JSON.
