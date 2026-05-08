@@ -60,6 +60,7 @@ SAFE_PREFIXES=(
 	"post list"
 	"post meta get"
 	"post meta list"
+	"post term list"
 	"post-type get"
 	"post-type list"
 	"rewrite flush"
@@ -86,6 +87,8 @@ SAFE_PREFIXES=(
 	"user list"
 	"user meta get"
 	"widget list"
+    "vip-search index",
+	"elasticpress index",
 )
 
 for prefix in "${SAFE_PREFIXES[@]}"; do

@@ -94,8 +94,6 @@
       "Bash(php -i)",
       "Bash(php -v)",
       "Bash(phpunit *)",
-      "Bash(wp --version)",
-      "Bash(wp --info)",
       "Bash(pwd)",
       "Bash(rg *)",
       "Bash(sed -n *)",
@@ -360,14 +358,6 @@
       "Bash(composer outdated *)",
       "Bash(composer validate *)",
       "Bash(find * -exec *)",
-      "Bash(wp plugin activate *)",
-      "Bash(wp plugin deactivate *)",
-      "Bash(wp theme activate *)",
-      "Bash(wp db export *)",
-      "Bash(wp db import *)",
-      "Bash(wp core update *)",
-      "Bash(wp option update *)",
-      "Bash(wp option add *)",
       "Write(~/.claude/**)"
     ]
   },
