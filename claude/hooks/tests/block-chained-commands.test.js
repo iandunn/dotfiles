@@ -149,6 +149,17 @@ test("blocks git -C with relative path", () => {
   assert.equal(exitCode, BLOCK_EXIT);
 });
 
+test("blocks git --git-dir with = syntax", () => {
+  const { exitCode, stderr } = run("git --git-dir=/some/path/.git status");
+  assert.equal(exitCode, BLOCK_EXIT);
+  assert.match(stderr, /git-dir/i);
+});
+
+test("blocks git --git-dir with space syntax", () => {
+  const { exitCode } = run("git --git-dir .git log");
+  assert.equal(exitCode, BLOCK_EXIT);
+});
+
 // -- normal commands that should pass through --
 
 test("allows plain git status", () => {
