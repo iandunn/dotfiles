@@ -11,6 +11,7 @@
       "Edit",
       "MultiEdit",
       "Read",
+      "Write(/tmp/claude/**)",
       "Bash(./vendor/bin/phpunit *)",
       "Bash(/bin/cat *)",
       "Bash(awk *)",
@@ -68,7 +69,7 @@
       "Bash(git diff *)",
       "Bash(git fetch *)",
       "Bash(git log *)",
-	  "Bash(git remote get-url origin)",
+      "Bash(git remote get-url origin)",
       "Bash(git show *)",
       "Bash(git stash list *)",
       "Bash(git status *)",
@@ -94,6 +95,7 @@
       "Bash(php -v)",
       "Bash(phpunit *)",
       "Bash(wp --version)",
+      "Bash(wp --info)",
       "Bash(pwd)",
       "Bash(rg *)",
       "Bash(sed -n *)",
@@ -390,8 +392,8 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(curl *)",
-            "command": "python3 /Users/iandunn/.claude/hooks/safe-curl-check.py"
+            "command": "python3 /Users/iandunn/.claude/hooks/safe-curl-check.py",
+            "if": "Bash(curl *)"
           },
           {
             "type": "command",
