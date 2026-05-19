@@ -10,6 +10,11 @@
 INPUT=$(cat)
 ARGS=$(echo "$INPUT" | jq -r '.tool_input.args // empty')
 
+if [ -z "$ARGS" ]; then
+	CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+	ARGS=$(echo "$CMD" | sed 's/^wp //')
+fi
+
 SAFE_PREFIXES=(
 	"--info"
 	"--version"
@@ -87,8 +92,8 @@ SAFE_PREFIXES=(
 	"user list"
 	"user meta get"
 	"widget list"
-    "vip-search index",
-	"elasticpress index",
+    "vip-search index"
+	"elasticpress index"
 )
 
 for prefix in "${SAFE_PREFIXES[@]}"; do

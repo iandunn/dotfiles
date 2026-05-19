@@ -387,6 +387,11 @@
           },
           {
             "type": "command",
+            "command": "/Users/iandunn/.claude/hooks/wp-cli-permissions.sh",
+            "if": "Bash(wp *)"
+          },
+          {
+            "type": "command",
             "command": "node /Users/iandunn/.claude/hooks/block-chained-commands.js"
           }
         ]
