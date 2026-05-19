@@ -49,7 +49,7 @@ class TestAllowed(unittest.TestCase):
         self.assertAllowed('curl -s -o /dev/null -w "%{http_code}" https://example.com')
 
     def test_health_check_with_insecure(self):
-        self.assertAllowed('curl -s -o /dev/null -w "%{http_code} label\\n" -k https://dmv.test/locations/')
+        self.assertAllowed('curl -s -o /dev/null -w "%{http_code} label\\n" -k https://example.org/locations/')
 
     def test_combined_short_flags(self):
         self.assertAllowed('curl -sSL https://example.com')
@@ -112,13 +112,13 @@ class TestAllowed(unittest.TestCase):
         self.assertAllowed('curl -s --retry 3 https://example.com')
 
     def test_health_check_root(self):
-        self.assertAllowed('curl -s -o /dev/null -w "%{http_code} /\\n" -k https://dmv.test/')
+        self.assertAllowed('curl -s -o /dev/null -w "%{http_code} /\\n" -k https://example.org/')
 
     def test_health_check_path_label(self):
-        self.assertAllowed('curl -s -o /dev/null -w "%{http_code} /kitchen-sink/\\n" -k https://dmv.test/kitchen-sink/')
+	self.assertAllowed('curl -s -o /dev/null -w "%{http_code} /some-page/\\n" -k https://example.org/some-page/')
 
     def test_health_check_path_label2(self):
-        self.assertAllowed('curl -s -o /dev/null -w "%{http_code} /mydmv/\\n" -k https://dmv.test/mydmv/')
+        self.assertAllowed('curl -s -o /dev/null -w "%{http_code} /my-path/\\n" -k https://example.org/my-path/')
 
     def test_cacert(self):
         self.assertAllowed('curl --cacert /etc/ssl/cert.pem https://example.com')
@@ -135,13 +135,13 @@ class TestAllowed(unittest.TestCase):
     # -- piped commands --
 
     def test_pipe_head(self):
-        self.assertAllowed('curl -sk https://dmv.test/es/ | head -5')
+        self.assertAllowed('curl -sk https://example.org/es/ | head -5')
 
     def test_pipe_grep_head(self):
-        self.assertAllowed('curl -sk https://dmv.test/es/ | grep -i "title|h1|404" | head -5')
+        self.assertAllowed('curl -sk https://example.org/es/ | grep -i "title|h1|404" | head -5')
 
     def test_pipe_dump_header_redirect_grep(self):
-        self.assertAllowed('curl -sk -D - -o /dev/null https://dmv.test/es/ 2>&1 | grep -E "HTTP|Location|location"')
+        self.assertAllowed('curl -sk -D - -o /dev/null https://example.org/es/ 2>&1 | grep -E "HTTP|Location|location"')
 
     def test_pipe_tail(self):
         self.assertAllowed('curl -s https://example.com | tail -20')
