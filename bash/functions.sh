@@ -48,7 +48,23 @@ _wp_complete() {
 
 # Prints a section header, to help make script output more readable
 section() {
-    printf "\n\033[1;33;40m %s \033[0m\n" "$1"
+    printf "\n\033[1;33;40m%s \033[0m\n" "$1"
+}
+
+success_message() {
+	printf "\n\033[1;32;40m%s \033[0m\n" "$1"
+}
+
+error_message() {
+	printf "\n\033[1;31;40m%s \033[0m\n" "$1"
+}
+
+warning_message() {
+	printf "\n\033[1;33;40m%s \033[0m\n" "$1"
+}
+
+info_message() {
+	printf "\n\033[1;34;40m%s \033[0m\n" "$1"
 }
 
 # find all files in the current folder and below, then grep each of them for the given string
@@ -518,4 +534,91 @@ function claude() {
 		printf "\n⚠️ No project root found, launching from current folder\n\n"
 		command claude "$@"
 	fi
+}
+
+git_archive_stale_branches() {
+	local cutoff_date
+	local main_branch
+	local branches
+	local current_branch
+
+	cutoff_date=$(date -d '3 months ago' '+%Y-%m-%d' 2>/dev/null || date -v-3m '+%Y-%m-%d')
+
+	main_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+
+	if [[ -z "$main_branch" ]]; then
+		error_message "error: origin/HEAD is not set."
+		return 1
+	fi
+
+	current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+	if [[ $(git status --porcelain) ]]; then
+		error_message "error: working tree is not clean. Stash or commit changes before pruning." >&2
+		return 1
+	fi
+
+	if [[ "$current_branch" != "$main_branch" ]]; then
+		info_message "Switching to $main_branch..."
+		git checkout "$main_branch"
+	fi
+
+	local skip_branches="dev|develop|development|preprod|retainer|st|staging|uat|it"
+
+	branches=$(git for-each-ref --format='%(refname:short) %(committerdate:short)' refs/heads \
+		| awk -v cutoff="$cutoff_date" -v main="$main_branch" -v skip="$skip_branches" \
+			'$2 < cutoff && $1 != main && $1 !~ ("^(" skip ")$") {print $1}')
+
+	if [[ -z "$branches" ]]; then
+		info_message "No stale branches found (older than 3 months)."
+		return 0
+	fi
+
+	info_message "Found stale branches (no commits since $cutoff_date):"
+	echo "$branches" | sed 's/^/  /'
+	echo
+
+	while IFS= read -r branch; do
+		local last_commit
+
+		last_commit=$(git log -1 --format='%ci (%cr)' "$branch")
+
+		echo "Branch: $branch"
+		echo "Last commit: $last_commit"
+		printf "Keep this branch? [y/N] "
+		read -r response </dev/tty
+
+		case "$response" in
+			[yY]|[yY][eE][sS])
+				echo "Keeping $branch."
+				;;
+
+			*)
+				local diff_output
+				local safe_name
+				local diff_dir="stale-diffs"
+
+				diff_output=$(git diff "$main_branch"..."$branch")
+
+				if [[ -z "$diff_output" ]]; then
+					warning_message "⚠️ diff against $main_branch is empty — branch may already be merged or changes reverted. Skipping deletion." >&2
+					echo
+					continue
+				fi
+
+				safe_name=$(echo "$branch" | tr '/' '_')
+
+				local diff_file="${diff_dir}/${safe_name}.diff"
+
+				mkdir -p "$diff_dir"
+				echo "Saving diff to ./${diff_file}..."
+				echo "$diff_output" > "$diff_file"
+
+				git branch -D "$branch"
+				;;
+		esac
+		echo
+	done <<< "$branches"
+
+	success_message "Done."
 }

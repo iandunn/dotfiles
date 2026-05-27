@@ -16,6 +16,7 @@
 	brmf	= branch --delete --force
 	bmv		= branch --move
 	bmerged = branch --merged
+	barchive  = "!source ~/dotfiles/bash/functions.sh && git_archive_stale_branches"
 
 	#rmmerged = !git branch -d $(git branch --merged=develop | grep -v develop) && git fetch --prune
 		# this makes asssumptions about workflow that aren't true of all projects
