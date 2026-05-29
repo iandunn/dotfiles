@@ -76,4 +76,12 @@ claude plugin install chrome-devtools-mcp
 section "Anthropic frontend-design plugin"
 claude plugin install frontend-design@claude-plugins-official
 
+section "Modern Web Guidance"
+claude plugin marketplace add GoogleChrome/modern-web-guidance
+claude plugin install modern-web-guidance@googlechrome
+
+section "Security Guidance"
+claude plugin install security-guidance@claude-plugins-official
+
+
 printf "\n\n⚠️ 10up agent skills not installed, see above"
