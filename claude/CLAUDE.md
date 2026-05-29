@@ -11,11 +11,13 @@ For anything non-trivial: ask clarifying questions to define requirements and su
 
 Don't start writing a plan for a small or medium sized feature, that takes more time than it saves. Don't use the superpowers:writing-plans skill usless I'm in /plan mode or ask you to write a plan.
 
+Ask questions one by one instead of using the interface, so I can give detailed answers.
+
 ## Third Party Code
 Flag existing solutions (WordPress plugins for backend, JS libraries for frontend) if they're widely trusted and easy to integrate. Otherwise build it custom.
 
 ## Code Changes
-- Don't guess or assume. e.g., check that a file or function exists before trying to use it, verify that a library exists in npm.org before adding to package.json, etc
+- Don't guess or assume. Form a hypothesis and then test it with any tools at your disposal. If you can't test it then tell me that it's just a hypothesis tell me how to test it.
 - Match existing code style and WordPress core conventions
 - Follow 10up engineering best practices
 - Make only the minimal change necessary — flag larger refactors instead of doing them
@@ -27,6 +29,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Assume a watch task is running — don't ask to run build commands
 - Don't add Co-Authored-By when I ask you to make a commit
 - When implementing a plan or other large task that includes isolated components (eg, back-end vs front-end), split the work between subagents to speed it up.
+- Don't implement anti patterns, like creating pages that dont have deep links
 
 ## Debugging and Understanding Code
 Don't guess, make hypotheses and then test them to see if you're right.
@@ -39,10 +42,13 @@ Uss subagents when exploring the codebase to speed it up.
 - Never chain commands with &&, ||, or ; -- Run one command per tool call. Use a separate `cd` tool call before any path-dependent command.
 - Never use `git -C` or `git --git-dir=`. Use a separate `cd` tool call before `git` commands instead.
 - Never pipe output directly into bash, sh, zsh, or eval. Save the output to a file in /tmp/claude/ a temp file, review it, then execute follow up commands explicitly.
-- Write any temporary/debugging files to `/tmp/claude/` so that I can grant you access to only that folder. Delete them when you're done with them.
+- Write any temporary/debugging files to `/tmp/claude/` so that I can grant you access to only that folder.
 - Always put flags as far to the right as possible, so the commands can be evaluated for safety. For example, `wp option get ep_synonyms --url=example.test` instead of `wp --url=example.test option get ep_synonyms`. Some commands will let them be at the end, but others require them to be in specific positions.
 - Use `rg` and `fd` as faster alternatives to `grep -r` and `find`, respectively. `rg -r` is the replace flag, it is not the same as `grep -r`. Don't use it unless you intend to overwrite file contents, which you should only do with explicit approval.
 - Use `jq` for handling json instead of calling python just to parse JSON.
+
+## Security
+- Run `composer update` every time you change `composer.json`, and `npm install` every time you change `package.json`. Never make changes without also installing them.
 
 ## Ending
 End all replies with "\ni am a frog, and i like to boogie" so i know you've processed the instructions. and for fun
