@@ -512,6 +512,7 @@ function claude() {
 
 	local dir="$PWD"
 	local root=""
+	local local_sites="$HOME/local-sites"
 
 	# Walk up to find CLAUDE.md, stopping before $HOME to avoid the global one.
 	# Keep walking even after finding one, to prefer the highest (personal) CLAUDE.md as root.
@@ -519,11 +520,13 @@ function claude() {
 	# personal one higher up (e.g. ~/local-sites/[project]/). Claude Code automatically reads
 	# nested CLAUDE.md files for context, so the repo one is still loaded.
 	#
-	# todo this isn't working for dmv
-	while [[ "$dir" != "$HOME" && "$dir" != "/" ]]; do
+	# ~/local-sites/ also acts as a stop boundary like $HOME — it has a shared CLAUDE.md that
+	# provides context for all local sites, but shouldn't itself be treated as a project root.
+	while [[ "$dir" != "$HOME" && "$dir" != "$local_sites" && "$dir" != "/" ]]; do
 		if [[ -f "$dir/CLAUDE.md" ]]; then
 			root="$dir"
 		fi
+
 		dir="$(dirname "$dir")"
 	done
 
