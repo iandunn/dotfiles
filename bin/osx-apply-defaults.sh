@@ -49,6 +49,9 @@ esac
 defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 defaults write com.apple.finder AppleShowAllFiles -boolean true
 
+# Stop prompting to "correct" file extensions when downloading files
+defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+
 # Show hidden files by default
 defaults write com.apple.finder AppleShowAllFiles -bool true
 
@@ -161,6 +164,11 @@ defaults write -g ApplePressAndHoldEnabled -bool false
 
 # Check for software updates daily instead of once per week
 defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1
+
+# Only install security updates automatically
+sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticallyInstallMacOSUpdates -bool false
+sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload -bool false
+sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate CriticalUpdateInstall -bool true
 
 # Limit Time Machine space, because it shares the disk with other things
 #sudo defaults write /Library/Preferences/com.apple.TimeMachine MaxSize 850000
