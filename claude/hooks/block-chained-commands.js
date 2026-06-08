@@ -42,7 +42,7 @@ process.stdin.on("end", () => {
 
     if (/\bgit\s+(-C\b|--git-dir\b)/.test(command)) {
       process.stderr.write(
-        "Never use `git -C` or `git --git-dir=`. " +
+        "Never use `git -C`, `git --git-dir=`, or the `GIT_DIR` environment variable. " +
         "Use a separate `cd` tool call before `git` commands instead."
       );
       process.exit(2);

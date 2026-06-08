@@ -30,6 +30,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Don't add Co-Authored-By when I ask you to make a commit
 - When implementing a plan or other large task that includes isolated components (eg, back-end vs front-end), split the work between subagents to speed it up.
 - Don't implement anti patterns, like creating pages that dont have deep links
+- If automated tests already exist, then write them for code you add as well. Only add meaningful tests, though, don't try to get 100% coverage.
 
 ## Debugging and Understanding Code
 Don't guess, make hypotheses and then test them to see if you're right.
@@ -40,7 +41,7 @@ Uss subagents when exploring the codebase to speed it up.
 ## Running Commands
 - When possible, use simple tools that are easy to verify/approve. For example, use `sed` or `awk` for string replacement rather than `python` or `node`. Don't do that if it's going to led to harder to read/verify output though.
 - Never chain commands with &&, ||, or ; -- Run one command per tool call. Use a separate `cd` tool call before any path-dependent command.
-- Never use `git -C` or `git --git-dir=`. Use a separate `cd` tool call before `git` commands instead.
+- Never use `git -C`, `git --git-dir=`, or the `GIT_DIR` environment variable. Use a separate `cd` tool call before `git` commands instead.
 - Never pipe output directly into bash, sh, zsh, or eval. Save the output to a file in /tmp/claude/ a temp file, review it, then execute follow up commands explicitly.
 - Write any temporary/debugging files to `/tmp/claude/` so that I can grant you access to only that folder.
 - Always put flags as far to the right as possible, so the commands can be evaluated for safety. For example, `wp option get ep_synonyms --url=example.test` instead of `wp --url=example.test option get ep_synonyms`. Some commands will let them be at the end, but others require them to be in specific positions.
