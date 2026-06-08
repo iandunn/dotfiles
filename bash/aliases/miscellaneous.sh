@@ -22,3 +22,6 @@ alias fix-camera='sudo killall VDCAssistant'
 # This is insane that OSX makes you do this any time you want to open a file in an app
 # alias unquarantine='xattr -d com.apple.quarantine'
 # need to test more, make sure this doesn't open up vulnerabilities beyond just files i download yourself (and therefore trust)
+
+# Remove hard line wraps when copying from narrow terminal windows
+alias unwrap='pbpaste | perl -0777 -pe "s/(?<!\n)\n(?!\n)/ /g" | pbcopy'

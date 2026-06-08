@@ -599,7 +599,6 @@ git_archive_stale_branches() {
 			*)
 				local diff_output
 				local safe_name
-				local diff_dir="stale-diffs"
 
 				diff_output=$(git diff "$main_branch"..."$branch")
 
@@ -611,7 +610,7 @@ git_archive_stale_branches() {
 
 				safe_name=$(echo "$branch" | tr '/' '_')
 
-				local diff_file="${diff_dir}/${safe_name}.diff"
+				local diff_file="./${safe_name}.diff"
 
 				mkdir -p "$diff_dir"
 				echo "Saving diff to ./${diff_file}..."
