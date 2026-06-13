@@ -23,8 +23,8 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Make only the minimal change necessary — flag larger refactors instead of doing them
 - Never touch unrelated lines
 - Don't remove comments, TODOs, console.log(), or debugger statements unless I ask. Blank lines are often used for readability, don't remove those.
-- Only add comments to code that explain *why* the code does something, not *what* it does — prefer descriptive variable naming etc instead. Don't add comments that explain new code in relation to old code that was removed by your changes. The person reading the code after it's merged wouldn't understand what that's about.
-- Ignore linting errors rather than getting stuck on them
+- Only add comments to code that explain *why* the code does something, not *what* it does — prefer descriptive variable naming etc instead.
+- Don't add comments that explain what you did, or that explain new code in relation to code that you changed. The person reading the code after it's merged wouldn't understand what that's about.
 - Exclude third-party code when inferring project conventions
 - Assume a watch task is running — don't ask to run build commands
 - Don't add Co-Authored-By when I ask you to make a commit
