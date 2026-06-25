@@ -3,10 +3,13 @@
 .DS_Store
 .idea
 .vscode
+
 0-sandbox.php
+0-sandbox-common.php
 0-sandbox-functionality.php
 sandbox-functionality.php
 sandbox-functionality/
+
 node_modules
 # vendor can't because some WP plugins distribute their vendor directory
 npm-debug.log

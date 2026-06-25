@@ -89,8 +89,7 @@
 	#
 	# log
 	#
-	logmain = !git log $(basename git symbolic-ref refs/remotes/origin/HEAD)..
-		# not working
+	logmain = "!source ~/dotfiles/bash/functions.sh && git log $(git_main_branch).."
 	logori = log origin..
 	logm   = log --no-abbrev-commit --format=medium
 	logsvn = log git-svn..

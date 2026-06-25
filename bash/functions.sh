@@ -539,6 +539,28 @@ function claude() {
 	fi
 }
 
+runbeep() {
+	local cmd=("$@")
+	local status
+
+	"${cmd[@]}"
+	status=$?
+
+	afplay /System/Library/Sounds/Funk.aiff
+
+	if [[ $status -eq 0 ]]; then
+		osascript -e "display notification \"Done: ${cmd[*]}\" with title \"Success\""
+	else
+		osascript -e "display notification \"Failed (exit $status): ${cmd[*]}\" with title \"Failed\""
+	fi
+
+	return $status
+}
+
+git_main_branch() {
+	git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'
+}
+
 git_archive_stale_branches() {
 	local cutoff_date
 	local main_branch
@@ -547,7 +569,7 @@ git_archive_stale_branches() {
 
 	cutoff_date=$(date -d '3 months ago' '+%Y-%m-%d' 2>/dev/null || date -v-3m '+%Y-%m-%d')
 
-	main_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+	main_branch=$(git_main_branch)
 
 	if [[ -z "$main_branch" ]]; then
 		error_message "error: origin/HEAD is not set."
