@@ -440,9 +440,18 @@ _git_resolve_branch() {
 		return
 	fi
 
+	# TODO allow autocompleet `git co dev<tab>` should complete to `develop`
+
 	branches=$(git branch --no-color | tr -d ' *')
 
-	# Exact local match
+	# If it's a filename, skip checkout.
+	if [[ -e "$query" ]]; then
+		# also support if it's a branch and then a filename like git co trunk composer.lock
+		git checkout "$query"
+		return
+	fi
+
+	# Skip fuzzy search when there's an exact match
 	if echo "$branches" | grep --color=never -qx "$query"; then
 		echo "$query"
 		return
