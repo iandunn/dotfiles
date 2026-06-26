@@ -412,6 +412,14 @@
     "local-wp",
     "chrome-devtools"
   ],
+  "disabledMcpjsonServers": [
+    "claude.ai Teamwork",
+    "claude.ai Sanity",
+    "claude.ai Greenhouse",
+    "claude.ai Supabase",
+    "claude.ai Browserstack",
+    "claude.ai Ahrefs"
+  ],
   "hooks": {
     "PreToolUse": [
       {
