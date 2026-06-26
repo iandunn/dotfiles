@@ -7,6 +7,10 @@
 	#include <print.h>
 #endif
 
+// todo note that i ran brew uninstall arm-none-eabi-gcc because i dont think its being used
+// and im running out of disk space. i think qmk is using arm-none-eabi-gcc@8
+// but if have problems compiling then try reinstalling arm-none-eabi-gcc
+
 // This has to come before `keycodes` and `process_record_user`.
 enum custom_keycodes {
 	RGB_SLD = SAFE_RANGE,
@@ -79,6 +83,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	),
 
 	// Navigation, macros, misc commonly used
+
+	// todo function keys via layer1 oneshot + F? oneshot + {number} = f[number] - would using F create lag or something though b/c its also a normal key? maybe not , and even if it did that might be fine b/c don't use often
+	// * need this to do f6 for firefox switching between panels
+	// KC_F6 would be this specifically, but probabably better to be able to do any key
+	// * see https://claude.ai/chat/5439cece-e2e4-4b3e-b3ac-1738040d32b0
+	//
+	// * document function keys once added
+
 	[1] = LAYOUT_ergodox_pretty(
 		_______, KC_F1,   KC_F2,      MS_BTN3, _______, _______, _______,            _______, KC_PAGE_UP, MS_ACL0, MS_ACL1, ST_MACRO_YAHOO, ST_MACRO_DASHES, ST_MACRO_CHECKBOX,
 		_______, _______, MS_BTN1, MS_UP,   MS_BTN2, _______, _______,         _______, MS_WHLU, RGUI(RSFT(KC_LEFT_BRACKET)), KC_UP, RGUI(RSFT(KC_RIGHT_BRACKET)), KC_HOME, _______,
@@ -178,7 +190,20 @@ bool process_record_user( uint16_t keycode, keyrecord_t *record ) {
 			}
 		}
 
-		// Ignore key releases while waiting
+		// Ignore key releases while waiting.
+		//
+		// BUG (TODO): This blanket `return false` can swallow OSM modifier release events,
+		// leaving Alt/Option (or other modifiers) stuck until the keyboard is unplugged.
+		//
+		// Symptom: typing produces Option-key characters like ®å†∫Ωœ instead of normal letters.
+		// Root cause: if OSM(MOD_LALT/RALT) is pending when key_lock_waiting becomes true,
+		// the subsequent release event is swallowed here before QMK's OSM state machine can
+		// dequeue it — so the modifier stays registered indefinitely.
+		//
+		// Fix: allow modifier key releases through so OSM can clean up:
+		//   if ( !record->event.pressed && IS_MOD(keycode) ) { return true; }
+		//
+		// Resume in: https://claude.ai (search conversation context for "®å†å†ƒƒƒ∫∫Ωœ")
 		return false;
 	}
 
