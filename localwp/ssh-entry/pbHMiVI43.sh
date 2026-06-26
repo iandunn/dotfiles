@@ -11,14 +11,19 @@ export WP_CLI_DISABLE_AUTO_CHECK_UPDATE=1
 echo "Setting Local environment variables..."
 source "$(dirname "$0")/common.sh"
 
+# todo switching to php 8.3.30 seems to be fine
+# its still running the buggy version of xdebug, though, so it may crash again in the future
+# https://community.localwp.com/t/xdebug-3-3-0-crashes/51324
+# could just deal with that for publix only for now
+
 export PATH="$HOME/Library/Application Support/Local/lightning-services/mysql-8.0.35+4/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
-export PATH="$HOME/Library/Application Support/Local/lightning-services/php-8.2.29+0/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
+export PATH="$HOME/Library/Application Support/Local/lightning-services/php-8.3.30+1/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/bin:$PATH"
 export PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix:$PATH"
 export PATH="/Applications/Local.app/Contents/Resources/extraResources/bin/composer/posix:$PATH"
 export PATH="$SITE_PATH/vendor/bin:$PATH"
 ## todo update ^ based on composer path
 
-export MAGICK_CODER_MODULE_PATH="$HOME/Library/Application Support/Local/lightning-services/php-8.2.29+0/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/ImageMagick/modules-Q16/coders"
+export MAGICK_CODER_MODULE_PATH="$HOME/Library/Application Support/Local/lightning-services/php-8.3.30+1/bin/darwin$PROCESSOR_DIRECTORY_SUFFIX/ImageMagick/modules-Q16/coders"
 
 
 echo "----"
