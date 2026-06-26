@@ -72,6 +72,7 @@ defaults write com.apple.finder EmptyTrashSecurely -bool true
 
 # Turn off startup sound because it wakes people up in the middle of the night, at libraries, etc.
 sudo nvram StartupMute=%01
+sudo nvram SystemAudioVolume=" "
 
 # Open new Finder windows to the Downloads folder
 defaults write com.apple.finder NewWindowTarget -string "PfLo"

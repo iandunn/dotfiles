@@ -28,6 +28,13 @@ cp -r . "$LOCALWP_ADDONS_DIR/$REPO_SLUG/"
 cd "$LOCALWP_ADDONS_DIR/$REPO_SLUG/"
 npm install --production --ignore-scripts
 
+# then have to manually activate
+# then manually add to every site?
+# maybe can script those last steps?
+# already manually to everything though, but maybe wanna script it to auto update future sites?
+# just make sure that it doesn't overwrite existing project-specific files
+
+
 
 
 #
@@ -50,12 +57,24 @@ node shared/scripts/skillpack-build.mjs --clean
 node shared/scripts/skillpack-install.mjs --global --skills=wp-playground,wp-abilities-api,wp-wpcli-and-ops,wp-phpstan
 
 
+
+
 #
 # Misc
 #
+# TODO need to make sure don't overwrite any uncommited changes in branchs?
+# maybe first check if on main branch and clean. if so then install
+# if not then skip this and warn at the end
 section "10up Agent Skills"
+# npx @10up/agent-skills --global
+# rm -rf ~/.claude/skills/10up-update-plugins
+# ln -s ~/.claude/skills/10up-update-plugins ~/vho
+# install from source rather than package ? symlink all individual ones to git repo? but then how to know about new ones?
+# just let it be overridden and manualy symlink when wanna work on one?
+
 npx @10up/agent-skills --global
 
+# TODO agent skills is part of relay now? so need to uninstall that? but then also fork relay to use your update-plugins skill?
 section "10up Relay Plugins"
 claude plugin marketplace add 10up/relay-plugins
 claude plugin install relay-eng@relay-plugins
@@ -82,6 +101,8 @@ claude plugin install modern-web-guidance@googlechrome
 
 section "Security Guidance"
 claude plugin install security-guidance@claude-plugins-official
+
+# todo add localwp mcp?
 
 
 printf "\n\n⚠️ 10up agent skills not installed, see above"

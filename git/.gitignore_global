@@ -12,6 +12,7 @@ sandbox-functionality/
 
 node_modules
 # vendor can't because some WP plugins distribute their vendor directory
+
 npm-debug.log
 .yalc
 yalc.lock

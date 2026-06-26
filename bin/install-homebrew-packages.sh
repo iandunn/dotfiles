@@ -47,6 +47,7 @@ packages=(
   ripgrep
   svn
   telnet
+  tree
   wget
   wp-cli-completion
   zoxide
