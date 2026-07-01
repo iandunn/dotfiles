@@ -456,6 +456,16 @@
           },
           {
             "type": "command",
+            "command": "/Users/iandunn/.claude/hooks/wp-cli-permissions.sh",
+            "if": "Bash(/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp *)"
+          },
+          {
+            "type": "command",
+            "command": "/Users/iandunn/.claude/hooks/wp-cli-permissions.sh",
+            "if": "Bash(\"/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp\" *)"
+          },
+          {
+            "type": "command",
             "command": "node /Users/iandunn/.claude/hooks/block-chained-commands.js"
           }
         ]
