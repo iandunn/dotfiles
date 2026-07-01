@@ -138,14 +138,39 @@ test("allows word starting with bash (e.g. basename)", () => {
 
 // -- git -C --
 
-test("blocks git -C with path", () => {
-  const { exitCode, stderr } = run("git -C /some/path status");
+test("allows git -C status (read-only)", () => {
+  const { exitCode } = run("git -C /some/path status");
+  assert.equal(exitCode, ALLOW_EXIT);
+});
+
+test("allows git -C log with relative path (read-only)", () => {
+  const { exitCode } = run("git -C ../other log");
+  assert.equal(exitCode, ALLOW_EXIT);
+});
+
+test("allows git -C stash list (read-only, two-word subcommand)", () => {
+  const { exitCode } = run("git -C /some/path stash list");
+  assert.equal(exitCode, ALLOW_EXIT);
+});
+
+test("allows git -C remote get-url origin (read-only, three-word subcommand)", () => {
+  const { exitCode } = run("git -C /some/path remote get-url origin");
+  assert.equal(exitCode, ALLOW_EXIT);
+});
+
+test("blocks git -C push (not read-only)", () => {
+  const { exitCode, stderr } = run("git -C /some/path push origin main");
   assert.equal(exitCode, BLOCK_EXIT);
   assert.match(stderr, /git -C/i);
 });
 
-test("blocks git -C with relative path", () => {
-  const { exitCode } = run("git -C ../other log");
+test("blocks git -C commit (not read-only)", () => {
+  const { exitCode } = run('git -C /some/path commit -m "fix"');
+  assert.equal(exitCode, BLOCK_EXIT);
+});
+
+test("blocks git -C branch -D (destructive variant of an otherwise-allowed subcommand)", () => {
+  const { exitCode } = run("git -C /some/path branch -D feature");
   assert.equal(exitCode, BLOCK_EXIT);
 });
 
@@ -158,6 +183,34 @@ test("blocks git --git-dir with = syntax", () => {
 test("blocks git --git-dir with space syntax", () => {
   const { exitCode } = run("git --git-dir .git log");
   assert.equal(exitCode, BLOCK_EXIT);
+});
+
+// -- cd + git in one command (including newline-joined) --
+
+test("blocks cd && git status, suggests git -C", () => {
+  const { exitCode, stderr } = run("cd /some/path && git status");
+  assert.equal(exitCode, BLOCK_EXIT);
+  assert.match(stderr, /git -C/);
+});
+
+test("blocks cd then git status joined by newline, suggests git -C", () => {
+  const { exitCode, stderr } = run("cd /some/path\ngit status");
+  assert.equal(exitCode, BLOCK_EXIT);
+  assert.match(stderr, /git -C/);
+});
+
+test("blocks cd && git push, does not suggest git -C", () => {
+  const { exitCode, stderr } = run("cd /some/path && git push origin main");
+  assert.equal(exitCode, BLOCK_EXIT);
+  assert.doesNotMatch(stderr, /git -C <path>/);
+});
+
+// -- newline chaining (non-git) --
+
+test("blocks newline-joined commands", () => {
+  const { exitCode, stderr } = run("ls foo\nls bar");
+  assert.equal(exitCode, BLOCK_EXIT);
+  assert.match(stderr, /chain/i);
 });
 
 // -- normal commands that should pass through --

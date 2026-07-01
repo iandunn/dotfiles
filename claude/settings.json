@@ -79,6 +79,16 @@
       "Bash(git grep *)",
       "Bash(git status *)",
       "Bash(git symbolic-ref *)",
+      "Bash(git -C * diff *)",
+      "Bash(git -C * fetch *)",
+      "Bash(git -C * log *)",
+      "Bash(git -C * ls-tree *)",
+      "Bash(git -C * remote get-url origin)",
+      "Bash(git -C * show *)",
+      "Bash(git -C * stash list *)",
+      "Bash(git -C * grep *)",
+      "Bash(git -C * status *)",
+      "Bash(git -C * symbolic-ref *)",
       "Bash(grep *)",
       "Bash(head *)",
       "Bash(host *)",
@@ -497,6 +507,7 @@
       }
     }
   },
+  "feedbackSurveyRate": 0,
   "spinnerVerbs": {
     "mode": "replace",
     "verbs": [

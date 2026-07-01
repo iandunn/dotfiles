@@ -42,9 +42,8 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 
 ## Running Commands
 - When possible, use simple tools that are easy to verify/approve. For example, use `sed` or `awk` for string replacement rather than `python` or `node`. Don't do that if it's going to led to harder to read/verify output though.
-- Never chain commands with &&, ||, or ; -- Run one command per tool call. Use a separate `cd` tool call before any path-dependent command.
-- Never use `git -C`, `git --git-dir=`, or the `GIT_DIR` environment variable. Use a separate `cd` tool call before `git` commands instead.
-- Never pipe output directly into bash, sh, zsh, or eval. Save the output to a file in /tmp/claude/ a temp file, review it, then execute follow up commands explicitly. Don't write executable code to /tmp/claude, just display it so I can review inside terminal.
+- Never chain commands with &&, ||, ;, or newlines -- Run one command per tool call. Use a separate `cd` tool call before any path-dependent command.
+- For read-only git commands (status, diff, log, show, ls-tree, grep, symbolic-ref, fetch, stash list, remote get-url origin), use `git -C <path> <command>` instead of a separate `cd` call. For any other git command (add, commit, push, checkout, merge, pull, stash push/pop/apply/drop, reset, rebase, branch -D, config, etc.), use a separate `cd` tool call instead; never use `git -C`, `git --git-dir=`, or the `GIT_DIR` environment variable for those.
 - Always put flags as far to the right as possible, so the commands can be evaluated for safety. For example, `wp option get ep_synonyms --url=example.test` instead of `wp --url=example.test option get ep_synonyms`. Some commands will let them be at the end, but others require them to be in specific positions.
 - Use `rg` and `fd` as faster alternatives to `grep -r` and `find`, respectively. `rg -r` is the replace flag, it is not the same as `grep -r`. Don't use it unless you intend to overwrite file contents, which you should only do with explicit approval.
 - Use `jq` for handling json instead of calling python just to parse JSON.
