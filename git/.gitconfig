@@ -47,6 +47,12 @@
 	# Make sure 10up sites are created in this folder
 	path = ~/dotfiles/git/.gitconfig.10up
 
+# This will silently rewrite the normal URL to the github-cadmv alias that's setup in .ssh/config-cadmv
+# So you can use `git clone`, `npm install`, etc normally
+# This only works if it's in `~/.gitconfig`, it can't be in any `includeIf` files
+[url "git@github-cadmv:ca-dmv/"]
+	insteadOf = ssh://git@github.com/ca-dmv/
+
 [init]
 	# Some other non-cringy options: production, develop, stable, release, base, default, trunk, primary.
 	defaultBranch = main
