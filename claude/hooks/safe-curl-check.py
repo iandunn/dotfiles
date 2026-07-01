@@ -7,6 +7,10 @@ combined short flags), then checks every token against an explicit
 allowlist of known-safe flags. Anything not on the allowlist falls
 through to normal permission handling (existing allow/deny rules or
 a user prompt). Nothing is explicitly blocked or denied here.
+
+GET requests are auto-approved for any domain.
+Requests with a body or non-safe HTTP method are auto-approved only for
+*.test and localhost (local dev environments).
 """
 import json
 import shlex
@@ -15,6 +19,16 @@ import sys
 
 def is_safe_url(s):
     return s.startswith('http://') or s.startswith('https://')
+
+
+def is_local_url(url):
+    """Returns True for localhost (any port) and *.test domains."""
+    for scheme in ('https://', 'http://'):
+        if url.startswith(scheme):
+            url = url[len(scheme):]
+            break
+    host = url.split('/')[0].split(':')[0]
+    return host in ('localhost', '127.0.0.1') or host.endswith('.test')
 
 
 # Long flags that take no argument.
@@ -31,7 +45,8 @@ LONG_NO_ARG = {
 
 # Long flags that take one argument.
 # Value is None (any value OK), 'safe_output' (/dev/null or /tmp/),
-# 'stdout_or_null' (- or /dev/null only), or 'url' (must be http/https).
+# 'stdout_or_null' (- or /dev/null only), 'url' (must be http/https),
+# 'no_file_ref' (block @filename at start), 'no_at' (block @ anywhere).
 LONG_WITH_ARG = {
     '--write-out': None, '--header': None, '--user-agent': None,
     '--output': 'safe_output',
@@ -44,6 +59,12 @@ LONG_WITH_ARG = {
     '--cacert': None, '--capath': None, '--cert': None, '--key': None,
     '--url': 'url',
     '--dump-header': 'stdout_or_null',
+    '--request': None,
+    '--data': 'no_file_ref', '--data-raw': None,
+    '--data-binary': 'no_file_ref', '--data-ascii': 'no_file_ref',
+    '--data-urlencode': 'no_at',
+    '--json': None,
+    '--form': 'no_at', '--form-string': None,
 }
 
 # Short flags that take no argument (single chars).
@@ -55,6 +76,18 @@ SHORT_WITH_ARG = {
     'o': '--output', 'm': '--max-time', 'e': '--referer',
     'b': '--cookie', 'u': '--user', 'E': '--cert',
     'D': '--dump-header',
+    'X': '--request',
+    'd': '--data',
+    'F': '--form',
+}
+
+# HTTP methods that don't modify server state.
+SAFE_HTTP_METHODS = {'GET', 'HEAD', 'OPTIONS'}
+
+# Flags that send a request body (implies possible state mutation).
+BODY_LONG_FLAGS = {
+    '--data', '--data-raw', '--data-binary', '--data-ascii',
+    '--data-urlencode', '--json', '--form', '--form-string',
 }
 
 # Shell redirect tokens that may appear alongside the curl command.
@@ -75,6 +108,10 @@ def value_ok(flag_key, value):
         return value in ('-', '/dev/null')
     if constraint == 'url':
         return is_safe_url(value)
+    if constraint == 'no_file_ref':
+        return not value.startswith('@')
+    if constraint == 'no_at':
+        return '@' not in value
     # Cookie from file leaks local cookie data.
     if flag_key == '--cookie' and value.startswith('@'):
         return False
@@ -82,9 +119,17 @@ def value_ok(flag_key, value):
 
 
 def check_curl_segment(tokens):
-    """Validate curl tokens (after the leading 'curl'). Returns True if safe."""
+    """
+    Validate curl tokens (after the leading 'curl').
+    Returns (ok, needs_local, urls):
+      ok          - all flags are on the allowlist with valid values
+      needs_local - True when a body flag or non-safe HTTP method is present
+      urls        - list of URL tokens found in the command
+    """
     i = 0
     end_of_flags = False
+    needs_local = False
+    urls = []
 
     while i < len(tokens):
         token = tokens[i]
@@ -96,11 +141,13 @@ def check_curl_segment(tokens):
         # After '--', remaining tokens must still be http/https URLs.
         if end_of_flags:
             if not is_safe_url(token):
-                return False
+                return False, False, []
+            urls.append(token)
             i += 1
             continue
 
         if is_safe_url(token):
+            urls.append(token)
             i += 1
             continue
 
@@ -113,9 +160,15 @@ def check_curl_segment(tokens):
         if token.startswith('--') and '=' in token:
             flag, value = token.split('=', 1)
             if flag in LONG_WITH_ARG and value_ok(flag, value):
+                if flag == '--request' and value.upper() not in SAFE_HTTP_METHODS:
+                    needs_local = True
+                if flag in BODY_LONG_FLAGS:
+                    needs_local = True
+                if flag == '--url':
+                    urls.append(value)
                 i += 1
                 continue
-            return False
+            return False, False, []
 
         # Long flag: --flag [value]
         if token.startswith('--'):
@@ -124,12 +177,19 @@ def check_curl_segment(tokens):
                 continue
             if token in LONG_WITH_ARG:
                 if i + 1 >= len(tokens):
-                    return False
-                if not value_ok(token, tokens[i + 1]):
-                    return False
+                    return False, False, []
+                value = tokens[i + 1]
+                if not value_ok(token, value):
+                    return False, False, []
+                if token == '--request' and value.upper() not in SAFE_HTTP_METHODS:
+                    needs_local = True
+                if token in BODY_LONG_FLAGS:
+                    needs_local = True
+                if token == '--url':
+                    urls.append(value)
                 i += 2
                 continue
-            return False
+            return False, False, []
 
         # Short flag(s): -s, -sSL, -sSo /dev/null, -sSo/dev/null
         # curl allows combining short flags; a with-arg flag consumes the
@@ -158,19 +218,23 @@ def check_curl_segment(tokens):
                     if not value_ok(long_key, value):
                         ok = False
                         break
+                    if c == 'X' and value.upper() not in SAFE_HTTP_METHODS:
+                        needs_local = True
+                    if long_key in BODY_LONG_FLAGS:
+                        needs_local = True
                     j = len(chars)  # consumed rest of combined token
                 else:
                     ok = False
                     break
             if not ok:
-                return False
+                return False, False, []
             i += 1 + extra
             continue
 
         # Unknown token: not a flag, not an http/https URL, not a redirect.
-        return False
+        return False, False, []
 
-    return True
+    return True, needs_local, urls
 
 
 def check_pipe_segment(tokens):
@@ -211,14 +275,19 @@ def main():
     if not curl_segment or curl_segment[0] != 'curl':
         sys.exit(0)
 
-    if not check_curl_segment(curl_segment[1:]):
+    ok, needs_local, urls = check_curl_segment(curl_segment[1:])
+    if not ok:
+        sys.exit(0)
+
+    if needs_local and (not urls or not all(is_local_url(u) for u in urls)):
         sys.exit(0)
 
     for segment in segments[1:]:
         if not check_pipe_segment(segment):
             sys.exit(0)
 
-    print('{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow", "permissionDecisionReason": "Read-only curl auto-approved"}}')
+    reason = 'Local-domain curl auto-approved' if needs_local else 'Safe curl GET auto-approved'
+    print(f'{{"hookSpecificOutput": {{"hookEventName": "PreToolUse", "permissionDecision": "allow", "permissionDecisionReason": "{reason}"}}}}')
 
 
 if __name__ == '__main__':

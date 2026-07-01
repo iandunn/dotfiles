@@ -115,7 +115,7 @@ class TestAllowed(unittest.TestCase):
         self.assertAllowed('curl -s -o /dev/null -w "%{http_code} /\\n" -k https://example.org/')
 
     def test_health_check_path_label(self):
-	self.assertAllowed('curl -s -o /dev/null -w "%{http_code} /some-page/\\n" -k https://example.org/some-page/')
+        self.assertAllowed('curl -s -o /dev/null -w "%{http_code} /some-page/\\n" -k https://example.org/some-page/')
 
     def test_health_check_path_label2(self):
         self.assertAllowed('curl -s -o /dev/null -w "%{http_code} /my-path/\\n" -k https://example.org/my-path/')
@@ -169,6 +169,35 @@ class TestAllowed(unittest.TestCase):
 
     def test_output_to_tmp_with_query(self):
         self.assertAllowed('curl -s "https://example.com/api?foo=bar" -o /tmp/result.json 2>&1')
+
+    # -- local domain POST / mutation requests --
+
+    def test_post_to_test_domain(self):
+        self.assertAllowed('curl -X POST https://dmv.test/wp-json/dmv/v1/check')
+
+    def test_post_with_data_to_test_domain(self):
+        self.assertAllowed('curl -sk -X POST https://dmv.test/wp-json/dmv/v1/check -H "Content-Type: application/json" -d \'{"foo":"bar"}\'')
+
+    def test_post_with_data_to_localhost(self):
+        self.assertAllowed('curl -s -d "foo=bar" http://localhost/api')
+
+    def test_post_with_data_to_localhost_port(self):
+        self.assertAllowed('curl -s -d "foo=bar" http://localhost:8080/api')
+
+    def test_json_body_to_test_domain(self):
+        self.assertAllowed('curl -s --json \'{"k":"v"}\' https://api.test/endpoint')
+
+    def test_delete_to_localhost(self):
+        self.assertAllowed('curl -X DELETE http://localhost/api/resource')
+
+    def test_put_to_test_domain(self):
+        self.assertAllowed('curl -X PUT https://site.test/api/resource -d \'{"name":"x"}\'')
+
+    def test_explicit_get_external(self):
+        self.assertAllowed('curl -X GET https://example.com/api')
+
+    def test_post_pipe_jq_to_test_domain(self):
+        self.assertAllowed('curl -sk -X POST https://dmv.test/wp-json/dmv/v1/check -H "Content-Type: application/json" -d \'{"foo":"bar"}\' | jq .')
 
 
 class TestNotAllowed(unittest.TestCase):
@@ -299,7 +328,8 @@ class TestNotAllowed(unittest.TestCase):
     def test_output_equals_non_tmp_file(self):
         self.assertFallthrough('curl --output=/var/log/file.txt https://example.com')
 
-    def test_combined_with_unknown(self):
+    def test_combined_request_no_url(self):
+        # -sX consumes the URL as the method value, leaving no URL → needs_local but no URL
         self.assertFallthrough('curl -sX https://example.com')
 
 
