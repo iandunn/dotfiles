@@ -103,7 +103,7 @@ SAFE_PIPE_CMDS = {
 def value_ok(flag_key, value):
     constraint = LONG_WITH_ARG.get(flag_key)
     if constraint == 'safe_output':
-        return value == '/dev/null' or value.startswith('/tmp/')
+        return value == '/dev/null' or value.startswith('/tmp/') or value.startswith('/private/tmp/')
     if constraint == 'stdout_or_null':
         return value in ('-', '/dev/null')
     if constraint == 'url':
