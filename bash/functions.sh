@@ -567,6 +567,8 @@ runbeep() {
 }
 
 git_main_branch() {
+	# todo this doesn't work w/ publix b/c vip has master set as main branch even though we treat trunk as main?
+	# maybe affects williams too. no it works for williams. why?
 	git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'
 }
 

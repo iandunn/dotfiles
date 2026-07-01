@@ -141,8 +141,13 @@
 	pullas = pull --autostash
 	# push = todo a bash function that checks if the current folder is wordcamp.test. if it is, then show a prompt asking if want to run pre-commit githooks.
 	# defaults to no (b/c working on branch). can answer yes if ready to run over entire branch for pr, or before pushing to production branch
-	pullu     = pull --set-upstream
+
+	#pullu     = pull --set-upstream
 	# what to name this? maybe better to just memorize. for deleting remote branches. need origin name maybe. rbranchrm = push -d
+
+	# Sets upstream to the current branch, for when `git pull` says you need to `git branch --set-upstream-to=origin/<branch> <branch>`
+	pullup = "!branch=$(git rev-parse --abbrev-ref HEAD) && git branch --set-upstream-to=origin/$branch 2>/dev/null; git pull"
+
 	pullreb  = pull --rebase
 	#pullreb  = !git co production && git pull && git co - && git rebase production
 		# todo can use `git bmain` now to get main branch name instead of assuming its production
