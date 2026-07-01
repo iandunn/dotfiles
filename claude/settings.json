@@ -352,7 +352,6 @@
       "Bash(wp theme delete*)",
       "Bash(wp user delete*)",
       "Bash(wp user create*)",
-      "Bash(wp option delete*)",
       "Bash(wp post delete*)",
       "Bash(wp site empty*)",
       "Bash(wp config create*)",
