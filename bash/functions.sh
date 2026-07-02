@@ -539,6 +539,8 @@ function claude() {
 		dir="$(dirname "$dir")"
 	done
 
+	# todo add a special case where ~/dotfiles/claude/CLAUDE.md is ignored and ~/dotfiles/claude.md is the root
+
 	if [[ -n "$root" ]]; then
 		printf "\n⚠️ Project root found at $root, launching from that folder\n\n"
 		cd "$root" && command claude "$@"

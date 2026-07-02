@@ -47,6 +47,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Always put flags as far to the right as possible, so the commands can be evaluated for safety. For example, `wp option get ep_synonyms --url=example.test` instead of `wp --url=example.test option get ep_synonyms`. Some commands will let them be at the end, but others require them to be in specific positions.
 - Use `rg` and `fd` as faster alternatives to `grep -r` and `find`, respectively. `rg -r` is the replace flag, it is not the same as `grep -r`. Don't use it unless you intend to overwrite file contents, which you should only do with explicit approval.
 - Use `jq` for handling json instead of calling python just to parse JSON.
+- If you prompt for something, wait until I respond, no matter how long it takes. Never decide to proceed on your own just because I haven't responded yet.
 
 ## Security
 - Run `composer update` every time you change `composer.json`, and `npm install` every time you change `package.json`. Never make changes without also installing them.

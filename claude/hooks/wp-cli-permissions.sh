@@ -97,6 +97,9 @@ SAFE_PREFIXES=(
 	"widget list"
     "vip-search index"
 	"elasticpress index"
+	"elasticpress stats"
+	"elasticpress status"
+	"elasticpress list-features"
 )
 
 for prefix in "${SAFE_PREFIXES[@]}"; do
