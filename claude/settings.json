@@ -8,6 +8,7 @@
     "pr": ""
   },
   "permissions": {
+  	"defaultMode": "auto",
     "allow": [
       "Bash(./vendor/bin/phpunit *)",
       "Bash(/bin/cat *)",
