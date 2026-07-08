@@ -111,7 +111,7 @@ alias slurp='nice -n 19 ~/vhosts/tools/wordpress-plugin-directory-slurper/update
 alias dcomp='docker-compose'
 
 # It crashed more than it should, and when it does, it can't be re-opened until this file is deleted.
-alias gorramit_firefox='rm -f ~/Library/Application Support/Firefox/Profiles/**/.parentlock'
+alias gorramit_firefox='rm -f ~/Library/Application Support/Firefox/Profiles/**/.parentlock && pkill -9 -u ian-work -f "org.mozilla.updater" &&   sudo pkill -9 -f "/Library/PrivilegedHelperTools/org.mozilla.updater" &&   rm -rf "/Users/ian-work/Library/Caches/Mozilla/updates/Applications/Firefox Developer Edition"'
 
 # have to specify which firefox, see https://github.com/mozilla/web-ext/issues/628
 # Don't add `--keep-profile-changes` because that causes security problems
@@ -128,3 +128,5 @@ alias ImageOptim='/Applications/ImageOptim.app/Contents/MacOS/ImageOptim'
 alias web-ext-run='web-ext run --firefox=/Applications/FirefoxDeveloperEdition.app/Contents/MacOS/firefox-bin --firefox-profile=dev-edition-default'
 
 alias ccstatusline='npx -y ccstatusline@latest'
+
+alias yalcwatchpush='fswatch -o dist | while read n; do yalc push; done'
