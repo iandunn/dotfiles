@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 
 /*
+ * i disabled this now that i'm using auto mode. it can be re-enabled with this in the settings.json file:
+	{
+	"type": "command",
+	"command": "node ~/.claude/hooks/block-chained-commands.js"
+	}
+ */
+
+/*
  * PreToolUse hook: blocks command chaining (&& || ; or newlines) and dangerous pipes (| bash/sh/zsh/eval).
  * Also blocks `cd` immediately before `git`, and restricts `git -C` to read-only subcommands.
  * Tells Claude to retry with the corrected form.

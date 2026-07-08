@@ -8,7 +8,6 @@
     "pr": ""
   },
   "permissions": {
-  	"defaultMode": "auto",
     "allow": [
       "Bash(./vendor/bin/phpunit *)",
       "Bash(/bin/cat *)",
@@ -134,9 +133,9 @@
       "Bash(which *)",
       "Bash(whois *)",
       "Bash(yalc publish .)",
-      "Edit(/Users/iandunn/local-sites/**)",
-      "Read(/Users/iandunn/.claude/**)",
-      "Read(/Users/iandunn/local-sites/**)",
+      "Edit(~/local-sites/**)",
+      "Read(~/.claude/**)",
+      "Read(~/local-sites/**)",
       "Read(/tmp/claude/**)",
       "Skill(10up-update-plugins)",
       "Skill(superpowers:systematic-debugging)",
@@ -158,18 +157,15 @@
       "WebFetch(domain:wpackagist.org)",
       "WebFetch(domain:www.salesforce.com)",
       "WebSearch",
-      "Write(/Users/iandunn/local-sites/**)",
+      "Write(~/local-sites/**)",
       "Write(/tmp/claude/**)",
       "mcp__chrome-devtools__click",
       "mcp__chrome-devtools__close_page",
       "mcp__chrome-devtools__drag",
       "mcp__chrome-devtools__emulate",
-      "mcp__chrome-devtools__evaluate_script",
       "mcp__chrome-devtools__fill",
-      "mcp__chrome-devtools__fill_form",
       "mcp__chrome-devtools__get_console_message",
       "mcp__chrome-devtools__get_network_request",
-      "mcp__chrome-devtools__handle_dialog",
       "mcp__chrome-devtools__hover",
       "mcp__chrome-devtools__lighthouse_audit",
       "mcp__chrome-devtools__list_console_messages",
@@ -199,12 +195,9 @@
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__close_page",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__drag",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__emulate",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__evaluate_script",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__fill",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__fill_form",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__get_console_message",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__get_network_request",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__handle_dialog",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__hover",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__lighthouse_audit",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_console_messages",
@@ -416,9 +409,8 @@
       "Bash(git merge --ff-only *)",
       "Bash(git pull *)",
       "Bash(git push *)",
-      "Bash(git stash push *)",
-      "Bash(git stash pop *)",
       "Bash(git stash apply *)",
+      "Bash(git stash clear*)",
       "Bash(git stash drop *)",
       "Bash(npm install *)",
       "Bash(npm i *)",
@@ -428,8 +420,16 @@
       "Bash(composer outdated *)",
       "Bash(composer validate *)",
       "Bash(find * -exec *)",
-      "Write(~/.claude/**)"
-    ]
+      "Write(~/.claude/**)",
+      "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__fill_form",
+      "mcp__chrome-devtools__handle_dialog",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__evaluate_script",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__fill_form",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__handle_dialog"
+    ],
+    "defaultMode": "auto",
+    "disableBypassPermissionsMode": "disable"
   },
   "model": "sonnet",
   "enabledMcpjsonServers": [
@@ -451,7 +451,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/iandunn/.claude/hooks/wp-cli-permissions.sh"
+            "command": "~/.claude/hooks/wp-cli-permissions.sh"
           }
         ]
       },
@@ -460,27 +460,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /Users/iandunn/.claude/hooks/safe-curl-check.py",
+            "command": "python3 ~/.claude/hooks/safe-curl-check.py",
             "if": "Bash(curl *)"
           },
           {
             "type": "command",
-            "command": "/Users/iandunn/.claude/hooks/wp-cli-permissions.sh",
+            "command": "~/.claude/hooks/wp-cli-permissions.sh",
             "if": "Bash(wp *)"
           },
           {
             "type": "command",
-            "command": "/Users/iandunn/.claude/hooks/wp-cli-permissions.sh",
+            "command": "~/.claude/hooks/wp-cli-permissions.sh",
             "if": "Bash(/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp *)"
           },
           {
             "type": "command",
-            "command": "/Users/iandunn/.claude/hooks/wp-cli-permissions.sh",
+            "command": "~/.claude/hooks/wp-cli-permissions.sh",
             "if": "Bash(\"/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp\" *)"
-          },
-          {
-            "type": "command",
-            "command": "node /Users/iandunn/.claude/hooks/block-chained-commands.js"
           }
         ]
       }
@@ -531,6 +527,26 @@
       }
     }
   },
+  "sandbox": {
+    "enabled": true,
+    "network": {
+      "allowedDomains": [
+        "*.github.com",
+        "*.githubusercontent.com",
+        "*.localhost",
+        "*.packagist.org",
+        "*.test",
+        "*.wordpress.org",
+        "github.com",
+        "localhost",
+        "packagist.org",
+        "registry.npmjs.org",
+        "wordpress.org",
+        "wpackagist.org"
+      ],
+      "allowLocalBinding": true
+    }
+  },
   "feedbackSurveyRate": 0,
   "spinnerVerbs": {
     "mode": "replace",
@@ -541,5 +557,14 @@
   "effortLevel": "high",
   "advisorModel": "opus",
   "tui": "default",
-  "skipWorkflowUsageWarning": true
+  "skipWorkflowUsageWarning": true,
+  "autoMode": {
+    "hard_deny": [
+      "$defaults",
+      "Reading, copying, or transmitting SSH keys, cloud credentials, GPG keys, API tokens, keychain data, or anything under ~/.ssh, ~/.aws, ~/.gnupg, or ~/.config/gh — regardless of what the task appears to require",
+      "Sending local file contents, environment variables, or credentials to external hosts, including embedding them in URLs, query strings, or form posts",
+      "Running WP-CLI, database, or deployment commands against a production or remote host (anything that is not localhost, *.localhost, or *.test)",
+      "Creating persistence mechanisms: modifying shell startup files, launch agents or daemons, crontab, or login items"
+    ]
+  }
 }
