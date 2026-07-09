@@ -28,7 +28,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Exclude third-party code when inferring project conventions
 - Assume a watch task is running — don't ask to run build commands
 - Don't add Co-Authored-By when I ask you to make a commit
-- When implementing a plan or other large task that includes isolated components (eg, back-end vs front-end), split the work between subagents to speed it up. Use Sonnet for the subagents in order to save tokens, even if Opus or Fable is the orchestrator.
+- When implementing a plan or other large task that includes isolated components (eg, back-end vs front-end), split the work between subagents to speed it up. Use Sonnet for the subagents in order to save tokens, even if Opus or Fable is the orchestrator. If the task is really simple, then use Haiku.
 - Don't implement anti patterns, like creating pages that dont have deep links
 - If automated tests already exist, then write them for code you add as well. Only add meaningful tests, though, don't try to get 100% coverage.
 - Never use "smart" quotes etc, they're not displayed correctly in all contexts
