@@ -431,7 +431,7 @@
     "defaultMode": "auto",
     "disableBypassPermissionsMode": "disable"
   },
-  "model": "opus",
+  "model": "opus[1m]",
   "enabledMcpjsonServers": [
     "local-wp",
     "chrome-devtools"

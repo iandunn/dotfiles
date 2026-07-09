@@ -36,7 +36,14 @@
         "rawValue": true
       }
     ],
-    [],
+    [
+      {
+        "id": "C76D8653-7CD8-41F0-A78B-8165BEF47403",
+        "type": "custom-command",
+        "color": "brightBlack",
+        "commandPath": "node /Users/ian-work/dotfiles/claude/ccstatusline-reset-alert.js"
+      }
+    ],
     []
   ],
   "flexMode": "full",
