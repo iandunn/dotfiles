@@ -18,7 +18,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 
 ## Code Changes
 - Don't guess or assume. Form a hypothesis and then test it with any tools at your disposal. If you can't test it then tell me that it's just a hypothesis tell me how to test it.
-- Match existing code style and WordPress core conventions
+- Match existing code style and WordPress Core conventions
 - Follow 10up engineering best practices
 - Make only the minimal change necessary — flag larger refactors instead of doing them
 - Never touch unrelated lines
@@ -26,7 +26,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Only add comments to code that explain *why* the code does something, not *what* it does — prefer descriptive variable naming etc instead.
 - Don't add comments that explain what you did, or that explain new code in relation to code that you changed. The person reading the code after it's merged wouldn't understand what that's about.
 - Exclude third-party code when inferring project conventions
-- Assume a watch task is running — don't ask to run build commands
+- Assume a watch task is running — don't run build commands
 - Don't add Co-Authored-By when I ask you to make a commit
 - When implementing a plan or other large task that includes isolated components (eg, back-end vs front-end), split the work between subagents to speed it up. Use Sonnet for the subagents in order to save tokens, even if Opus or Fable is the orchestrator. If the task is really simple, then use Haiku.
 - Don't implement anti patterns, like creating pages that dont have deep links
@@ -41,10 +41,6 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - When you fix a bug in one area of the code, check to see if it's occurring in other areas too
 
 ## Running Commands
-- When possible, use simple tools that are easy to verify/approve. For example, use `sed` or `awk` for string replacement rather than `python` or `node`. Don't do that if it's going to led to harder to read/verify output though.
-- Never chain commands with &&, ||, ;, or newlines -- Run one command per tool call. Use a separate `cd` tool call before any path-dependent command.
-- For read-only git commands (status, diff, log, show, ls-tree, grep, symbolic-ref, fetch, stash list, remote get-url origin), use `git -C <path> <command>` instead of a separate `cd` call. For any other git command (add, commit, push, checkout, merge, pull, stash push/pop/apply/drop, reset, rebase, branch -D, config, etc.), use a separate `cd` tool call instead; never use `git -C`, `git --git-dir=`, or the `GIT_DIR` environment variable for those.
-- Always put flags as far to the right as possible, so the commands can be evaluated for safety. For example, `wp option get ep_synonyms --url=example.test` instead of `wp --url=example.test option get ep_synonyms`. Some commands will let them be at the end, but others require them to be in specific positions.
 - Use `rg` and `fd` as faster alternatives to `grep -r` and `find`, respectively. `rg -r` is the replace flag, it is not the same as `grep -r`. Don't use it unless you intend to overwrite file contents, which you should only do with explicit approval.
 - Use `jq` for handling json instead of calling python just to parse JSON.
 - If you prompt for something, wait until I respond, no matter how long it takes. Never decide to proceed on your own just because I haven't responded yet.
