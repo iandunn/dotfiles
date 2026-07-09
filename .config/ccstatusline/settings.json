@@ -1,0 +1,66 @@
+{
+  "version": 3,
+  "lines": [
+    [
+      {
+        "id": "1",
+        "type": "model",
+        "color": "cyan",
+        "rawValue": true
+      },
+      {
+        "id": "fb152fd0-dc76-49d6-b2c0-17e05e40001d",
+        "type": "separator"
+      },
+      {
+        "id": "5282be83-caae-4b0a-b57c-d3866faf4a1e",
+        "type": "context-percentage-usable",
+        "rawValue": true
+      },
+      {
+        "id": "61787b62-51a3-440a-b6c6-53f8040d8503",
+        "type": "separator"
+      },
+      {
+        "id": "cd4aada9-5fe7-4060-bc39-7ffc40da1b05",
+        "type": "session-usage",
+        "rawValue": true
+      },
+      {
+        "id": "4a800a45-baf0-4b0e-9ac5-d6e1ea671d1c",
+        "type": "separator"
+      },
+      {
+        "id": "737e622d-bb42-403a-8eac-55dad832f6e8",
+        "type": "weekly-usage",
+        "rawValue": true
+      }
+    ],
+    [],
+    []
+  ],
+  "flexMode": "full",
+  "compactThreshold": 60,
+  "colorLevel": 2,
+  "inheritSeparatorColors": false,
+  "globalBold": false,
+  "gitCacheTtlSeconds": 5,
+  "minimalistMode": false,
+  "powerline": {
+    "enabled": false,
+    "separators": [
+      ""
+    ],
+    "separatorInvertBackground": [
+      false
+    ],
+    "startCaps": [],
+    "endCaps": [],
+    "autoAlign": false,
+    "continueThemeAcrossLines": false
+  },
+  "installation": {
+    "method": "auto-update",
+    "packageManager": "npm"
+  }
+}
