@@ -2,11 +2,39 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>AIFeatureFunctionCalling</key>
+	<true/>
+	<key>AIFeatureHostedCodeInterpeter</key>
+	<false/>
+	<key>AIFeatureHostedFileSearch</key>
+	<false/>
+	<key>AIFeatureHostedWebSearch</key>
+	<false/>
+	<key>AIFeatureStreamingResponses</key>
+	<true/>
+	<key>AITermAPI</key>
+	<integer>7</integer>
+	<key>AIVectorStore</key>
+	<integer>0</integer>
+	<key>AIVendor</key>
+	<integer>4</integer>
 	<key>AboutToPasteTabsWithCancel</key>
 	<true/>
 	<key>AboutToPasteTabsWithCancel_selection</key>
 	<integer>0</integer>
+	<key>AiMaxTokens</key>
+	<integer>200000</integer>
+	<key>AiModel</key>
+	<string>claude-opus-4-6</string>
+	<key>AiResponseMaxTokens</key>
+	<integer>128000</integer>
+	<key>AitermURL</key>
+	<string>https://api.anthropic.com/v1/messages</string>
 	<key>AlternateMouseScroll</key>
+	<true/>
+	<key>BracketedPasteMode</key>
+	<true/>
+	<key>ConvertDosNewlines</key>
 	<true/>
 	<key>Default Arrangement Name</key>
 	<string>Arrangement 1</string>
@@ -285,7 +313,7 @@
 				<real>1</real>
 			</dict>
 			<key>BM Growl</key>
-			<true/>
+			<false/>
 			<key>Background Color</key>
 			<dict>
 				<key>Blue Component</key>
