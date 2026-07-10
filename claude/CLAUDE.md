@@ -39,6 +39,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - On the backend add php error logs and trigger the code with curl, wp cli, etc, then read the log.
 - Use subagents when exploring the codebase to speed it up.
 - When you fix a bug in one area of the code, check to see if it's occurring in other areas too
+- Don't use the Chrome MCP if my current session usage is above 60%.
 
 ## Running Commands
 - Use `rg` and `fd` as faster alternatives to `grep -r` and `find`, respectively. `rg -r` is the replace flag, it is not the same as `grep -r`. Don't use it unless you intend to overwrite file contents, which you should only do with explicit approval.
