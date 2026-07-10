@@ -24,4 +24,4 @@ alias fix-camera='sudo killall VDCAssistant'
 # need to test more, make sure this doesn't open up vulnerabilities beyond just files i download yourself (and therefore trust)
 
 # Remove hard line wraps when copying from narrow terminal windows
-alias unwrap='pbpaste | perl -0777 -pe "s/(?<!\n)\n(?!\n)/ /g" | pbcopy'
+alias unwrap='pbpaste | perl -0777 -pe "s/^[ \t]+//mg; s/(?<!\n)\n(?!\n)/ /g; s/[ \t]{2,}/ /g" | pbcopy'
