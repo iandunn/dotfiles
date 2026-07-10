@@ -19,7 +19,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const THRESHOLD = 50;
+const SESSION_THRESHOLD = 50;
+const WEEKLY_THRESHOLD = 75;
 const CACHE_FILE = path.join(os.homedir(), '.cache', 'ccstatusline', 'usage.json');
 
 function readStdin() {
@@ -85,14 +86,14 @@ const weekly = stdin.weekly ?? cache.weekly ?? null;
 
 // Show only if at/above threshold and the reset is still in the future (guards
 // against stale cache whose window has already reset).
-function qualifies(w) {
-    return w && w.pct >= THRESHOLD && w.resetMs > Date.now();
+function qualifies(w, threshold) {
+    return w && w.pct >= threshold && w.resetMs > Date.now();
 }
 
 const parts = [];
-if (qualifies(session))
+if (qualifies(session, SESSION_THRESHOLD))
     parts.push(`Session resets ${fmtClock(session.resetMs)}`);
-if (qualifies(weekly))
+if (qualifies(weekly, WEEKLY_THRESHOLD))
     parts.push(`Weekly resets ${fmtWeekday(weekly.resetMs)} ${fmtClock(weekly.resetMs)}`);
 
 if (parts.length)
