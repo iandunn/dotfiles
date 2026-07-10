@@ -13,7 +13,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const THRESHOLD = 75;
+const THRESHOLD = 70;
 const CACHE_FILE = path.join(os.homedir(), '.cache', 'ccstatusline', 'usage.json');
 
 function readStdin() {
