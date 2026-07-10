@@ -9,6 +9,12 @@
 //   own usage cache, which persists across sessions and is kept fresh by the
 //   session-usage / weekly-usage widgets.
 
+// todo - maybe make this smarter by incorporating the time remaining.
+// like, it doesn't matter if i'm at 90% if the reset is in a few seconds
+// maybe maybe i'd still want it just to avoid anxiety
+// so maybe always show it above 90%, but below that only show it if likely to get to 90% in time  remaining
+// what would be a good way to estimate that?
+
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
