@@ -22,6 +22,7 @@ packages=(
   git-svn
   gh
   glab
+  gs
   jq
   lnav
   micro
