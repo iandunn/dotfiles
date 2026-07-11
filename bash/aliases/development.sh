@@ -130,3 +130,5 @@ alias web-ext-run='web-ext run --firefox=/Applications/FirefoxDeveloperEdition.a
 alias ccstatusline='npx -y ccstatusline@latest'
 
 alias yalcwatchpush='fswatch -o dist | while read n; do yalc push; done'
+
+alias claudeusage='claude -p "/usage"'
