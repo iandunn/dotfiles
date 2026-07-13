@@ -50,6 +50,13 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - If you prompt for something, wait until I respond, no matter how long it takes. Never decide to proceed on your own just because I haven't responded yet.
 - Don't run things like `npx jest` when you can run `npm run test` instead.
 
+## Reading PDFs
+- Don't give PDFs to the Read tool directly — it renders every page to images and wastes tokens. Extract locally with poppler; `tesseract` handles OCR.
+- Text: `pdftotext -layout in.pdf out.txt` (or `-f N -l M ... -` for pages N-M to stdout), then read/grep it.
+- Screenshots: `pdfimages -list in.pdf` to find embedded images, then `pdfimages -png -p in.pdf $TMPDIR/x` to extract them as PNGs and read only the relevant ones. Preserves screenshots without rendering pages.
+- Fallback for vector/complex pages: `pdftoppm -png -r 150 -f N -l N in.pdf $TMPDIR/x` to render one page.
+- Write extracted files to `$TMPDIR`, not the project.
+
 ## Security
 - Run `composer update` every time you change `composer.json`, and `npm install` every time you change `package.json`. Never make changes without also installing them.
 

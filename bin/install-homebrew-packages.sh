@@ -44,6 +44,7 @@ packages=(
   nvm
   node
   pipx
+  poppler
   qmk/qmk/qmk
   ripgrep
   svn
