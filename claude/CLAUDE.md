@@ -33,6 +33,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Don't implement anti patterns, like creating pages that dont have deep links
 - If automated tests already exist, then write them for code you add as well. Only add meaningful tests, though, don't try to get 100% coverage.
 - Never use "smart" quotes etc, they're not displayed correctly in all contexts
+- If I tell you to not write code yet, and then later on say something that you think is approval to start writing, explicitly prompt to make sure I want you to start.
 - Don't prefix PHP methods etc with a `\`, instead add a `use` statement at the top of the file.
 
 ## Debugging and Understanding Code
