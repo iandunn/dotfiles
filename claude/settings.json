@@ -162,16 +162,17 @@
       "mcp__chrome-devtools__close_page",
       "mcp__chrome-devtools__drag",
       "mcp__chrome-devtools__emulate",
+      "mcp__chrome-devtools__evaluate_script",
       "mcp__chrome-devtools__fill",
+      "mcp__chrome-devtools__fill_form",
       "mcp__chrome-devtools__get_console_message",
       "mcp__chrome-devtools__get_network_request",
+      "mcp__chrome-devtools__handle_dialog",
       "mcp__chrome-devtools__hover",
       "mcp__chrome-devtools__lighthouse_audit",
       "mcp__chrome-devtools__list_console_messages",
       "mcp__chrome-devtools__list_network_requests",
       "mcp__chrome-devtools__list_pages",
-      "mcp__chrome-devtools__navigate_page",
-      "mcp__chrome-devtools__new_page",
       "mcp__chrome-devtools__performance_analyze_insight",
       "mcp__chrome-devtools__performance_start_trace",
       "mcp__chrome-devtools__performance_stop_trace",
@@ -194,16 +195,17 @@
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__close_page",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__drag",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__emulate",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__evaluate_script",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__fill",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__fill_form",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__get_console_message",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__get_network_request",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__handle_dialog",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__hover",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__lighthouse_audit",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_console_messages",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_network_requests",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_pages",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__navigate_page",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__new_page",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__performance_analyze_insight",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__performance_start_trace",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__performance_stop_trace",
@@ -390,13 +392,7 @@
       "Bash(composer outdated *)",
       "Bash(composer validate *)",
       "Bash(find * -exec *)",
-      "Edit(~/.claude/**)",
-      "mcp__chrome-devtools__evaluate_script",
-      "mcp__chrome-devtools__fill_form",
-      "mcp__chrome-devtools__handle_dialog",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__evaluate_script",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__fill_form",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__handle_dialog"
+      "Edit(~/.claude/**)"
     ],
     "defaultMode": "auto",
     "disableBypassPermissionsMode": "disable"
@@ -416,6 +412,15 @@
   ],
   "hooks": {
     "PreToolUse": [
+      {
+        "matcher": "mcp__(chrome-devtools|plugin_chrome-devtools-mcp_chrome-devtools)__(navigate_page|new_page)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/chrome-mcp-permissions.py"
+          }
+        ]
+      },
       {
         "matcher": "mcp__local-wp__wp_cli",
         "hooks": [
