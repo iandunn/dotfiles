@@ -26,31 +26,41 @@ Currently implemented:
     external host -- those will not re-trigger this prompt.
 
   - Session usage gate (first "safe" chrome-devtools call of the session):
-    reads the sessionUsage percentage from ccstatusline's usage cache
-    (~/.cache/ccstatusline/usage.json), the same 5-hour rate-limit window
-    shown in the statusline. "Safe" means: a local-host navigation,
-    back/forward/reload, or any non-navigation tool -- i.e. any call that
-    didn't already need a host-trust prompt. On the first such call seen for
-    a given session_id, if usage is above the threshold, returns "ask"
-    instead of falling through to settings.json's allow list; every
-    subsequent safe call in that session is allowed silently. This is a
-    one-time "are you sure you want to keep using Chrome MCP" check, not a
-    per-click gate. CLAUDE.md's "don't use the Chrome MCP above 60% session
-    usage" rule cannot be self-enforced by the model -- it is never given a
-    usage number during a turn -- so this hook is the only place that can act
-    on it. If the cache file is missing or unreadable, fails open (allow)
-    rather than blocking on absent data.
+    fetches the live 5-hour rate-limit utilization straight from Anthropic's
+    usage API (the same endpoint ccstatusline itself falls back to). "Safe"
+    means: a local-host navigation, back/forward/reload, or any
+    non-navigation tool -- i.e. any call that didn't already need a
+    host-trust prompt. On the first such call seen for a given session_id,
+    if usage is above the threshold, returns "ask" instead of falling
+    through to settings.json's allow list; every subsequent safe call in
+    that session is allowed silently. This is a one-time "are you sure you
+    want to keep using Chrome MCP" check, not a per-click gate. CLAUDE.md's
+    "don't use the Chrome MCP above 60% session usage" rule cannot be
+    self-enforced by the model -- it is never given a usage number during a
+    turn -- so this hook is the only place that can act on it.
+
+    This used to read ccstatusline's usage cache
+    (~/.cache/ccstatusline/usage.json), but that file is only ever populated
+    as a one-off fallback during a session's very first render, before
+    Claude Code's statusline stdin has rate_limits data yet. Once any
+    session has that live data, ccstatusline never touches the cache file
+    again, so it goes stale forever and no longer reflects real usage --
+    which is why this hook now shells out to `claude -p "/usage"` and parses
+    its output instead. That's slower (several seconds), but it only runs
+    once per session and avoids touching OAuth credentials directly. If the
+    command fails, times out, or its output doesn't parse, fails open
+    (allow) rather than blocking on absent data.
 """
 import json
 import os
+import re
+import subprocess
 import sys
 import tempfile
 from urllib.parse import urlparse
 
 SESSION_USAGE_THRESHOLD = 60
-USAGE_CACHE_FILE = os.path.join(
-    os.path.expanduser('~'), '.cache', 'ccstatusline', 'usage.json'
-)
+USAGE_COMMAND_TIMEOUT_SECONDS = 30
 SESSION_GATE_MARKER_DIR = os.path.join(tempfile.gettempdir(), 'claude-chrome-mcp-usage-gate')
 
 
@@ -108,6 +118,26 @@ def is_chrome_devtools_tool(tool_name):
     return 'chrome-devtools__' in tool_name
 
 
+def fetch_live_session_usage():
+    """Returns the current 5-hour rate-limit usage (0-100) by shelling out to
+    `claude -p "/usage"` and parsing its "Current session: NN% used" line, or
+    None on any failure -- callers should fail open on None rather than block
+    on absent data."""
+    try:
+        result = subprocess.run(
+            ['claude', '-p', '/usage'],
+            capture_output=True, text=True, timeout=USAGE_COMMAND_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+    if result.returncode != 0:
+        return None
+
+    match = re.search(r'Current session:\s*(\d+(?:\.\d+)?)%\s*used', result.stdout)
+    return float(match.group(1)) if match else None
+
+
 def gate_session_usage(session_id):
     """Returns True if it emitted a decision (caller should stop); False to
     fall through to the next gate. Only acts on the first chrome-devtools
@@ -125,12 +155,7 @@ def gate_session_usage(session_id):
     except OSError:
         pass
 
-    try:
-        with open(USAGE_CACHE_FILE) as f:
-            cache = json.load(f)
-        usage = cache.get('sessionUsage')
-    except (OSError, json.JSONDecodeError, ValueError):
-        return False
+    usage = fetch_live_session_usage()
 
     if not isinstance(usage, (int, float)) or usage <= SESSION_USAGE_THRESHOLD:
         return False
