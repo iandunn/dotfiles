@@ -413,7 +413,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__(chrome-devtools|plugin_chrome-devtools-mcp_chrome-devtools)__(navigate_page|new_page)",
+        "matcher": "mcp__(chrome-devtools|plugin_chrome-devtools-mcp_chrome-devtools)__.*",
         "hooks": [
           {
             "type": "command",

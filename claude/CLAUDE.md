@@ -25,7 +25,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Don't remove comments, TODOs, console.log(), or debugger statements unless I ask. Blank lines are often used for readability, don't remove those.
 - Use descriptive variable/function/etc names, not cryptic/terse abbreviations/etc
 - Only add comments to code that explain *why* the code does something, not *what* it does — prefer descriptive variable naming etc instead.
-- Don't add comments that explain what you did, or that explain new code in relation to code that you changed. The person reading the code after it's merged wouldn't understand what that's about.
+- Don't add comments that explain what you did, or that explain new code in relation to code that you changed. The person reading the code after it's merged wouldn't understand what that's about. Comments should be durable and self-contained.
 - Exclude third-party code when inferring project conventions
 - Assume a watch task is running — don't run build commands
 - Don't add Co-Authored-By when I ask you to make a commit
@@ -42,7 +42,12 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - On the backend add php error logs and trigger the code with curl, wp cli, etc, then read the log.
 - Use subagents when exploring the codebase to speed it up.
 - When you fix a bug in one area of the code, check to see if it's occurring in other areas too
-- Don't use the Chrome MCP if my current session usage is above 60%.
+- Put other temporary files in /tmp/. Put permanent artifacts like PDF -> text in the corresponding _notes folder or Relay folder.
+
+## Chrome MCP
+- When taking screenshots, pass an absolute `filePath` under the OS temp dir (run `getconf DARWIN_USER_TEMP_DIR`, e.g. /var/folders/.../T/). The MCP tool only allows writes there.
+- Never navigate to a non-localhost URL unless I give explicit permission. [`hooks/chrome-mcp-permissions.py` can't enforce that part, so it's needed here].
+- Quit the Chrome app when you're done rather than leaving it open.
 
 ## Running Commands
 - Use `rg` and `fd` as faster alternatives to `grep -r` and `find`, respectively. `rg -r` is the replace flag, it is not the same as `grep -r`. Don't use it unless you intend to overwrite file contents, which you should only do with explicit approval.
