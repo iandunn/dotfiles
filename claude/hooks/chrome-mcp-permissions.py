@@ -59,7 +59,7 @@ import sys
 import tempfile
 from urllib.parse import urlparse
 
-SESSION_USAGE_THRESHOLD = 60
+SESSION_USAGE_THRESHOLD = 80
 USAGE_COMMAND_TIMEOUT_SECONDS = 30
 SESSION_GATE_MARKER_DIR = os.path.join(tempfile.gettempdir(), 'claude-chrome-mcp-usage-gate')
 
