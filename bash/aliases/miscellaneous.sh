@@ -23,5 +23,6 @@ alias fix-camera='sudo killall VDCAssistant'
 # alias unquarantine='xattr -d com.apple.quarantine'
 # need to test more, make sure this doesn't open up vulnerabilities beyond just files i download yourself (and therefore trust)
 
-# Remove hard line wraps when copying from narrow terminal windows
-alias unwrap='pbpaste | perl -0777 -pe "s/^[ \t]+//mg; s/(?<!\n)\n(?!\n)/ /g; s/[ \t]{2,}/ /g" | pbcopy'
+# Remove hard line wraps when copying from narrow terminal windows, and
+# strip leading quote/pipe markers (e.g. "▎", "|", ">") left by wrapped blockquotes
+alias unwrap='pbpaste | perl -0777 -pe "s/^[ \t]+//mg; s/^[▎|>]+[ \t]*//mg; s/(?<!\n)\n(?!\n)/ /g; s/[ \t]{2,}/ /g" | pbcopy'
