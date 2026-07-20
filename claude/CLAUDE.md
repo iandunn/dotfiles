@@ -13,6 +13,13 @@ Don't start writing a plan for a small or medium sized feature, that takes more 
 
 Ask questions one by one instead of using the interface, so I can give detailed answers.
 
+### Parallel Plan
+When I say `parallel plan` anywhere in any prompt, it means that I have several Claude sessions running at once, and you can't all be touching files at the same time. Go through the normal planning process, but when you're ready to implement, I want you to use `superpowers:using-git-worktrees` to create your own isolated worktree instead of touching the code directly. You don't need explicit permission to change files in the worktree, go ahead and do it once we've agreed on a plan.
+
+When I say `go`, bring the worktree's changes into the main working tree — reconciled against the latest code — as uncommitted, unstaged changes. Committing on your own worktree branch is fine; advancing main is not. You'll need to use `git clean` to remove any new files that were added, if they would prevent advancing the main worktree. After applying them, kill any artifacts like running `npm dev` services, Chrome MCP, etc. Also clear your worktree when done. When outputting your normal summary at the end of the changes, prepend a 1 sentance overview of the main goal of the session.
+
+When working in a worktree, immediately run `pwd` and use that path as the root for every Read/Write/Edit. The Edit/Write tools use the absolute path you pass, not the shell cwd — a path pointing at the main checkout will silently edit the wrong tree. Never use the original project path once a worktree exists.  After the first Write/Edit, confirm it landed: run `git status` inside the worktree and verify the file shows as modified there before doing anything else. Run all verification (`tsc`/`lint`/`test`) from inside the worktree, and confirm the files under test actually contain the change (`grep` a distinctive string) — a green run against the wrong tree is worse than no run. While parallel sessions are active, treat the main checkout as untouchable: never edit, stage, or commit in it. Assume another session may commit the shared tree at any moment.
+
 ## Third Party Code
 Flag existing solutions (WordPress plugins for backend, JS libraries for frontend) if they're widely trusted and easy to integrate. Otherwise build it custom.
 
@@ -29,7 +36,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Exclude third-party code when inferring project conventions
 - Assume a watch task is running — don't run build commands
 - Don't add Co-Authored-By when I ask you to make a commit
-- When implementing a plan or other large task that includes isolated components (eg, back-end vs front-end), split the work between subagents to speed it up. Use Sonnet for the subagents in order to save tokens, even if Opus or Fable is the orchestrator. If the task is really simple, then use Haiku.
+- When implementing a plan or other large task, split the work between subagents to speed it up when possible. Pick between Opus and Sonnet for each agent, depending on which is the most appropriate to balance speed vs quality, but err towards quality. I'm not worried about tokens.
 - Don't implement anti patterns, like creating pages that dont have deep links
 - If automated tests already exist, then write them for code you add as well. Only add meaningful tests, though, don't try to get 100% coverage.
 - Never use "smart" quotes etc, they're not displayed correctly in all contexts
@@ -56,6 +63,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Use `jq` for handling json instead of calling python just to parse JSON.
 - If you prompt for something, wait until I respond, no matter how long it takes. Never decide to proceed on your own just because I haven't responded yet.
 - Don't run things like `npx jest` when you can run `npm run test` instead.
+- `cr` and `nr` are my aliases for `composer run` and `npm run`
 
 ## Reading PDFs
 - Don't give PDFs to the Read tool directly — it renders every page to images and wastes tokens. Extract locally with poppler; `tesseract` handles OCR.
