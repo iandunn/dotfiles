@@ -53,10 +53,12 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Put other temporary files in /tmp/. Put permanent artifacts like PDF -> text in the corresponding _notes folder or Relay folder.
 
 ## Chrome MCP
-- If you try to launch it and can't because another session already has, then stop and let me know you need me to close it.
+- Each session gets its own isolated Chrome, so sessions never block each other -- just open yours. (The user-scope `chrome-devtools` MCP server runs with `--isolated`, giving each session a throwaway temp `--user-data-dir`; the plugin's shared-profile server is disabled in settings.json via `deniedMcpServers` matching its name `plugin:chrome-devtools-mcp:chrome-devtools`, which is version-independent so plugin updates won't resurrect it. The `--isolated` server definition lives in `~/.claude.json`, which is not tracked in dotfiles.)
+- Isolated profiles are fresh on every launch: no persisted wp-admin logins, cookies, or extensions. Log in as part of the flow if a task needs it.
 - When taking screenshots, pass an absolute `filePath` under the OS temp dir (run `getconf DARWIN_USER_TEMP_DIR`, e.g. /var/folders/.../T/). The MCP tool only allows writes there.
 - Never navigate to a non-localhost URL unless I give explicit permission. [`hooks/chrome-mcp-permissions.py` can't enforce that part, so it's needed here].
-- Quit the MCP-launched Chrome instance when you're done with it, but don't kill my personal instance. They both use the same `Google Chrome.app`, but you can target the MCP one like: `pkill -f "user-data-dir=$HOME/.cache/chrome-devtools-mcp/chrome-profile"`. Confirm first with `ps aux | grep chrome-devtools-mcp` to be safe.
+- To close this session's isolated Chrome (on request, or when done with it), run `bash ~/dotfiles/claude/bin/close-isolated-chrome.sh` with the command sandbox disabled (it needs `ps`/`kill`, which the sandbox blocks). It targets only this session's browser via process ancestry -- never a parallel session's isolated browser or my personal Chrome. Do NOT call `kill`/`pkill` yourself; both are denied, and the allow-listed helper is the only sanctioned path.
+- The isolated profile also auto-deletes when the browser closes (including at session end), so if you forget to close it, it still cleans up.
 
 ## Running Commands
 - Use `rg` and `fd` as faster alternatives to `grep -r` and `find`, respectively. `rg -r` is the replace flag, it is not the same as `grep -r`. Don't use it unless you intend to overwrite file contents, which you should only do with explicit approval.

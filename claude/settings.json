@@ -13,6 +13,7 @@
       "Bash(/bin/cat *)",
       "Bash(/bin/date +%s *)",
       "Bash(awk *)",
+      "Bash(bash ~/dotfiles/claude/bin/close-isolated-chrome.sh)",
       "Bash(bat *)",
       "Bash(cat *)",
       "Bash(cd *)",
@@ -346,8 +347,9 @@
       "Bash(wget *)",
       "Bash(chmod *)",
       "Bash(chown *)",
-      "Bash(kill *)",
+	  "Bash(kill *)",
       "Bash(killall *)",
+      "Bash(pkill *)",
       "Bash(dd *)",
       "Bash(mkfs*)",
       "Bash(fdisk*)",
@@ -409,6 +411,11 @@
     "claude.ai Supabase",
     "claude.ai Browserstack",
     "claude.ai Ahrefs"
+  ],
+  "deniedMcpServers": [
+    {
+      "serverName": "plugin:chrome-devtools-mcp:chrome-devtools"
+    }
   ],
   "hooks": {
     "PreToolUse": [
