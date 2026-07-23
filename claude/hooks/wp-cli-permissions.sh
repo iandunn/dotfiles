@@ -15,6 +15,18 @@ if [ -z "$ARGS" ]; then
 	ARGS=$(echo "$CMD" | sed 's/^wp //')
 fi
 
+# A prefix match authorizes the whole command, but bash executes everything in
+# it, so a safe prefix followed by a shell metacharacter (`option get x && wp db
+# reset --yes`, `; rm ...`, `$(...)`) would ride through. Refuse to auto-approve
+# anything carrying one; it falls through to the normal prompt.
+if [[ "$ARGS" == *';'* || "$ARGS" == *'&'* || "$ARGS" == *'|'* \
+	|| "$ARGS" == *'$'* || "$ARGS" == *'`'* || "$ARGS" == *'('* \
+	|| "$ARGS" == *')'* || "$ARGS" == *'<'* || "$ARGS" == *'>'* \
+	|| "$ARGS" == *$'\n'* ]]; then
+	echo '{}'
+	exit 0
+fi
+
 SAFE_PREFIXES=(
 	"--info"
 	"--version"

@@ -39,6 +39,18 @@ run_hook() {
   [[ "$output" == *'"permissionDecision":"allow"'* ]]
 }
 
+@test "allows option update" {
+  run_hook "option update blogname Foo"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"permissionDecision":"allow"'* ]]
+}
+
+@test "allows option delete" {
+  run_hook "option delete my_option"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"permissionDecision":"allow"'* ]]
+}
+
 @test "allows user list" {
   run_hook "user list"
   [ "$status" -eq 0 ]
@@ -113,18 +125,6 @@ run_hook() {
   [ "$output" = "{}" ]
 }
 
-@test "falls through for option update" {
-  run_hook "option update blogname Foo"
-  [ "$status" -eq 0 ]
-  [ "$output" = "{}" ]
-}
-
-@test "falls through for option delete" {
-  run_hook "option delete my_option"
-  [ "$status" -eq 0 ]
-  [ "$output" = "{}" ]
-}
-
 @test "falls through for post delete" {
   run_hook "post delete 1"
   [ "$status" -eq 0 ]
@@ -153,6 +153,32 @@ run_hook() {
 
 @test "does not allow plugin list prefixed by something else" {
   run_hook "bad plugin list"
+  [ "$status" -eq 0 ]
+  [ "$output" = "{}" ]
+}
+
+# -- shell metacharacters must not ride after a safe prefix --
+
+@test "falls through for a chained command after a safe prefix" {
+  run_hook "option get siteurl && wp db reset --yes"
+  [ "$status" -eq 0 ]
+  [ "$output" = "{}" ]
+}
+
+@test "falls through for a semicolon-riding command after a safe prefix" {
+  run_hook "option get siteurl; rm -rf /tmp/x"
+  [ "$status" -eq 0 ]
+  [ "$output" = "{}" ]
+}
+
+@test "falls through for command substitution after a safe prefix" {
+  run_hook "option get \$(id)"
+  [ "$status" -eq 0 ]
+  [ "$output" = "{}" ]
+}
+
+@test "falls through for a piped command after a safe prefix" {
+  run_hook "option get siteurl | tee /tmp/x"
   [ "$status" -eq 0 ]
   [ "$output" = "{}" ]
 }

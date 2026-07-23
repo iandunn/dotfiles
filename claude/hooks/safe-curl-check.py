@@ -15,6 +15,7 @@ Requests with a body or non-safe HTTP method are auto-approved only for
 import json
 import shlex
 import sys
+from urllib.parse import urlparse
 
 
 def is_safe_url(s):
@@ -22,12 +23,13 @@ def is_safe_url(s):
 
 
 def is_local_url(url):
-    """Returns True for localhost (any port) and *.test domains."""
-    for scheme in ('https://', 'http://'):
-        if url.startswith(scheme):
-            url = url[len(scheme):]
-            break
-    host = url.split('/')[0].split(':')[0]
+    """Returns True for localhost (any port) and *.test domains.
+
+    Uses urlparse().hostname so userinfo cannot spoof the host: curl connects
+    to the host after any `user:pass@`, so http://localhost:x@evil.com/ must be
+    read as evil.com, not localhost.
+    """
+    host = urlparse(url).hostname or ''
     return host in ('localhost', '127.0.0.1') or host.endswith('.test')
 
 
@@ -251,6 +253,14 @@ def main():
         sys.exit(0)
 
     command = data.get('tool_input', {}).get('command', '')
+
+    # shlex.split() tokenizes but does not perform shell expansion; bash does.
+    # A command-substitution or variable inside an otherwise-valid URL token
+    # (https://x/$(cmd), backticks, $VAR) passes tokenization as a plain URL and
+    # would then be expanded by the shell after this hook auto-approves it, so
+    # never auto-approve a command carrying '$' or a backtick.
+    if '$' in command or '`' in command:
+        sys.exit(0)
 
     try:
         tokens = shlex.split(command)

@@ -39,7 +39,7 @@ function get_previous_components() {
 	foreach ( $staged_files as $file ) {
 		$short_descriptions = explode(
 			PHP_EOL,
-			shell_exec( "/usr/bin/git log --format='%s' --max-count=5 $file" )
+			shell_exec( "/usr/bin/git log --format='%s' --max-count=5 -- " . escapeshellarg( $file ) )
 		);
 
 		if ( $short_descriptions ) {
