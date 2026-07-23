@@ -29,13 +29,10 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Follow 10up engineering best practices
 - Make only the minimal change necessary — flag larger refactors instead of doing them
 - Never touch unrelated lines
-- Don't remove comments, TODOs, console.log(), or debugger statements unless I ask. Blank lines are often used for readability, don't remove those.
-- Use descriptive variable/function/etc names, not cryptic/terse abbreviations/etc
-- Only add comments to code that explain *why* the code does something, not *what* it does — prefer descriptive variable naming etc instead.
-- Don't add comments that explain what you did, or that explain new code in relation to code that you changed. The person reading the code after it's merged wouldn't understand what that's about. Comments should be durable and self-contained.
 - Exclude third-party code when inferring project conventions
 - Assume a watch task is running — don't run build commands
 - Don't add Co-Authored-By when I ask you to make a commit
+- Use descriptive variable/function/etc names, not cryptic/terse abbreviations/etc
 - When implementing a plan or other large task, split the work between subagents to speed it up when possible. Pick between Opus and Sonnet for each agent, depending on which is the most appropriate to balance speed vs quality, but err towards quality. I'm not worried about tokens.
 - Don't implement anti patterns, like creating pages that dont have deep links
 - If automated tests already exist, then write them for code you add as well. Only add meaningful tests, though, don't try to get 100% coverage.
@@ -43,6 +40,14 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - If I tell you to not write code yet, and then later on say something that you think is approval to start writing, explicitly prompt to make sure I want you to start.
 - Don't prefix PHP methods etc with a `\`, instead add a `use` statement at the top of the file.
 - Don't try to commit stuff unless I ask you to. Give me a drafted commit message once a task is done though.
+
+### Comments
+- Don't remove comments, TODOs, console.log(), or debugger statements unless I ask. Blank lines are often used for readability, don't remove those.
+- Only add comments to code that explain *why* the code does something, not *what* it does — prefer descriptive variable naming etc instead.
+- Don't add comments that explain new code in relation to code that you changed. The person reading the code after it's merged wouldn't understand what that's about. Comments should be durable and self-contained.
+- Wrap lines at 100 characters unless there's an lint rule that specifies lower.
+- When you're writing things that are intended for humans to read (comments, commit messages, QA instructions, etc), don't be verbose. Include the necessary information, but no more than that.
+
 
 ## Debugging and Understanding Code
 - Don't guess, make hypotheses and then test them to see if you're right.
