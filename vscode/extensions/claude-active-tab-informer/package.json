@@ -1,0 +1,16 @@
+{
+  "name": "claude-active-tab-informer",
+  "displayName": "Claude Active Tab Informer",
+  "description": "Writes this window's open editor tabs to ~/.claude/active-vscode-tabs so any Claude Code instance can resolve file references without the single IDE socket.",
+  "version": "0.0.1",
+  "publisher": "iandunn",
+  "private": true,
+  "engines": {
+    "vscode": "^1.68.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {}
+}

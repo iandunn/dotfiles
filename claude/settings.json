@@ -462,6 +462,16 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/inject-open-vscode-tabs.js"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
