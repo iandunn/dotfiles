@@ -60,10 +60,6 @@ ln -sf $DOTFILES_DIR/.config/micro/settings.json	$HOME/.config/micro/settings.js
 ln -sf $DOTFILES_DIR/localwp/ssh-entry "$HOME/Library/Application Support/Local/ssh-entry"
 	# todo ^ is installing to localwp/ssh-entry/ssh-entry and keeps nesting
 
-# iTerm2 has an option to load preferences from a file, but it isn't working.
-# If can get it working then won't need this. Using this may cause issues since it's not standard.
-#ln -sf ~/dotfiles/iterm2/com.googlecode.iterm2.plist ~/Library/Preferences/com.googlecode.iterm2.plist
-
 # These have to be hard links, because Subversion and SSH configs don't support symlinks.
 mkdir -p $HOME/.subversion
 ln -f $DOTFILES_DIR/.subversion/config	$HOME/.subversion/config
