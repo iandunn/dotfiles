@@ -95,6 +95,13 @@ def gate_navigation(tool_input, session_id):
             emit('allow', 'Navigation stays within current/visited pages')
         return
 
+    # about:blank loads no external content, so it carries none of the
+    # prompt-injection risk that gates real hosts; treat it as a safe call.
+    if url.strip().lower() == 'about:blank':
+        if not gate_session_usage(session_id):
+            emit('allow', 'about:blank auto-approved')
+        return
+
     host = urlparse(url).hostname or ''
 
     if host and is_local_host(host):
