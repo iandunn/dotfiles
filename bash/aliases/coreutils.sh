@@ -39,7 +39,10 @@ alias locate='locate -i'
 alias zip='zip -r'
 alias untar='tar -xvf'
 
-alias date='gdate "+%b %e %Y %l:%M:%S %P"' # use GNU date instead of BSD date for consistency across machines
+# Originally added so that GNU date is always used instead of BSD date, for consistency across machines
+# That occasionally causes conflicts with tools that should be calling `command(date)` instead, though. I don't use it often though.
+#alias date='gdate "+%b %e %Y %l:%M:%S %P"'
+
 alias timeutc='gdate --utc --date="@$1"'
 	# todo gdate: invalid date ‘@’
 alias timelocal='gdate --date='@''
