@@ -514,11 +514,6 @@ git_fuzzy_merge() {
 # This assumes that all projects should have a CLAUDE.md file at the root folder that identifies it as a project
 # and provides project-specific instructions.
 function claude() {
-	if [[ -f "$PWD/CLAUDE.md" ]]; then
-		command claude "$@"
-		return
-	fi
-
 	local dir="$PWD"
 	local root=""
 	local local_sites="$HOME/local-sites"
