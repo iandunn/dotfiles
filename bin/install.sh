@@ -45,7 +45,7 @@ ln -sf $DOTFILES_DIR/bash/.bash_profile	$HOME/.bash_profile
 ln -sf $DOTFILES_DIR/bash/.bash_aliases	$HOME/.bash_aliases
 ln -sf $DOTFILES_DIR/bash/.fdignore		$HOME/.fdignore
 ln -sf $DOTFILES_DIR/bash/.fdignore		$HOME/.rgignore
-ln -sf $DOTFILES_DIR/claude.md			$HOME/claude.md
+ln -sf $DOTFILES_DIR/claude/CLAUDE.md	$HOME/CLAUDE.md
 
 ln -sf $DOTFILES_DIR/git/.gitconfig			$HOME/.gitconfig
 ln -sf $DOTFILES_DIR/git/.gitignore_global	$HOME/.gitignore_global

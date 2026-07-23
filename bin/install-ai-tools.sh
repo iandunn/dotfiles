@@ -99,8 +99,9 @@ section "Modern Web Guidance"
 claude plugin marketplace add GoogleChrome/modern-web-guidance
 claude plugin install modern-web-guidance@googlechrome
 
-section "Security Guidance"
+section "Security Guidance / Claude Security"
 claude plugin install security-guidance@claude-plugins-official
+claude plugin install claude-security@claude-plugins-official
 
 # todo add localwp mcp?
 

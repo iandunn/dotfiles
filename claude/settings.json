@@ -475,7 +475,9 @@
     "chrome-devtools-mcp@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
     "relay-eng@relay-plugins": true,
-    "modern-web-guidance@googlechrome": true
+    "modern-web-guidance@googlechrome": true,
+    "security-guidance@claude-plugins-official": true,
+    "claude-security@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "spark-plugins": {
@@ -537,7 +539,7 @@
     ]
   },
   "effortLevel": "high",
-  "advisorModel": "opus",
+  "advisorModel": "fable",
   "tui": "default",
   "skipWorkflowUsageWarning": true,
   "autoMode": {
