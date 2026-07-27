@@ -78,6 +78,7 @@ npx @10up/agent-skills --global
 section "10up Relay Plugins"
 claude plugin marketplace add 10up/relay-plugins
 claude plugin install relay-eng@relay-plugins
+claude plugin install relay-pjm@relay-plugins
 
 section "Daryll Doc Skills"
 claude plugin marketplace add darylldoyle/docs-skills

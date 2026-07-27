@@ -23,6 +23,7 @@
       "Bash(composer diagnose)",
       "Bash(composer dump-autoload *)",
       "Bash(composer outdated *)",
+      "Bash(composer validate *)",
       "Bash(composer run lint *)",
       "Bash(composer run test *)",
       "Bash(composer show *)",
@@ -347,7 +348,7 @@
       "Bash(wget *)",
       "Bash(chmod *)",
       "Bash(chown *)",
-	  "Bash(kill *)",
+      "Bash(kill *)",
       "Bash(killall *)",
       "Bash(pkill *)",
       "Bash(dd *)",
@@ -391,8 +392,6 @@
       "Bash(npm update *)",
       "Bash(npm uninstall *)",
       "Bash(npm remove *)",
-      "Bash(composer outdated *)",
-      "Bash(composer validate *)",
       "Bash(find * -exec *)",
       "Edit(~/.claude/**)"
     ],
@@ -487,7 +486,8 @@
     "relay-eng@relay-plugins": true,
     "modern-web-guidance@googlechrome": true,
     "security-guidance@claude-plugins-official": true,
-    "claude-security@claude-plugins-official": true
+    "claude-security@claude-plugins-official": true,
+    "relay-pjm@relay-plugins": true
   },
   "extraKnownMarketplaces": {
     "spark-plugins": {
