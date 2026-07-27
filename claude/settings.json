@@ -89,6 +89,8 @@
       "Bash(git stash list *)",
       "Bash(git status *)",
       "Bash(git symbolic-ref *)",
+      "Bash(git worktree list*)",
+      "Bash(git worktree prune*)",
       "Bash(glab --version)",
       "Bash(glab mr *)",
       "Bash(grep *)",
@@ -300,7 +302,6 @@
       "Bash(git filter-*)",
       "Bash(git update-ref*)",
       "Bash(git tag -d*)",
-      "Bash(git worktree remove*)",
       "Bash(git submodule deinit*)",
       "Bash(git branch -d -f*)",
       "Bash(npm publish*)",
@@ -458,6 +459,21 @@
             "type": "command",
             "command": "~/.claude/hooks/wp-cli-permissions.sh",
             "if": "Bash(\"/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp\" *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(cp *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(npm i*)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(git worktree remove*)"
           }
         ]
       }
