@@ -1,4 +1,6 @@
 {
+    "autoclose": false,
+
     "*.md": {
         "softwrap": true,
         "wordwrap": true
