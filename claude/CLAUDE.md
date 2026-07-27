@@ -47,6 +47,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Don't add comments that explain new code in relation to code that you changed. The person reading the code after it's merged wouldn't understand what that's about. Comments should be durable and self-contained.
 - Wrap lines at 100 characters unless there's an lint rule that specifies lower.
 - When you're writing things that are intended for humans to read (comments, commit messages, QA instructions, etc), don't be verbose. Include the necessary information, but no more than that.
+- Add backticks around references to code, like class and file names, etc. Do that in commit messages too.
 
 
 ## Debugging and Understanding Code
@@ -71,6 +72,8 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - If you prompt for something, wait until I respond, no matter how long it takes. Never decide to proceed on your own just because I haven't responded yet.
 - Don't run things like `npx jest` when you can run `npm run test` instead.
 - `cr` and `nr` are my aliases for `composer run` and `npm run`
+- Never wrap a command in a subshell or group -- `( a && echo yes || echo no )`, `{ ... }` -- just to make its exit code readable; that introduces nuisance approval prompts. Run the bare commands and use exit codes instead.
+- Don't `cd` into a directory and then run `git` in the same command; use `git -C <path> <read-only command>`, or a separate `cd` call followed by the git call. Never put more than one `cd` in a single command. Both shapes are hardcoded permission prompts.
 
 ## Reading PDFs
 - Don't give PDFs to the Read tool directly — it renders every page to images and wastes tokens. Extract locally with poppler; `tesseract` handles OCR.
