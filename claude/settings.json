@@ -287,7 +287,6 @@
       "Bash(git push --mirror*)",
       "Bash(git push --delete*)",
       "Bash(git reset --hard*)",
-      "Bash(git clean*)",
       "Bash(git checkout .)",
       "Bash(git checkout -- .)",
       "Bash(git branch -D*)",
@@ -565,9 +564,12 @@
     ]
   },
   "effortLevel": "high",
-  "advisorModel": "fable",
+  "advisorModel": "opus",
   "tui": "default",
   "skipWorkflowUsageWarning": true,
+  "worktree": {
+    "baseRef": "head"
+  },
   "autoMode": {
     "hard_deny": [
       "$defaults",

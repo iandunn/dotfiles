@@ -107,4 +107,16 @@ claude plugin install claude-security@claude-plugins-official
 # todo add localwp mcp?
 
 
+# `claude plugin update` only takes one plugin at a time, so loop over everything that's installed
+# rather than listing them individually above. `plugin update` resolves against the cached
+# marketplace manifests, so those have to be refreshed first or there's nothing new to find.
+section "Update All Claude Plugins"
+claude plugin marketplace update
+
+claude plugin list --json | jq -r '.[] | "\(.id) \(.scope)"' |
+	while read -r plugin_id plugin_scope; do
+		claude plugin update "$plugin_id" --scope "$plugin_scope"
+	done
+
+
 printf "\n\n⚠️ 10up agent skills not installed, see above"
