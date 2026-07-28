@@ -28,6 +28,7 @@
       "Bash(composer run test *)",
       "Bash(composer show *)",
       "Bash(composer update *)",
+      "Bash(cp *)",
       "Bash(curl -s \"https://api.wordpress.org/*)",
       "Bash(curl -s http://*.localhost:3000)",
       "Bash(curl -s http://*.localhost:3000/*)",
@@ -100,6 +101,8 @@
       "Bash(ll *)",
       "Bash(ls *)",
       "Bash(mkdir *)",
+      "Bash(mv * .claude/tmp/)",
+      "Bash(mv * .claude/tmp/*)",
       "Bash(node --version)",
       "Bash(npm --version)",
       "Bash(npm audit *)",
@@ -375,7 +378,6 @@
       "Bash(history -c*)"
     ],
     "ask": [
-      "Bash(cp *)",
       "Bash(mv *)",
       "Bash(git add *)",
       "Bash(git commit *)",
@@ -398,7 +400,7 @@
     "defaultMode": "auto",
     "disableBypassPermissionsMode": "disable"
   },
-  "model": "opus",
+  "model": "opus[1m]",
   "enabledMcpjsonServers": [
     "local-wp",
     "chrome-devtools"

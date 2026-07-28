@@ -41,7 +41,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Never use "smart" quotes etc, they're not displayed correctly in all contexts
 - If I tell you to not write code yet, and then later on say something that you think is approval to start writing, explicitly prompt to make sure I want you to start.
 - Don't prefix PHP methods etc with a `\`, instead add a `use` statement at the top of the file.
-- Don't try to commit stuff unless I ask you to. Give me a drafted commit message once a task is done though.
+- Don't try to commit stuff unless I ask you to. Give me a drafted commit message once a task is completely done though.
 
 ### Comments
 - Don't remove comments, TODOs, console.log(), or debugger statements unless I ask. Blank lines are often used for readability, don't remove those.
@@ -58,7 +58,8 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - On the backend add php error logs and trigger the code with curl, wp cli, etc, then read the log.
 - Use subagents when exploring the codebase to speed it up.
 - When you fix a bug in one area of the code, check to see if it's occurring in other areas too
-- Put other temporary files in /tmp/. Put permanent artifacts like PDF -> text in the corresponding _notes folder or Relay folder.
+- Put temporary files in `.claude/tmp/` inside the project, not the system `/tmp`. My global gitignore covers `.claude`, which keeps scratch files out of commits while leaving them visible to me. Put permanent artifacts like PDF -> text in the corresponding _notes folder or Relay folder.
+- To test a change reversibly (e.g., "does this lint rule still fire without the ignore comment?"), use `Edit` to make the change and a second `Edit` to put it back. Don't copy the file to a backup and then restore it.
 
 ## Chrome MCP
 - Each session gets its own isolated Chrome, so sessions never block each other -- just open yours. (The user-scope `chrome-devtools` MCP server runs with `--isolated`, giving each session a throwaway temp `--user-data-dir`; the plugin's shared-profile server is disabled in settings.json via `deniedMcpServers` matching its name `plugin:chrome-devtools-mcp:chrome-devtools`, which is version-independent so plugin updates won't resurrect it. The `--isolated` server definition lives in `~/.claude.json`, which is not tracked in dotfiles.)
