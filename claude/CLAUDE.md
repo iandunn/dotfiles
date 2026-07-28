@@ -76,7 +76,8 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - This applies to accidental circumvention too. If you notice you've been routing around a rule, say so, even if it's been working.
 
 ## Running Commands
-- Use `rg` and `fd` as faster alternatives to `grep -r` and `find`, respectively. `rg -r` is the replace flag, it is not the same as `grep -r`. Don't use it unless you intend to overwrite file contents, which you should only do with explicit approval.
+- Be aware that I often have aliases for commands, like `rm` is actually `rm -i`. You'll sometimes need to prefix those with `command` to avoid that. Don't do that generally though because permission rules match the literal command string, so `command ls` doesn't match `Bash(ls *)` and would need a duplicate `settings.json` rule for every command.
+- Use `rg` and `fd` as faster alternatives to recursive `grep` and `find`, respectively. `rg` searches recursively with no flag, so recursive search with line numbers is just `rg -n 'pattern' path/`. Never run `rg -r` because that takes replacement text and rewrites the matches it prints, so the output shows something other than what's in the file.
 - Use `jq` for handling json instead of calling python just to parse JSON.
 - If you prompt for something, wait until I respond, no matter how long it takes. Never decide to proceed on your own just because I haven't responded yet.
 - Don't run things like `npx jest` when you can run `npm run test` instead.
