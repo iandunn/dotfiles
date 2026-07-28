@@ -490,6 +490,9 @@
       }
     ]
   },
+  "worktree": {
+    "baseRef": "head"
+  },
   "statusLine": {
     "type": "command",
     "command": "npx -y ccstatusline@latest",
@@ -569,9 +572,6 @@
   "advisorModel": "opus",
   "tui": "default",
   "skipWorkflowUsageWarning": true,
-  "worktree": {
-    "baseRef": "head"
-  },
   "autoMode": {
     "hard_deny": [
       "$defaults",

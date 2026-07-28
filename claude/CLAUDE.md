@@ -69,6 +69,12 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - To close this session's isolated Chrome (on request, or when done with it), run `bash ~/dotfiles/claude/bin/close-isolated-chrome.sh` with the command sandbox disabled (it needs `ps`/`kill`, which the sandbox blocks). It targets only this session's browser via process ancestry -- never a parallel session's isolated browser or my personal Chrome. Do NOT call `kill`/`pkill` yourself; both are denied, and the allow-listed helper is the only sanctioned path.
 - The isolated profile also auto-deletes when the browser closes (including at session end), so if you forget to close it, it still cleans up.
 
+## Restrictions
+- Never work around a restriction in `settings.json`, a hook, or a `CLAUDE.md` file. If a command is denied, that's the answer -- don't reach for a different command that achieves the same effect. e.g., when `rm` is denied, don't use `mv`, `truncate`, or a redirect to destroy a file's contents.
+- Sweeping a scratch file *you* created into `.claude/tmp/` is sanctioned cleanup, not a workaround -- that's what the `mv` allow rule is for. Displacing a file *I* wrote is a workaround. The line is whose work is at stake, not which command you used.
+- When a restriction blocks something you believe the task genuinely needs, stop and tell me what's blocked and why you think it's needed. I'll decide whether to loosen the rule. A restriction I set deliberately is more important than the task you're working on.
+- This applies to accidental circumvention too. If you notice you've been routing around a rule, say so, even if it's been working.
+
 ## Running Commands
 - Use `rg` and `fd` as faster alternatives to `grep -r` and `find`, respectively. `rg -r` is the replace flag, it is not the same as `grep -r`. Don't use it unless you intend to overwrite file contents, which you should only do with explicit approval.
 - Use `jq` for handling json instead of calling python just to parse JSON.
