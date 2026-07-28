@@ -526,22 +526,26 @@ function claude() {
 	#
 	# ~/local-sites/ also acts as a stop boundary like $HOME — it has a shared CLAUDE.md that
 	# provides context for all local sites, but shouldn't itself be treated as a project root.
+	#
+	# A directory holding the global CLAUDE.md itself isn't a project root either. Stopping before
+	# $HOME isn't enough, because ~/CLAUDE.md is a symlink to ~/dotfiles/claude/CLAUDE.md, so the
+	# walk would otherwise treat ~/dotfiles/claude/ as a root. -ef compares the resolved files.
 	while [[ "$dir" != "$HOME" && "$dir" != "$local_sites" && "$dir" != "/" ]]; do
-		if [[ -f "$dir/CLAUDE.md" ]]; then
+		if [[ -f "$dir/CLAUDE.md" ]] && ! [[ "$dir/CLAUDE.md" -ef "$HOME/CLAUDE.md" ]]; then
 			root="$dir"
 		fi
 
 		dir="$(dirname "$dir")"
 	done
 
-	# todo add a special case where ~/dotfiles/claude/CLAUDE.md is ignored and ~/dotfiles/claude.md is the root
-
-	if [[ -n "$root" ]]; then
-		printf "\n⚠️ Project root found at $root, launching from that folder\n\n"
-		cd "$root" && command claude "$@"
-	else
-		printf "\n⚠️ No project root found, launching from current folder\n\n"
+	if [[ -z "$root" ]]; then
+		printf "\n⚠️ No project root found, launching from current folder\n\n" >&2
 		command claude "$@"
+	elif [[ "$root" == "$PWD" ]]; then
+		command claude "$@"
+	else
+		printf "\n⚠️ Project root found at %s, launching from that folder\n\n" "$root" >&2
+		cd "$root" && command claude "$@"
 	fi
 }
 
