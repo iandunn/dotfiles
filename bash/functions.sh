@@ -513,30 +513,63 @@ git_fuzzy_merge() {
 #
 # This assumes that all projects should have a CLAUDE.md file at the root folder that identifies it as a project
 # and provides project-specific instructions.
-function claude() {
-	local dir="$PWD"
+#
+# _claude_project_root() walks up from $1 (default $PWD) and outputs the folder that owns the winning CLAUDE.md,
+# or nothing if there isn't one. claude() below is the wrapper that launches from it.
+#
+# Which CLAUDE.md wins when several are stacked:
+#   - A git repo that carries its own CLAUDE.md is a self-contained project, so the nearest one wins. That's how
+#     a standalone repo parked inside a Local site (~/local-sites/misc/app/public/foo) becomes its
+#     own root rather than resolving to the site folder.
+#   - `wp-content` and `mu-plugins` are excluded from that. They're the site's own git repo rather than an
+#     independent project, and the personal CLAUDE.md above them (e.g. ~/local-sites/10up/bar/) holds the
+#     context that matters.
+#   - Otherwise the highest one wins, which covers a vendored plugin that ships a CLAUDE.md without being a repo
+#     of its own, like `wp-content/plugins/safe-svg`. Claude Code reads nested CLAUDE.md files for context,
+#     so the lower ones are still loaded.
+#
+# ~/local-sites/ acts as a stop boundary like $HOME — it has a shared CLAUDE.md that provides context for all
+# local sites, but shouldn't itself be treated as a project root.
+#
+# A directory holding the global CLAUDE.md itself isn't a project root either. Stopping before $HOME isn't
+# enough, because ~/CLAUDE.md is a symlink to ~/dotfiles/claude/CLAUDE.md, so the walk would otherwise treat
+# ~/dotfiles/claude/ as a root. -ef compares the resolved files.
+#
+# TODO If the `wp-content`/`mu-plugins` exception list has to keep growing, switch to marker files instead: a
+# `.claude-walker-stop` in ~/local-sites, ~/local-sites/misc/app/public, etc, that halts the walk. That moves
+# the layout knowledge next to the folders it describes, and would replace the hardcoded stop boundaries too.
+_claude_project_root() {
+	local dir="${1:-$PWD}"
 	local root=""
 	local local_sites="$HOME/local-sites"
 
-	# Walk up to find CLAUDE.md, stopping before $HOME to avoid the global one.
-	# Keep walking even after finding one, to prefer the highest (personal) CLAUDE.md as root.
-	# This handles the case where a project has a repo-committed CLAUDE.md in wp-content/ and a
-	# personal one higher up (e.g. ~/local-sites/[project]/). Claude Code automatically reads
-	# nested CLAUDE.md files for context, so the repo one is still loaded.
-	#
-	# ~/local-sites/ also acts as a stop boundary like $HOME — it has a shared CLAUDE.md that
-	# provides context for all local sites, but shouldn't itself be treated as a project root.
-	#
-	# A directory holding the global CLAUDE.md itself isn't a project root either. Stopping before
-	# $HOME isn't enough, because ~/CLAUDE.md is a symlink to ~/dotfiles/claude/CLAUDE.md, so the
-	# walk would otherwise treat ~/dotfiles/claude/ as a root. -ef compares the resolved files.
 	while [[ "$dir" != "$HOME" && "$dir" != "$local_sites" && "$dir" != "/" ]]; do
 		if [[ -f "$dir/CLAUDE.md" ]] && ! [[ "$dir/CLAUDE.md" -ef "$HOME/CLAUDE.md" ]]; then
 			root="$dir"
+
+			# -e rather than -d so worktrees and submodules count, where .git is a file.
+			if [[ -e "$dir/.git" ]]; then
+				case "${dir##*/}" in
+					wp-content | mu-plugins )
+					;;
+
+					* )
+						break
+					;;
+				esac
+			fi
 		fi
 
 		dir="$(dirname "$dir")"
 	done
+
+	printf '%s' "$root"
+}
+
+# See _claude_project_root() above for how the root folder is chosen.
+function claude() {
+	local root
+	root="$(_claude_project_root)"
 
 	if [[ -z "$root" ]]; then
 		printf "\n⚠️ No project root found, launching from current folder\n\n" >&2
