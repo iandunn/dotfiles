@@ -513,35 +513,33 @@
     "relay-pjm@relay-plugins": true
   },
   "extraKnownMarketplaces": {
-    "spark-plugins": {
-      "source": {
-        "source": "github",
-        "repo": "10up/spark-plugins"
-      }
-    },
     "docs-skills-marketplace": {
       "source": {
         "source": "github",
         "repo": "darylldoyle/docs-skills"
-      }
+      },
+      "autoUpdate": true
     },
     "chrome-devtools-plugins": {
       "source": {
         "source": "github",
         "repo": "ChromeDevTools/chrome-devtools-mcp"
-      }
+      },
+      "autoUpdate": true
     },
     "relay-plugins": {
       "source": {
         "source": "github",
         "repo": "10up/relay-plugins"
-      }
+      },
+      "autoUpdate": true
     },
     "googlechrome": {
       "source": {
         "source": "github",
         "repo": "GoogleChrome/modern-web-guidance"
-      }
+      },
+      "autoUpdate": true
     }
   },
   "sandbox": {

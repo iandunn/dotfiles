@@ -41,7 +41,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Never use "smart" quotes etc, they're not displayed correctly in all contexts
 - If I tell you to not write code yet, and then later on say something that you think is approval to start writing, explicitly prompt to make sure I want you to start.
 - Don't prefix PHP methods etc with a `\`, instead add a `use` statement at the top of the file.
-- Don't try to commit stuff unless I ask you to. Give me a drafted commit message once a task is completely done though.
+- Don't try to commit stuff unless I ask you to. Give me a drafted commit message, but only once i've acknowleded that a task is completely done.
 
 ### Comments
 - Don't remove comments, TODOs, console.log(), or debugger statements unless I ask. Blank lines are often used for readability, don't remove those.
