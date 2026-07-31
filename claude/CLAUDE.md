@@ -80,6 +80,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Use `rg` and `fd` as faster alternatives to recursive `grep` and `find`, respectively. `rg` searches recursively with no flag, so recursive search with line numbers is just `rg -n 'pattern' path/`. Never run `rg -r` because that takes replacement text and rewrites the matches it prints, so the output shows something other than what's in the file.
 - Use `jq` for handling json instead of calling python just to parse JSON.
 - If you prompt for something, wait until I respond, no matter how long it takes. Never decide to proceed on your own just because I haven't responded yet.
+- Paths in commands you hand me to run -- or mention in prose -- must be absolute; your cwd isn't mine, and `EnterWorktree` moves yours without moving mine. When a path-based command fails, show me `pwd` rather than guessing a different prefix.
 - Don't run things like `npx jest` when you can run `npm run test` instead.
 - `cr` and `nr` are my aliases for `composer run` and `npm run`
 - Never wrap a command in a subshell or group -- `( a && echo yes || echo no )`, `{ ... }` -- just to make its exit code readable; that introduces nuisance approval prompts. Run the bare commands and use exit codes instead.
