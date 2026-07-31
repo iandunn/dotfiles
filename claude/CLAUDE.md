@@ -13,6 +13,13 @@ Don't start writing a plan for a small or medium sized feature, that takes more 
 
 Ask questions one by one instead of using the interface, so I can give detailed answers.
 
+### Process weight
+- Skills chain into each other (brainstorming ends by invoking writing-plans, which suggests subagent execution). That chain does NOT override the rules in this file. If a skill's next step is something I told you not to do, stop and tell me instead of following it.
+- Never write implementation code into a plan or design document you're going to execute yourself in the same session. Plans capture decisions, file boundaries, interfaces, and risks -- code belongs in code. Writing it twice means the plan's copy has bugs the implementer then has to rediscover one at a time, which is slower than just writing it and running the tests.
+- Scale review to the change. A handful of files in a personal project needs one review pass at the end, not a reviewer plus a fix loop plus a re-reviewer per task. Reserve per-task review for work that's genuinely subtle or hard to reverse.
+- Prefer implementing directly and letting tests find problems over ceremony that predicts problems. Tests are faster and more honest than a review of prose.
+- If you notice the process is generating more bookkeeping than progress, say so and propose cutting it. Don't grind through it because a skill said to. Mid-task is not too late to switch.
+
 ### Parallel Plan
 When I say `parallel plan` anywhere in any prompt, it means that I have several Claude sessions running at once, and you can't all be touching files at the same time. Go through the normal planning process, but when you're ready to implement, I want you to work in your own isolated worktree instead of touching the code directly. You don't need explicit permission to change files in the worktree, go ahead and do it once we've agreed on a plan.
 
