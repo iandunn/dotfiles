@@ -14,7 +14,7 @@ if [[ "$homebrew" != "y" && "$homebrew" != "Y" ]]; then
   exit 1
 fi
 
-printf "\nWARNING: This will overwrite files like ~/.bashrc and ~/.bash_profile. \nHave you diff'd them against the ~/dotfiles version and integrated any changes? (y/N) "
+printf "\nWARNING: This will overwrite files like ~/.bashrc, ~/.bash_profile, ~/.claude/settings.json, etc. \nHave you diff'd them against the ~/dotfiles version and integrated any changes? (y/N) "
 read diffed
 
 if [[ "$diffed" != "y" && "$diffed" != "Y" ]]; then
@@ -45,8 +45,20 @@ ln -sf $DOTFILES_DIR/bash/.bash_profile	$HOME/.bash_profile
 ln -sf $DOTFILES_DIR/bash/.bash_aliases	$HOME/.bash_aliases
 ln -sf $DOTFILES_DIR/bash/.fdignore		$HOME/.fdignore
 ln -sf $DOTFILES_DIR/bash/.fdignore		$HOME/.rgignore
-ln -sf $DOTFILES_DIR/claude/CLAUDE.md	$HOME/CLAUDE.md
-ln -sf $DOTFILES_DIR/claude/hooks		$HOME/.claude/hooks
+
+mkdir -p $HOME/.claude/skills
+ln -sf  $DOTFILES_DIR/claude/CLAUDE.md			$HOME/CLAUDE.md
+ln -sf  $DOTFILES_DIR/claude/settings.json		$HOME/.claude/settings.json
+ln -sf  $DOTFILES_DIR/claude/keybindings.json	$HOME/.claude/keybindings.json
+
+# `-n` keeps a re-run from nesting the link inside the directory it created last time.
+ln -sfn $DOTFILES_DIR/claude/hooks	$HOME/.claude/hooks
+ln -sfn $DOTFILES_DIR/claude/rules	$HOME/.claude/rules
+
+# Linked individually because `~/.claude/skills` also holds links to skills from other repos
+for skill in $DOTFILES_DIR/claude/skills/*/; do
+	ln -sfn "${skill%/}" "$HOME/.claude/skills/$(basename $skill)"
+done
 
 ln -sf $DOTFILES_DIR/git/.gitconfig			$HOME/.gitconfig
 ln -sf $DOTFILES_DIR/git/.gitignore_global	$HOME/.gitignore_global
