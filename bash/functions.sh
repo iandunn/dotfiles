@@ -606,6 +606,88 @@ git_main_branch() {
 	git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'
 }
 
+# Write every running Claude Code session to a Markdown file, so they can be restarted after quitting
+# VS Code or rebooting. Claude keeps the conversations on disk, but nothing restarts the processes, and
+# `claude --resume` needs a session ID that isn't visible anywhere in the terminal.
+#
+# `~/.claude/sessions/<pid>.json` is Claude's own registry of running sessions. Entries stick around
+# after a session exits, so the PID is the only reliable liveness signal.
+save_active_claude_sessions() {
+	local report="$HOME/Downloads/active-claude-sessions.md"
+	local registry="$HOME/.claude/sessions"
+
+	if [[ ! -d "$registry" ]]; then
+		error_message "error: $registry not found."
+		return 1
+	fi
+
+	local rows=()
+	local file
+
+	for file in "$registry"/*.json; do
+		[[ -e "$file" ]] || continue
+
+		local pid
+		pid="$(basename "$file" .json)"
+
+		command ps -p "$pid" -o pid= > /dev/null 2>&1 || continue
+
+		local cwd session_id name
+		IFS=$'\t' read -r cwd session_id name < <(
+			jq -r 'select(.kind == "interactive") | [.cwd, .sessionId, .name] | @tsv' "$file" 2>/dev/null
+		)
+
+		# Skips background and one-shot `--print` sessions, which have nothing to reopen.
+		[[ -n "$session_id" ]] || continue
+
+		# The transcript lives under a mangled copy of the project path, so find it by session ID instead
+		# of trying to reproduce the mangling.
+		local transcripts=("$HOME/.claude/projects"/*/"$session_id.jsonl")
+		local title=""
+
+		if [[ -e "${transcripts[0]}" ]]; then
+			title="$(jq -r 'select(.type == "ai-title") | .aiTitle' "${transcripts[0]}" 2>/dev/null | tail -1)"
+
+			# A session that hasn't earned a title yet still has the prompt that started it, which beats
+			# falling through to a derived name like `dmv-a8`.
+			if [[ -z "$title" ]]; then
+				title="$(
+					jq -r 'select(.type == "last-prompt") | .lastPrompt' "${transcripts[0]}" 2>/dev/null \
+						| tail -1 | tr '\n' ' ' | cut -c1-90
+				)"
+			fi
+		fi
+
+		rows+=("$cwd"$'\t'"${title:-$name}"$'\t'"$session_id")
+	done
+
+	if [[ ${#rows[@]} -eq 0 ]]; then
+		warning_message "No running Claude sessions found."
+		return 0
+	fi
+
+	{
+		printf '# Active Claude sessions\n\n'
+		printf 'Saved %s. Open a terminal in each folder and run the commands below.\n' "$(date '+%Y-%m-%d %H:%M')"
+
+		local current_cwd=""
+		local cwd title session_id
+
+		while IFS=$'\t' read -r cwd title session_id; do
+			if [[ "$cwd" != "$current_cwd" ]]; then
+				printf '\n\n## %s\n\n`cd %s`\n\n' "${cwd##*/}" "$cwd"
+				current_cwd="$cwd"
+			fi
+
+			printf -- '- %s\n  `claude --resume %s`\n' "$title" "$session_id"
+		done < <(printf '%s\n' "${rows[@]}" | sort)
+
+		printf '\n'
+	} > "$report"
+
+	success_message "Saved ${#rows[@]} sessions to $report"
+}
+
 git_archive_stale_branches() {
 	local cutoff_date
 	local main_branch
