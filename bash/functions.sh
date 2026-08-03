@@ -514,7 +514,7 @@ git_fuzzy_merge() {
 # This assumes that all projects should have a CLAUDE.md file at the root folder that identifies it as a project
 # and provides project-specific instructions.
 #
-# _claude_project_root() walks up from $1 (default $PWD) and outputs the folder that owns the winning CLAUDE.md,
+# claude_project_root() walks up from $1 (default $PWD) and outputs the folder that owns the winning CLAUDE.md,
 # or nothing if there isn't one. claude() below is the wrapper that launches from it.
 #
 # Which CLAUDE.md wins when several are stacked:
@@ -538,7 +538,7 @@ git_fuzzy_merge() {
 # TODO If the `wp-content`/`mu-plugins` exception list has to keep growing, switch to marker files instead: a
 # `.claude-walker-stop` in ~/local-sites, ~/local-sites/misc/app/public, etc, that halts the walk. That moves
 # the layout knowledge next to the folders it describes, and would replace the hardcoded stop boundaries too.
-_claude_project_root() {
+claude_project_root() {
 	local dir="${1:-$PWD}"
 	local root=""
 	local local_sites="$HOME/local-sites"
@@ -566,10 +566,10 @@ _claude_project_root() {
 	printf '%s' "$root"
 }
 
-# See _claude_project_root() above for how the root folder is chosen.
+# See claude_project_root() above for how the root folder is chosen.
 function claude() {
 	local root
-	root="$(_claude_project_root)"
+	root="$(claude_project_root)"
 
 	if [[ -z "$root" ]]; then
 		printf "\n⚠️ No project root found, launching from current folder\n\n" >&2
