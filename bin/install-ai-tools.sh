@@ -1,3 +1,5 @@
+# ⚠️ When adding a new marketplace, you need to add `autoupdate:true` in `claude/settings.json`
+
 source ~/dotfiles/bash/functions.sh
 
 section "Claude Code"
@@ -62,21 +64,38 @@ node shared/scripts/skillpack-install.mjs --global --skills=wp-playground,wp-abi
 #
 # Misc
 #
-# TODO need to make sure don't overwrite any uncommited changes in branchs?
-# maybe first check if on main branch and clean. if so then install
-# if not then skip this and warn at the end
-section "10up Agent Skills"
-# npx @10up/agent-skills --global
-# rm -rf ~/.claude/skills/10up-update-plugins
-# ln -s ~/.claude/skills/10up-update-plugins ~/vho
-# install from source rather than package ? symlink all individual ones to git repo? but then how to know about new ones?
-# just let it be overridden and manualy symlink when wanna work on one?
-
-npx @10up/agent-skills --global
-
-# TODO agent skills is part of relay now? so need to uninstall that? but then also fork relay to use your update-plugins skill?
+# Installed from a local clone instead of GitHub so that local customizations to the
+# bundled skills stay in effect. `$RELAY_BRANCH` is `main` plus those customizations, and
+# each feature lives on its own `feat/` branch for contributing back upstream.
 section "10up Relay Plugins"
-claude plugin marketplace add 10up/relay-plugins
+
+RELAY_PLUGINS_DIR="$HOME/vhosts/tools/relay-plugins"
+RELAY_BRANCH="local-main"
+
+if [ -d "$RELAY_PLUGINS_DIR" ]; then
+	if [ -n "$(git -C "$RELAY_PLUGINS_DIR" status --porcelain)" ]; then
+		printf "\n⚠️ %s has uncommitted changes, skipping its update.\n" "$RELAY_PLUGINS_DIR"
+	else
+		git -C "$RELAY_PLUGINS_DIR" fetch origin
+		git -C "$RELAY_PLUGINS_DIR" checkout "$RELAY_BRANCH"
+
+		if ! git -C "$RELAY_PLUGINS_DIR" merge origin/main; then
+			git -C "$RELAY_PLUGINS_DIR" merge --abort
+			printf "\n⚠️ Merging origin/main into %s conflicted, so the merge was aborted and nothing was updated. Resolve it by hand, then re-run.\n" "$RELAY_BRANCH"
+		else
+			printf "\n✅ Merged origin/main into %s successfully.\n" "$RELAY_BRANCH"
+		fi
+	fi
+else
+	# A fresh clone has no customizations — they only exist on branches in the previous
+	# clone, and are not pushed to the shared upstream. Warn loudly rather than installing
+	# vanilla relay as though it were the customized build.
+	git clone git@github.com:10up/relay-plugins.git "$RELAY_PLUGINS_DIR"
+	git -C "$RELAY_PLUGINS_DIR" checkout -b "$RELAY_BRANCH"
+	printf "\n⚠️ Fresh clone, so %s is vanilla main. Re-apply the local skill customizations before relying on them.\n" "$RELAY_BRANCH"
+fi
+
+claude plugin marketplace add "$RELAY_PLUGINS_DIR"
 claude plugin install relay-eng@relay-plugins
 claude plugin install relay-pjm@relay-plugins
 
@@ -117,6 +136,3 @@ claude plugin list --json | jq -r '.[] | "\(.id) \(.scope)"' |
 	while read -r plugin_id plugin_scope; do
 		claude plugin update "$plugin_id" --scope "$plugin_scope"
 	done
-
-
-printf "\n\n⚠️ 10up agent skills not installed, see above"

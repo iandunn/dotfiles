@@ -502,14 +502,14 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "docs-skills@docs-skills-marketplace": true,
+    "docs-skills@docs-skills-marketplace": false,
     "superpowers@claude-plugins-official": true,
     "chrome-devtools-mcp@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true,
-    "relay-eng@relay-plugins": true,
-    "modern-web-guidance@googlechrome": true,
+    "frontend-design@claude-plugins-official": false,
+    "modern-web-guidance@googlechrome": false,
     "security-guidance@claude-plugins-official": true,
     "claude-security@claude-plugins-official": true,
+    "relay-eng@relay-plugins": true,
     "relay-pjm@relay-plugins": true
   },
   "extraKnownMarketplaces": {
@@ -527,19 +527,18 @@
       },
       "autoUpdate": true
     },
-    "relay-plugins": {
-      "source": {
-        "source": "github",
-        "repo": "10up/relay-plugins"
-      },
-      "autoUpdate": true
-    },
     "googlechrome": {
       "source": {
         "source": "github",
         "repo": "GoogleChrome/modern-web-guidance"
       },
       "autoUpdate": true
+    },
+    "relay-plugins": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/iandunn/vhosts/tools/relay-plugins"
+      }
     }
   },
   "sandbox": {

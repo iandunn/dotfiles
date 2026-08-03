@@ -1,0 +1,2 @@
+- Look for a `CLAUDE.local.md` file in the project/repository when you start a new session. If it exists, it provides context/custom instructions for that repo, so load it.
+- I often put planning notes in a `_notes` folder in a repo, so relevant things there may be there as well.
