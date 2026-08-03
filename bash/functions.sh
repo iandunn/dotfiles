@@ -613,7 +613,15 @@ git_main_branch() {
 # `~/.claude/sessions/<pid>.json` is Claude's own registry of running sessions. Entries stick around
 # after a session exits, so the PID is the only reliable liveness signal.
 save_active_claude_sessions() {
-	local report="$HOME/Downloads/active-claude-sessions.md"
+	local now
+	local timestamp
+
+	# One `date` call so the filename and the header can't straddle a second boundary. Timestamped
+	# because the snapshot taken right before a reboot is the one worth keeping.
+	now="$(date '+%Y-%m-%d %H:%M:%S')"
+	timestamp="${now//[: ]/-}"
+
+	local report="$HOME/Downloads/active-claude-sessions-$timestamp.md"
 	local registry="$HOME/.claude/sessions"
 
 	if [[ ! -d "$registry" ]]; then
@@ -633,9 +641,12 @@ save_active_claude_sessions() {
 		command ps -p "$pid" -o pid= > /dev/null 2>&1 || continue
 
 		local cwd session_id name
-		IFS=$'\t' read -r cwd session_id name < <(
+		# Herestring rather than process substitution because git's `!` aliases source this file with
+		# `/bin/sh`, and bash in POSIX mode can't parse `< <(...)` -- a syntax error there breaks every
+		# function in the file, not just this one.
+		IFS=$'\t' read -r cwd session_id name <<< "$(
 			jq -r 'select(.kind == "interactive") | [.cwd, .sessionId, .name] | @tsv' "$file" 2>/dev/null
-		)
+		)"
 
 		# Skips background and one-shot `--print` sessions, which have nothing to reopen.
 		[[ -n "$session_id" ]] || continue
@@ -668,7 +679,7 @@ save_active_claude_sessions() {
 
 	{
 		printf '# Active Claude sessions\n\n'
-		printf 'Saved %s. Open a terminal in each folder and run the commands below.\n' "$(date '+%Y-%m-%d %H:%M')"
+		printf 'Saved %s. Open a terminal in each folder and run the commands below.\n' "$now"
 
 		local current_cwd=""
 		local cwd title session_id
@@ -680,7 +691,7 @@ save_active_claude_sessions() {
 			fi
 
 			printf -- '- %s\n  `claude --resume %s`\n' "$title" "$session_id"
-		done < <(printf '%s\n' "${rows[@]}" | sort)
+		done <<< "$(printf '%s\n' "${rows[@]}" | sort)" # Herestring for the same `/bin/sh` reason as above.
 
 		printf '\n'
 	} > "$report"
