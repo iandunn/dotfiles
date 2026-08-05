@@ -78,6 +78,9 @@ sudo nvram SystemAudioVolume=" "
 defaults write com.apple.finder NewWindowTarget -string "PfLo"
 defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/Downloads/"
 
+# open selected files from Finder in a single Preview window instead of splitting into multiple windows
+defaults write NSGlobalDomain AppleWindowTabbingMode -string always
+
 # Reduce transparency of the Finder sidebar
 #defaults write com.apple.universalaccess reduceTransparency -boolean true
 #  get error: 2021-03-16 07:37:11.901 defaults[8022:3831499] Could not write domain com.apple.universalaccess; exiting

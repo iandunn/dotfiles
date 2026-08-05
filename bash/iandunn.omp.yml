@@ -40,6 +40,11 @@
 version: 3
 final_space: true
 
+# Claude Code sets the terminal title to a summary of the conversation, but only restores the
+# previous title when it exits gracefully -- a crash or a VS Code reload leaves the last summary
+# stamped there forever. Re-stamping on every prompt clears it out.
+console_title_template: '{{ .Folder }}'
+
 upgrade:
     source: cdn
     interval: 168h
