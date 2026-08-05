@@ -1,5 +1,7 @@
 # Writing Code
 
+- When writing anything to a file (code, markdown, etc) don't add hard wraps. Let the editor add soft wraps. Add 1 blank line after the end of a ### or smaller section in Markdown, and 2 blank lines after the end of a ## section.
+
 - Match existing code style and WordPress Core conventions
 
 - Follow 10up engineering best practices
@@ -25,7 +27,7 @@
 
 ## Comments
 
-- Don't remove comments, TODOs, `console.log()`, or debugger statements unless I ask. Blank lines are often used for readability, don't remove those.
+- Don't remove comments, TODOs, `console.log()`, or debugger statements unless I ask. Blank lines are often used for readability, don't remove those. When completing a checkbox TODO (`- [ ]`), put an `x` in the box instead of deleting it.
 
 - Only add comments to code that explain *why* the code does something, not *what* it does — prefer descriptive variable naming etc instead.
 
