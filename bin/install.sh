@@ -54,6 +54,7 @@ ln -sf  $DOTFILES_DIR/claude/keybindings.json	$HOME/.claude/keybindings.json
 # `-n` keeps a re-run from nesting the link inside the directory it created last time.
 ln -sfn $DOTFILES_DIR/claude/hooks	$HOME/.claude/hooks
 ln -sfn $DOTFILES_DIR/claude/rules	$HOME/.claude/rules
+ln -sfn $DOTFILES_DIR/claude/commands	$HOME/.claude/commands
 
 # Linked individually because `~/.claude/skills` also holds links to skills from other repos
 for skill in $DOTFILES_DIR/claude/skills/*/; do
