@@ -1,37 +1,57 @@
-.sass-cache
+# Version Control
 .svn
+.git
+
+
+
+# Generated artifacts
+.sass-cache
+.npm-cache
+.phpunit.result.cache
+__pycache__
+yalc.lock
+*.map
+.wrangler
+.wrangler-home
+# build -- don't want to have to add these all the time b/c of watch tasks, but do want to commit them to the repo when production uses them. not sure how to handle that yet
+
+
+# Private / sensitive
+.cloudflare.env
+local-config.php
+CLAUDE-SECURITY*
+.env.local
+.dev.vars
+
+
+# Dependencies
+node_modules
+# vendor can't because some WP plugins distribute their vendor directory
+
+
+# Logs
+debug.log
+npm-debug.log
+
+
+# Local config
 .DS_Store
 .idea
 .vscode
+.claude
+.yalc
 
+
+# Local customizations
 0-sandbox.php
 0-sandbox-common.php
 0-sandbox-functionality.php
 sandbox-functionality.php
 sandbox-functionality/
 
-node_modules
-# vendor can't because some WP plugins distribute their vendor directory
 
-npm-debug.log
-.yalc
-yalc.lock
-*.map
-# build -- don't want to have to add these all the time b/c of watch tasks, but do want to commit them to the repo when production uses them. not sure how to handle that yet
-local-config.php
-.env.local
-.dev.vars
-.wrangler
-.wrangler-home
-debug.log
-.phpunit.result.cache
+# Local docs
+_notes
 MERGE-TODO.md
 scratchpad.md
-.claude
 CLAUDE.local.md
-__pycache__
-
-.cloudflare.env
-.npm-cache
-
-_notes
