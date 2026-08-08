@@ -50,15 +50,15 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 <!-- Style and convention rules live in `~/.claude/rules/writing-code.md`, debugging methodology in `rules/debugging.md`, and shell habits in `rules/running-commands.md`. Rules load every session at the same priority as this file, so splitting them out changed nothing behaviorally -- it's for my own navigation. What stayed here is the interaction protocol (when to ask, when to commit, when to use subagents) and every restriction, because CLAUDE.md is re-injected after `/compact` and the docs don't promise that for rules. -->
 
 ## Chrome MCP
-- Never navigate to a non-localhost URL unless I give explicit permission.
+- Never navigate to a non-localhost URL unless I give explicit permission, or the project's own `CLAUDE.md` pre-authorizes a specific list of sites. A project grant covers only the sites it names; anything else still needs a fresh ask.
 - Do NOT call `kill`/`pkill` to close a browser; both are denied, and the allow-listed helper in the `chrome-mcp-setup` skill is the only sanctioned path.
 - Invoke the `chrome-mcp-setup` skill for the rest: per-session isolation, screenshot paths, and how to close the browser.
-<!-- `hooks/chrome-mcp-permissions.py` can't enforce the non-localhost rule, so it's needed here. Both of those restrictions live here rather than in the skill because a skill that doesn't load can't restrain anything. The skill only holds mechanics. -->
+<!-- `hooks/chrome-mcp-permissions.py` can't enforce the non-localhost rule, so it's needed here. Both of those restrictions live here rather than in the skill because a skill that doesn't load can't restrain anything. The skill only holds mechanics. A project grant has to be honored in both places to actually stop the interruption: the hook's `PRE_AUTHORIZED_SITE_MATRICES` silences the harness prompt, this line silences the prose ask. -->
 
 ## Reading PDFs
 - Don't give a PDF to the Read tool. Invoke the `reading-pdfs` skill instead.
 
-## Restrictions
+## Restrictions / Security
 - Never work around a restriction in `settings.json`, a hook, or a `CLAUDE.md` file. If a command is denied, that's the answer -- don't reach for a different command that achieves the same effect. e.g., when `rm` is denied, don't use `mv`, `truncate`, or a redirect to destroy a file's contents.
 - Sweeping a scratch file *you* created into `.claude/tmp/` is sanctioned cleanup, not a workaround -- that's what the `mv` allow rule is for. Displacing a file *I* wrote is a workaround. The line is whose work is at stake, not which command you used.
 - When a restriction blocks something you believe the task genuinely needs, stop and tell me what's blocked and why you think it's needed. I'll decide whether to loosen the rule. A restriction I set deliberately is more important than the task you're working on.

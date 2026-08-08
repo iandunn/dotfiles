@@ -6,16 +6,29 @@ main() dispatches on the tool name so additional gates can be added over time.
 
 Currently implemented:
   - Non-local navigation gate (navigate_page / new_page): navigations to a
-    non-local host ALWAYS return "ask" with a warning that approving also lets
+    non-local host return "ask" with a warning that approving also lets
     evaluate_script/click/fill/etc. run automatically on that site, where
     prompt injection from external page content can escalate to remote code
-    execution. This is unconditional -- a high-usage session never suppresses
-    it, since security takes precedence over a token-usage nicety. A single
-    PreToolUse hook invocation can only return one decision, so on a call that
-    is BOTH a non-local navigation AND this session's first not-yet-checked
-    usage gate, only the host-trust prompt is shown; the usage check is left
-    unresolved (its marker is not written) so it fires on the next safe
-    opportunity instead of being silently dropped.
+    execution. A high-usage session never suppresses it, since security takes
+    precedence over a token-usage nicety. A single PreToolUse hook invocation
+    can only return one decision, so on a call that is BOTH a non-local
+    navigation AND this session's first not-yet-checked usage gate, only the
+    host-trust prompt is shown; the usage check is left unresolved (its marker
+    is not written) so it fires on the next safe opportunity instead of being
+    silently dropped.
+
+    The sole exception is a project listed in PRE_AUTHORIZED_SITE_MATRICES:
+    while cwd is inside one, the hosts named by that project's own site matrix
+    are allowed silently. That exists for repos whose test loop IS driving live
+    external sites -- a browser extension exercised against a fixed list of
+    real pages -- where the prompt fires on every navigation and approving is
+    the only possible answer. Every host outside the matrix still asks. This is
+    the highest-exposure kind of allowance rather than the lowest, since those
+    same sessions run evaluate_script against the pages they open.
+
+    Matching is by host, not by exact URL, because approving one page on a host
+    already grants every other page on it (see LIMITATION below) -- so exact-URL
+    matching would add spurious prompts without adding a real boundary.
 
     LIMITATION: this gate only sees explicit navigate_page/new_page calls. The
     MCP launches Chrome over a puppeteer pipe (browser.ts: `pipe: true`), not a
@@ -63,6 +76,13 @@ SESSION_USAGE_THRESHOLD = 80
 USAGE_COMMAND_TIMEOUT_SECONDS = 30
 SESSION_GATE_MARKER_DIR = os.path.join(tempfile.gettempdir(), 'claude-chrome-mcp-usage-gate')
 
+# Project root -> the JSON site matrix inside it, shaped `{"sites": [{"url": ...}]}`.
+# That matrix is the single source of truth for which hosts the project may open
+# without a prompt, so adding a site to it is the only step needed.
+PRE_AUTHORIZED_SITE_MATRICES = {
+    '~/local-sites/misc/app/public/browser-extensions/slash-to-search': 'test/sites.json',
+}
+
 
 def is_local_host(host):
     """Returns True for localhost, 127.0.0.1, and *.localhost / *.test hosts."""
@@ -72,6 +92,31 @@ def is_local_host(host):
         or host.endswith('.localhost')
         or host.endswith('.test')
     )
+
+
+def pre_authorized_hosts(cwd):
+    """Returns the hosts the current project has pre-authorized for external
+    navigation, read fresh from its site matrix on every call. Empty for any cwd
+    outside a listed project root, and empty -- so the gate still prompts -- if the
+    matrix is missing or unparseable."""
+    cwd = os.path.realpath(cwd)
+
+    for project_root, matrix_path in PRE_AUTHORIZED_SITE_MATRICES.items():
+        root = os.path.realpath(os.path.expanduser(project_root))
+
+        # Comparing against root plus a separator keeps a sibling directory whose
+        # name merely starts with the root's from counting as being inside it.
+        if cwd != root and not cwd.startswith(root + os.sep):
+            continue
+
+        try:
+            with open(os.path.join(root, matrix_path)) as matrix_file:
+                sites = json.load(matrix_file)['sites']
+            return {host for host in (urlparse(site['url']).hostname for site in sites) if host}
+        except (OSError, ValueError, KeyError, TypeError):
+            return set()
+
+    return set()
 
 
 def emit(decision, reason):
@@ -84,7 +129,7 @@ def emit(decision, reason):
     }))
 
 
-def gate_navigation(tool_input, session_id):
+def gate_navigation(tool_input, session_id, cwd):
     url = tool_input.get('url')
 
     # navigate_page with type back/forward/reload has no URL and stays within
@@ -107,6 +152,11 @@ def gate_navigation(tool_input, session_id):
     if host and is_local_host(host):
         if not gate_session_usage(session_id):
             emit('allow', f'Local host ({host}) auto-approved')
+        return
+
+    if host and host in pre_authorized_hosts(cwd):
+        if not gate_session_usage(session_id):
+            emit('allow', f"{host} is in this project's pre-authorized site matrix")
         return
 
     reason = (
@@ -183,9 +233,10 @@ def main():
     tool_name = data.get('tool_name', '')
     tool_input = data.get('tool_input', {})
     session_id = data.get('session_id', '')
+    cwd = data.get('cwd') or os.getcwd()
 
     if tool_name.endswith(('navigate_page', 'new_page')):
-        gate_navigation(tool_input, session_id)
+        gate_navigation(tool_input, session_id, cwd)
         return
 
     if is_chrome_devtools_tool(tool_name):
