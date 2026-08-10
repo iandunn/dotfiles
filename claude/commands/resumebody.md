@@ -1,6 +1,6 @@
 ---
 description: Find a past session by what was said in it, not just by its title
-argument-hint: [query - no quotes or special characters]
+argument-hint: <query - no quotes or special characters>
 allowed-tools: Bash(bash /Users/iandunn/dotfiles/claude/bin/claude-session-search.sh:*), Bash(jq:*), Read
 ---
 
@@ -16,7 +16,9 @@ Search term: `$ARGUMENTS`
 
 ## Step 1: check the term before running anything
 
-The term is passed to a shell, so validate it first. Allowed characters are letters, digits, spaces, and `- _ . /` only.
+If the `Search term:` line above is empty -- nothing between the backticks, or only whitespace -- **stop**. Run nothing. Tell the user this command needs a term to search for.
+
+The term is passed to a shell, so validate it next. Allowed characters are letters, digits, spaces, and `- _ . /` only.
 
 If it contains anything else -- quotes, backticks, `$`, `;`, `|`, `&`, `<`, `>`, parentheses, or a backslash -- **stop**. Run nothing. Tell the user those characters can't be used in a search term, name the ones you found, and suggest a plain-text term instead. Do not try to escape or strip them.
 
@@ -27,8 +29,6 @@ bash /Users/iandunn/dotfiles/claude/bin/claude-session-search.sh '<term>'
 ```
 
 Scoped to the current project by default. Add `--all-projects` only when the user asks for it, and `--limit 0` when they ask to see the rest.
-
-With no term at all, run it with no argument to list the most recent sessions in this project.
 
 ## Step 3: report the results as separate paragraphs
 
