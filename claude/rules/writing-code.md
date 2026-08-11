@@ -33,8 +33,20 @@
 
 - Don't add comments that explain new code in relation to code that you changed. The person reading the code after it's merged wouldn't understand what that's about. Comments should be durable and self-contained.
 
-- Wrap lines at 100 characters unless there's an lint rule that specifies lower.
-
-- When you're writing things that are intended for humans to read (comments, commit messages, QA instructions, etc), don't be verbose. Include the necessary information, but no more than that.
+- Wrap lines at 100 characters unless there's a lint rule that specifies lower.
 
 - Add backticks around references to code, like class and file names, etc. Do that in commit messages too.
+
+
+## Writing for Humans
+
+- When writing for humans (code comments, commit messages, PR descriptions, etc) then don't be overly verbose. Include all the important information, but keep it short enough that it's actually practical to read it. For simple commits that's 1 sentance beyond the title, for complex commits its's roughly 2 paragraphs. For PRs its just an overview because the details should be in the commit messages.
+
+- Detailed plans, TODOs, Relay docs, etc, are the type of thing meant as context for agents, and that's where you'd write the way you normally would.
+
+
+## Documentation
+
+- Update docs periodically as you learn things and design solution, prepare a commit, etc. Don't wait until the end.
+- Correct/update existing docs rather than appending the correction to original stale/false info.
+- Record what was expensive to learn and is invisible from the code. Skip anything a reader gets from the code itself.
