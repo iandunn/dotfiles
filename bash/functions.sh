@@ -67,6 +67,68 @@ info_message() {
 	printf "\n\033[1;34;40m%s \033[0m\n" "$1"
 }
 
+# Remove hard line wraps when copying from narrow terminal windows, and
+# strip leading quote/pipe markers (e.g. "▎", "|", ">") left by wrapped blockquotes
+#
+# A wrapper that hard-splits an over-long token (a URL, a long chained expression) leaves
+# nothing in the text to distinguish that break from a break between two words, so every
+# join gets a space and the suspect junctions are reported on stderr instead of guessed
+# at. A stray space inside a token is loud; a swallowed space between two URLs is silent.
+#
+# Lives here rather than in aliases/ because it needs per-line logic and a stderr channel
+# that stays out of the clipboard.
+unwrap() {
+	pbpaste | perl -CSD -e '
+		use utf8;
+
+		local $/;
+		my $text = <STDIN>;
+		$text =~ s/^[ \t]+//mg;
+		$text =~ s/^[▎|>]+[ \t]*//mg;
+
+		my @suspect;
+		my @chunks = split /(\n{2,})/, $text;
+
+		for my $chunk (@chunks) {
+			next if $chunk =~ /^\n*$/;
+
+			my @lines = split /\n/, $chunk, -1;
+			my $wrap_column = 0;
+
+			for my $line (@lines) {
+				$wrap_column = length($line) if length($line) > $wrap_column;
+			}
+
+			for my $i (1 .. $#lines) {
+				my ($tail) = $lines[$i - 1] =~ /(\S+)$/;
+				my ($head) = $lines[$i] =~ /^(\S+)/;
+
+				# A wrapper only hard-splits a token that is itself longer than the
+				# wrap column, and only on a line that reached that column. The column
+				# is estimated per paragraph rather than across the whole paste, which
+				# over-reports rather than under-reports: a spurious warning costs a
+				# line of noise, a missed one costs a silently wrong paste.
+				next unless defined $tail and defined $head;
+				next unless length($lines[$i - 1]) == $wrap_column;
+				next unless length($tail) + length($head) > $wrap_column;
+
+				push @suspect, substr($tail, -25) . "  <-JOINED->  " . substr($head, 0, 25);
+			}
+
+			$chunk = join(" ", @lines);
+		}
+
+		$text = join("", @chunks);
+		$text =~ s/[ \t]{2,}/ /g;
+		print $text;
+
+		if (@suspect) {
+			printf STDERR "\033[1;33;40munwrap: %d join(s) may fall inside a token rather than between words:\033[0m\n", scalar @suspect;
+			printf STDERR "  %s\n", $_ for @suspect;
+		}
+	' | pbcopy
+}
+
 # find all files in the current folder and below, then grep each of them for the given string
 # this could _almost_ be an alias, but then $QUERY would have to be at the end of the command, so you couldn't remove the binary files
 #
