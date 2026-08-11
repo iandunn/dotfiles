@@ -42,6 +42,8 @@
 
 - When writing for humans (code comments, commit messages, PR descriptions, etc) then don't be overly verbose. Include all the important information, but keep it short enough that it's actually practical to read it. For simple commits that's 1 sentance beyond the title, for complex commits its's roughly 2 paragraphs. For PRs its just an overview because the details should be in the commit messages.
 
+- Code comments: Start with 1-2 sentances as the ideal, then only add more if necessary.
+
 - Detailed plans, TODOs, Relay docs, etc, are the type of thing meant as context for agents, and that's where you'd write the way you normally would.
 
 
@@ -49,4 +51,4 @@
 
 - Update docs periodically as you learn things and design solution, prepare a commit, etc. Don't wait until the end.
 - Correct/update existing docs rather than appending the correction to original stale/false info.
-- Record what was expensive to learn and is invisible from the code. Skip anything a reader gets from the code itself.
+- Record what was expensive to learn and is invisible from the code. Skip anything a reader gets from the code itself. The durable conclusion is what's important, though, not how you found it.
