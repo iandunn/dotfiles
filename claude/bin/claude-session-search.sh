@@ -107,11 +107,19 @@ fi
 # Only text the user actually typed. Tool results are `tool_result` items rather than `text` ones, so they
 # never reach this, which is what keeps the search off its own output.
 #
+# Blocks with `promptSource == "sdk"` are the exception that breaks that assumption. A headless session --
+# the security-review plugin spawns one per change reviewed -- injects its entire unified diff as a `user`
+# text block, so every symbol in the diff becomes searchable as if it had been typed. Those sessions then
+# outrank the real ones, because the sort is by raw mention count and a diff repeats a symbol many times.
+#
+# Excluded rather than allow-listed on `promptSource == "typed"`: transcripts written before that field
+# existed have none at all, so an allow-list would drop years of history and look like it had worked.
+#
 # `<resumebody-instructions>` is the first line of the /resumebody command file, whose whole body gets
 # injected into the transcript as one user block on every run. Excluding blocks that *start* with it drops
 # that boilerplate without dropping the session: a real prompt that merely mentions the marker doesn't begin
 # with it, and any other work in that session stays searchable.
-prompts='select(.type == "user") | (.message.content? // empty) | (if type == "string" then . else (map(select(.type == "text") | .text) | join("\n")) end) | select(type == "string" and length > 0) | select(startswith("<command-") or startswith("<local-command-") or startswith("<resumebody-instructions>") | not)'
+prompts='select(.type == "user" and .promptSource != "sdk") | (.message.content? // empty) | (if type == "string" then . else (map(select(.type == "text") | .text) | join("\n")) end) | select(type == "string" and length > 0) | select(startswith("<command-") or startswith("<local-command-") or startswith("<resumebody-instructions>") | not)'
 
 # Assistant text too, so a one-sentence summary can say how the question was resolved and not just what
 # was asked. Only the lines mentioning the query are kept, so this stays cheap.
@@ -165,6 +173,15 @@ while IFS= read -r file; do
 	# Subagent transcripts sit in the same folders as `agent-<id>.jsonl` and aren't resumable, so only
 	# real session UUIDs get through. Cheaper here than after the jq passes, too.
 	if [[ ! "$session_id" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+		continue
+	fi
+
+	# Headless sessions -- the security-review plugin spawns one per change reviewed -- aren't conversations
+	# and aren't resumable, so they get dropped whole. The query path already loses them once their injected
+	# prompt is filtered out, but the no-query listing never looks at prompts and needs its own rejection.
+	# Their opening prompt is always within the first few records. Read structurally rather than grepped out
+	# of the raw JSON, because a transcript that quotes such a record as text would match a substring search.
+	if head -n 20 "$file" 2>/dev/null | jq -e -s 'any(.[]; .type == "user" and .promptSource == "sdk")' >/dev/null 2>&1; then
 		continue
 	fi
 
