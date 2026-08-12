@@ -62,10 +62,15 @@
 	abbrevCommit = true
 
 [merge]
-	# Turning it on will overwrite local changes during a merge
+	# Keep deliberate branch merges visible in history as merge commits, rather than flattening them into the trunk.
 	ff = false
 
 [pull]
+	# Without this, `merge.ff = false` also forces a merge commit on every pull, even when nothing local has diverged
+	# and the pull could just advance the branch pointer. Overrides `merge.ff` for pulls only.
+	ff = true
+
+	# Has to stay set. Unset, git refuses divergent pulls with `fatal: Need to specify how to reconcile divergent branches`.
 	rebase = false
 
 [push]
