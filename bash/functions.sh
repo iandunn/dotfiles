@@ -75,6 +75,12 @@ info_message() {
 # join gets a space and the suspect junctions are reported on stderr instead of guessed
 # at. A stray space inside a token is loud; a swallowed space between two URLs is silent.
 #
+# "|" and ">" are also legitimate shell syntax (pipes, sed delimiters, redirects), and a
+# wrap can land one at the start of a continuation line, so those two are only treated as
+# quote markers when the line looks like part of a quote block: an adjacent line is also
+# marked, the marker is followed by whitespace, and the line isn't a markdown table row.
+# "▎" is decorative-only and always stripped. Every "|"/">" strip is reported on stderr.
+#
 # Lives here rather than in aliases/ because it needs per-line logic and a stderr channel
 # that stays out of the clipboard.
 unwrap() {
@@ -83,8 +89,34 @@ unwrap() {
 
 		local $/;
 		my $text = <STDIN>;
+
+		# Terminal copies pad every line to the window width with trailing spaces;
+		# stripping them first keeps the wrap-column estimate honest.
+		$text =~ s/[ \t]+$//mg;
 		$text =~ s/^[ \t]+//mg;
-		$text =~ s/^[▎|>]+[ \t]*//mg;
+
+		my @lines = split /\n/, $text, -1;
+		my @looks_quoted = map { /^[▎|>]/ ? 1 : 0 } @lines;
+		my $stripped_ambiguous = 0;
+
+		for my $i (0 .. $#lines) {
+			if ($lines[$i] =~ /^▎/) {
+				$lines[$i] =~ s/^[▎|>]+[ \t]*//;
+				next;
+			}
+
+			next unless $lines[$i] =~ /^[|>]+([ \t]|$)/;
+			next if $lines[$i] =~ /^\|/ and $lines[$i] =~ /\|$/;
+
+			my $neighbor_marked = ($i > 0 and $looks_quoted[$i - 1])
+				|| ($i < $#lines and $looks_quoted[$i + 1]);
+			next unless $neighbor_marked;
+
+			$lines[$i] =~ s/^[|>]+[ \t]*//;
+			$stripped_ambiguous++;
+		}
+
+		$text = join("\n", @lines);
 
 		my @suspect;
 		my @chunks = split /(\n{2,})/, $text;
@@ -92,16 +124,16 @@ unwrap() {
 		for my $chunk (@chunks) {
 			next if $chunk =~ /^\n*$/;
 
-			my @lines = split /\n/, $chunk, -1;
+			my @chunk_lines = split /\n/, $chunk, -1;
 			my $wrap_column = 0;
 
-			for my $line (@lines) {
+			for my $line (@chunk_lines) {
 				$wrap_column = length($line) if length($line) > $wrap_column;
 			}
 
-			for my $i (1 .. $#lines) {
-				my ($tail) = $lines[$i - 1] =~ /(\S+)$/;
-				my ($head) = $lines[$i] =~ /^(\S+)/;
+			for my $i (1 .. $#chunk_lines) {
+				my ($tail) = $chunk_lines[$i - 1] =~ /(\S+)$/;
+				my ($head) = $chunk_lines[$i] =~ /^(\S+)/;
 
 				# A wrapper only hard-splits a token that is itself longer than the
 				# wrap column, and only on a line that reached that column. The column
@@ -109,19 +141,20 @@ unwrap() {
 				# over-reports rather than under-reports: a spurious warning costs a
 				# line of noise, a missed one costs a silently wrong paste.
 				next unless defined $tail and defined $head;
-				next unless length($lines[$i - 1]) == $wrap_column;
+				next unless length($chunk_lines[$i - 1]) == $wrap_column;
 				next unless length($tail) + length($head) > $wrap_column;
 
 				push @suspect, substr($tail, -25) . "  <-JOINED->  " . substr($head, 0, 25);
 			}
 
-			$chunk = join(" ", @lines);
+			$chunk = join(" ", grep { length } @chunk_lines);
 		}
 
-		$text = join("", @chunks);
-		$text =~ s/[ \t]{2,}/ /g;
-		print $text;
+		print join("", @chunks);
 
+		if ($stripped_ambiguous) {
+			printf STDERR "\033[1;33;40munwrap: stripped a leading \"|\" or \">\" from %d line(s) as a quote marker; if this was shell syntax, re-copy and fix by hand\033[0m\n", $stripped_ambiguous;
+		}
 		if (@suspect) {
 			printf STDERR "\033[1;33;40munwrap: %d join(s) may fall inside a token rather than between words:\033[0m\n", scalar @suspect;
 			printf STDERR "  %s\n", $_ for @suspect;
