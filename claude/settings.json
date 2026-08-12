@@ -29,7 +29,8 @@
       "Bash(composer run test *)",
       "Bash(composer show *)",
       "Bash(composer update *)",
-      "Bash(cp *)",
+      "Bash(cp * .claude/tmp/)",
+      "Bash(cp * .claude/tmp/*)",
       "Bash(curl -s \"https://api.wordpress.org/*)",
       "Bash(curl -s http://*.localhost:3000)",
       "Bash(curl -s http://*.localhost:3000/*)",
@@ -125,6 +126,7 @@
       "Bash(pwd)",
       "Bash(rg *)",
       "Bash(rm .claude/tmp/*)",
+      "Bash(rm -f .claude/tmp/*)",
       "Bash(sed -n *)",
       "Bash(sort *)",
       "Bash(stat *)",
@@ -380,10 +382,6 @@
       "Bash(history -c*)"
     ],
     "ask": [
-      "Bash(mv *)",
-      "Bash(rm *)",
-      "Bash(git add *)",
-      "Bash(git commit *)",
       "Bash(git switch *)",
       "Bash(git checkout *)",
       "Bash(git merge --ff-only *)",
@@ -472,7 +470,47 @@
           {
             "type": "command",
             "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
-            "if": "Bash(npm i*)"
+            "if": "Bash(command cp *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(rm *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(command rm *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(mv *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(command mv *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(git add*)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(git commit*)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(git -C * add*)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(git -C * commit*)"
           },
           {
             "type": "command",
