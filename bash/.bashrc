@@ -46,6 +46,14 @@ export NVM_DIR="$HOME/.nvm"
 \. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
 \. "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"
 
+# LocalWP site shells source this file twice -- once before the entry script's `exec $SHELL`, and
+# once after -- and both Local and "brew shellenv" prepend to $PATH in between. On the second pass
+# nvm finds its directory already in $PATH and swaps the version in place rather than prepending, so
+# Homebrew's node stays ahead of it and `nvm use` silently has no effect. Deactivating first removes
+# the entry, letting the following `use` put nvm back at the front.
+nvm deactivate >/dev/null 2>&1
+nvm use default --silent >/dev/null 2>&1
+
 
 export GPG_TTY=$(tty)
 export GITLEAKS_CONFIG=~/.config/gitleaks/gitleaks.toml
