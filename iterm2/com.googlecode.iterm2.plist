@@ -30,6 +30,8 @@
 	<integer>128000</integer>
 	<key>AitermURL</key>
 	<string>https://api.anthropic.com/v1/messages</string>
+	<key>AllowClipboardAccess</key>
+	<true/>
 	<key>AlternateMouseScroll</key>
 	<true/>
 	<key>BracketedPasteMode</key>
@@ -447,7 +449,7 @@
 				</dict>
 			</dict>
 			<key>Mouse Reporting</key>
-			<false/>
+			<true/>
 			<key>Name</key>
 			<string>Default</string>
 			<key>Non Ascii Font</key>
@@ -585,6 +587,8 @@
 	<false/>
 	<key>SplitPaneDimmingAmount</key>
 	<real>0.30488943960661113</real>
+	<key>SuppressMultilinePasteWarningWhenNotAtShellPrompt</key>
+	<true/>
 	<key>TabStyle</key>
 	<integer>1</integer>
 	<key>TabStyleWithAutomaticOption</key>
