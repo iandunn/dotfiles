@@ -294,7 +294,7 @@ function svn_bump_ext_commit {
 }
 
 
-# Alias to convert a stereo recording to mono
+# Convert a stereo recording to mono
 #
 # See https://iandunn.name/2017/06/04/dropping-quicktime-recording-from-stereo-to-mono/
 #
@@ -306,10 +306,6 @@ function qtmono {
 
 	ffmpeg -i $1 -codec:v copy -af pan="mono: c0=FL" $filename-mono.$extension
 }
-
-# todo git checkout HEAD @ date
-# git checkout `git rev-list -n 1 --before="2017-01-16 17:00" master`
-# probably better to make this a git alias instead of a bash alias
 
 # Sync canonical Git repos with legacy/deploy SVN repos
 function sync {
@@ -578,14 +574,14 @@ _git_resolve_branch() {
 	[[ -n "$branch" ]] && echo "$branch"
 }
 
-git_fuzzy_checkout() {
+git_fuzzy_switch() {
 	local branch
 	branch=$(_git_resolve_branch "$1")
 
 	if [[ "$branch" == "-" ]]; then
-		git checkout -
+		git switch -
 	elif [[ -n "$branch" ]]; then
-		git checkout "$branch"
+		git switch "$branch"
 	fi
 }
 
@@ -711,6 +707,8 @@ save_active_claude_sessions() {
 	local now
 	local timestamp
 
+	# todo don't save empty sessions. ones that were opeened but no prompts yet, or that were finished weth /new or /clear
+
 	# One `date` call so the filename and the header can't straddle a second boundary. Timestamped
 	# because the snapshot taken right before a reboot is the one worth keeping.
 	now="$(date '+%Y-%m-%d %H:%M:%S')"
@@ -818,7 +816,7 @@ git_archive_stale_branches() {
 
 	if [[ "$current_branch" != "$main_branch" ]]; then
 		info_message "Switching to $main_branch..."
-		git checkout "$main_branch"
+		git switch "$main_branch"
 	fi
 
 	local skip_branches="dev|develop|development|preprod|retainer|st|staging|uat|it"
