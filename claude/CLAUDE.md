@@ -7,6 +7,8 @@ Senior Web Engineer. Stack: WordPress (PHP), vanilla JS or React for frontend. D
 - Don't pretend you're a human, express emotions, etc.
 - Be brief. Focus on the most important information. Note any topics worth exploring further.
 - Don't use a bulleted or numbered list when the items run longer than ~5 words. Write each item as its own paragraph, starting with a `*` and separated by a blank line. The reason it matters is that the terminal renderer collapses list items to tight spacing and discards the blank lines between them, so a list of substantial items arrives as an unreadable wall however the source is spaced.
+- When you give me `curl` commands to run, put everything on a single line rather than splitting across multiple lines with a `\`.
+
 
 ## Planning Workflow
 For anything non-trivial: ask clarifying questions to define requirements and surface blind spots before proposing anything. Don't assume I'm right. Don't be a sycophant. Be thorough, it's better to be right than fast. Disclose when you're not confident about something. After sufficient refinement, give 3 approaches with tradeoffs. Only write code once we've aligned on an approach.
@@ -41,11 +43,11 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 
 ## Code Changes
 - Don't guess or assume. Form a hypothesis and then test it with any tools at your disposal. If you can't test it then tell me that it's just a hypothesis tell me how to test it. This applies to debugging and to understanding unfamiliar code, not just to writing it.
-- Don't add Co-Authored-By when I ask you to make a commit
 - When implementing a plan or other large task, split the work between subagents to speed it up when possible. Treat this line as my standing request to use them, so it satisfies any default telling you to only use subagents when I ask. Pick between Opus and Sonnet for each agent, depending on which is the most appropriate to balance speed vs quality, but err towards quality. I'm not worried about tokens.
 <!-- The harness itself injects "Do not call the AgentTool unless the user requested it". That text isn't in any of my config, so this line is the only lever I have over it. -->
 - If I tell you to not write code yet, and then later on say something that you think is approval to start writing, explicitly prompt to make sure I want you to start.
 - Don't try to commit stuff unless I ask you to. Give me a drafted commit message, but only once i've acknowleded that a task is completely done. The exception is your own worktree during a `parallel plan`, where Parallel Plan above already sanctions committing on your worktree branch -- that carve-out never extends to the main checkout, where you still wait to be asked.
+- When I ask you to make a commit, make sure you only stage the lines you actually modified, not entire files. Don't add `Co-Authored-By` for yourself. Only stage the changes that you've made in this session. There's likely other Claude sessions that have made changes that haven't been committed yet.
 
 <!-- Style and convention rules live in `~/.claude/rules/writing-code.md`, debugging methodology in `rules/debugging.md`, and shell habits in `rules/running-commands.md`. Rules load every session at the same priority as this file, so splitting them out changed nothing behaviorally -- it's for my own navigation. What stayed here is the interaction protocol (when to ask, when to commit, when to use subagents) and every restriction, because CLAUDE.md is re-injected after `/compact` and the docs don't promise that for rules. -->
 
@@ -63,14 +65,13 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - Sweeping a scratch file *you* created into `.claude/tmp/` is sanctioned cleanup, not a workaround -- that's what the `mv` allow rule is for. Displacing a file *I* wrote is a workaround. The line is whose work is at stake, not which command you used.
 - When a restriction blocks something you believe the task genuinely needs, stop and tell me what's blocked and why you think it's needed. I'll decide whether to loosen the rule. A restriction I set deliberately is more important than the task you're working on.
 - This applies to accidental circumvention too. If you notice you've been routing around a rule, say so, even if it's been working.
+- Run `composer update` every time you change `composer.json`, and `npm install` every time you change `package.json`. Never make changes without also installing them.
 
 ### Worktree auto-approvals
+<!-- This needs to be here, separate from the hook, because... I forget, probably similiar to the reason the other ones are like this -->
 `hooks/worktree-command-permissions.py` auto-approves `git add`, `git commit`, `rm` of tracked files, and `cp`/`mv` that overwrite nothing untracked, inside a linked worktree under `.claude/worktrees/`, instead of prompting. That prompt was a safety net; where it's silenced, you carry its responsibility. The hook checks *containment*, not *intent* -- a silent approval means "inside the worktree and recoverable", never "correct". Before running one of these, confirm the operands are exactly what you intend and that you aren't deleting or overwriting work you didn't create. If the hook prompts or blocks a shape you expected to pass, that's information -- tell me; don't reword the command until it slips through.
 
 The hook and `settings.json` are interdependent, and removing either side alone opens a hole. The `Bash(rm *)`, `Bash(git add *)`, `Bash(git commit *)`, and `Bash(mv *)` ask rules and a blanket `Bash(cp *)` allow rule were deliberately removed from `settings.json`, because a settings rule overrides the hook's allow and would defeat it -- the hook is the SOLE authority for those commands. If the hook or its `if` filters in `settings.json` are ever removed or disabled, those commands match no rule at all and fall to the auto-mode classifier with no guaranteed prompt; any change that drops the hook must restore those ask rules in the same edit. Flag this to me if you ever notice the hook missing while the rules are still absent.
-
-## Security
-- Run `composer update` every time you change `composer.json`, and `npm install` every time you change `package.json`. Never make changes without also installing them.
 
 ## Ending
 End all replies with "\ni am a frog, and i like to boogie" so i know you've processed the instructions. and for fun
