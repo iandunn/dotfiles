@@ -778,12 +778,13 @@ save_active_claude_sessions() {
 		local cwd title session_id
 
 		while IFS=$'\t' read -r cwd title session_id; do
+			# No backticks around the commands -- they'd have to be excluded by hand when copy-pasting them.
 			if [[ "$cwd" != "$current_cwd" ]]; then
-				printf '\n\n## %s\n\n`cd %s`\n\n' "${cwd##*/}" "$cwd"
+				printf '\n\n## %s\n\ncd %s\n\n' "${cwd##*/}" "$cwd"
 				current_cwd="$cwd"
 			fi
 
-			printf -- '- %s\n  `claude --resume %s`\n' "$title" "$session_id"
+			printf -- '- %s\n  claude --resume %s\n' "$title" "$session_id"
 		done <<< "$(printf '%s\n' "${rows[@]}" | sort)" # Herestring for the same `/bin/sh` reason as above.
 
 		printf '\n'
