@@ -20,7 +20,11 @@ Run all verification (`tsc`, `lint`, `test`) from inside the worktree, and confi
 
 ## Patching back on `go`
 
-`git diff` from the worktree branch, then `git apply` in the main tree. Committing on the worktree branch is fine; advancing main is not.
+1. **Generate the patch while still inside the worktree**, since the diff has to be taken from the worktree branch: `git diff <base>..HEAD > <patch path>`. Write it outside the worktree (the session scratchpad) so it survives the worktree being removed.
+2. **Exit the worktree with `ExitWorktree` and `action: "keep"`.** That restores the session's working directory to the main checkout and leaves the branch and its commits on disk. Use `"keep"` rather than `"remove"`: until the patch lands, that branch is the only other copy of the work.
+3. **`git apply <patch path>` from the restored working directory** -- a bare invocation, no `-C` and no `cd`. Run `git apply --check` first; the main tree may have advanced while the worktree was open.
+
+Committing on the worktree branch is fine; advancing main is not.
 
 `git apply` fails safe: it refuses rather than clobbering an existing untracked file, and leaves what it applies unstaged.
 
@@ -32,5 +36,8 @@ When writing the end-of-session summary, prepend a one-sentence overview of the 
 
 Clear the worktree when done. User's standing request in `CLAUDE.md` covers this, so don't ask.
 
-- Created by `EnterWorktree`: use `ExitWorktree` with `action: "remove"`. It refuses to delete uncommitted or unmerged work unless you pass `discard_changes`. If it refuses, tell the user what it found instead of overriding it.
+- Created by `EnterWorktree`, still inside it: use `ExitWorktree` with `action: "remove"`. It refuses to delete uncommitted or unmerged work unless you pass `discard_changes`. If it refuses, tell the user what it found instead of overriding it.
+
+- Created by `EnterWorktree`, already exited with `action: "keep"` -- which is every worktree that has been patched back on `go`: `ExitWorktree` is a no-op now, so remove it with `git worktree remove <path>` followed by `git branch -D <branch>`. The branch needs `-D` rather than `-d` because its commits are unmerged even once the patch has landed in the main tree.
+
 - Created by `git worktree add`: `ExitWorktree` won't touch it. Use `git worktree remove`, without `--force`.

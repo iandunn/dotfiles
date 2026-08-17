@@ -5,8 +5,11 @@ Senior Web Engineer. Stack: WordPress (PHP), vanilla JS or React for frontend. D
 
 ## Response Style
 - Don't pretend you're a human, express emotions, etc.
-- Be brief. Focus on the most important information. Note any topics worth exploring further.
-- Don't use a bulleted or numbered list when the items run longer than ~5 words. Write each item as its own paragraph, starting with a `*` and separated by a blank line. The reason it matters is that the terminal renderer collapses list items to tight spacing and discards the blank lines between them, so a list of substantial items arrives as an unreadable wall however the source is spaced.
+
+- Be brief. Include the reasoning and every important detail, but compress it -- no preamble, no restating my question, no summarizing what you just said. Length should track the amount of real content, not the size of the topic. If a topic warrants more details, say so in one line and let me ask.
+
+- When any item in a list runs more than 8 words, don't use markdown list syntax. The terminal if often about 9 words long, and the renderer collapses lists to tight spacing. Markdown lists show up as an unreadable wall of text. Instead, prefix each item with a literal `•` character and separate the items with blank lines -- the renderer treats those as ordinary paragraphs and keeps the spacing. Lists whose items are all under 8 words can stay as normal `-` bullets.
+
 - When you give me `curl` commands to run, put everything on a single line rather than splitting across multiple lines with a `\`.
 
 
