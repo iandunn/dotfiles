@@ -100,15 +100,45 @@ that is a relative path under `.claude/tmp/` makes the hook stay silent, same
 rationale as the rm exemption: sweeping scratch into `.claude/tmp/` is
 sanctioned cleanup owned by settings.json's `mv * .claude/tmp/*` allow rules.
 
-`cp` -- same shape as mv: sources are only read, never destroyed, so the
-destination is again where the danger lives, and it gets mv's checks (contained,
-nothing untracked overwritten, realpath-resolved directory dests, `.claude/tmp/`
-dest silence). Sources are containment-checked too, not because cp can hurt
-them, but because "everything a promptless command names stays inside the
-worktree" is a simpler invariant to trust than per-command carve-outs. The one
-cp-specific rule: a RECURSIVE copy onto a landing path that already exists
+`cp` -- same shape as mv: the destination is where the danger lives, and it
+gets mv's checks (contained, nothing untracked overwritten, realpath-resolved
+directory dests, `.claude/tmp/` dest silence). Unlike mv, SOURCES may live
+outside the worktree: cp only reads them, so copying a fixture in from the main
+checkout writes nothing outside and destroys nothing. (mv cannot have that
+freedom -- an outside source means deleting a file from the main checkout.) The
+one cp-specific rule: a RECURSIVE copy onto a landing path that already exists
 asks, because a directory merge can silently replace untracked files arbitrarily
 deep, and checking that honestly costs more than a prompt.
+
+`git branch -D worktree-*` -- auto-approved only when the branch holds nothing
+the current branch does not already have. Worktree branches exist to carry work
+back to the main checkout; once `go` has patched them in and that patch is
+committed, the branch is dead weight. Git cannot see this on its own: the patch
+lands as a new commit with a different SHA, so `git branch --merged` reports the
+branch as unmerged forever and only `-D` can delete it.
+
+Two independent proofs are accepted, because each covers a case the other
+misses:
+
+    content   every file the branch touched is byte-identical on HEAD
+              (`git diff --quiet <branch> HEAD -- <paths it changed>`).
+              Immune to squashing, reordering, and combining, since it never
+              looks at commits -- and `go` collapses a branch into ONE main
+              commit, so this is the case that actually occurs.
+    patch-id  `git cherry HEAD <branch>` reports no `+` lines, meaning every
+              commit's diff already exists on HEAD under another SHA. Catches
+              the single-commit-applied-verbatim case.
+
+Either one establishes that deleting the branch destroys no content. Neither
+can report success while the work is missing: both require HEAD to already
+contain it. Anything else -- a name outside the `worktree-` convention, main
+having moved on top of those files, an amended patch, a git command that fails
+-- asks.
+
+What this deliberately gives up is HISTORY, not content: if a branch carried
+several meaningful commits and the patch landed as one, `-D` discards those
+messages and boundaries. For throwaway branches whose commits exist only to
+produce a patch, that is the intended trade.
 
 `git worktree remove` -- auto-approved when no force flag is present, and
 prompted when one is. Without `--force`, git itself refuses to delete anything
@@ -341,6 +371,81 @@ def sanctioned_worktree_root(cwd):
     return root
 
 
+WORKTREE_BRANCH_PREFIX = 'worktree-'
+
+
+def git_output(cwd, *args):
+    """Run a read-only git command; return stdout, or None if it failed."""
+    try:
+        result = subprocess.run(
+            ['git', '-C', cwd, *args],
+            capture_output=True, text=True, timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout
+
+
+def branch_content_is_on_head(branch, cwd):
+    """True if every file the branch touched is identical on HEAD."""
+    base = git_output(cwd, 'merge-base', branch, 'HEAD')
+    if base is None:
+        return False
+
+    names = git_output(cwd, 'diff', '--name-only', base.strip(), branch)
+    if names is None:
+        return False
+
+    paths = [path for path in names.splitlines() if path]
+    if not paths:
+        return True
+
+    return git_output(cwd, 'diff', '--quiet', branch, 'HEAD', '--', *paths) is not None
+
+
+def branch_commits_are_on_head(branch, cwd):
+    """True if every commit on the branch has a patch-id equivalent on HEAD."""
+    cherry = git_output(cwd, 'cherry', 'HEAD', branch)
+    if cherry is None:
+        return False
+    return not any(line.startswith('+') for line in cherry.splitlines())
+
+
+def is_branch_delete(tokens):
+    return (
+        len(tokens) >= 2
+        and tokens[0] == 'git'
+        and tokens[1] == 'branch'
+        and any(re.fullmatch(r'--delete|-[a-zA-Z]*[dD]', token) for token in tokens[2:])
+    )
+
+
+def decide_branch_delete(tokens, cwd):
+    """Allow deleting a worktree branch whose content is already on HEAD."""
+    operands = [token for token in tokens[2:] if not token.startswith('-')]
+
+    if len(operands) != 1:
+        return 'ask', 'Delete one branch at a time so each can be checked; confirm this'
+
+    branch = operands[0]
+    if not branch.startswith(WORKTREE_BRANCH_PREFIX):
+        return 'ask', f'`{branch}` is not a {WORKTREE_BRANCH_PREFIX}* branch; confirm this delete'
+
+    if git_output(cwd, 'rev-parse', '--verify', f'refs/heads/{branch}') is None:
+        return 'ask', f'`{branch}` is not a local branch here; confirm this delete'
+
+    if branch_content_is_on_head(branch, cwd):
+        return 'allow', f'Every file `{branch}` touched is identical on HEAD; nothing to lose'
+
+    if branch_commits_are_on_head(branch, cwd):
+        return 'allow', f'Every commit on `{branch}` already exists on HEAD by patch-id'
+
+    return 'ask', (f'`{branch}` holds content HEAD does not have; deleting it would '
+                   'destroy that work; confirm this delete')
+
+
 def decide_rm(tokens, cwd):
     """Allow only a non-recursive rm of tracked files contained in a sanctioned worktree.
 
@@ -472,8 +577,9 @@ def decide_cp(tokens, cwd):
     for operand in operands:
         if expands_after_this_hook(operand):
             return 'ask', f'`{operand}` expands to a path this hook cannot see; confirm this cp'
-        if not is_inside(operand, root, cwd):
-            return 'ask', f'`{operand}` is outside the worktree at {root}; confirm this cp'
+
+    if not is_inside(dest, root, cwd):
+        return 'ask', f'`{dest}` is outside the worktree at {root}; confirm this cp'
 
     if any(char in dest for char in GLOB_CHARS):
         return 'ask', f'`{dest}` is a glob destination; confirm this cp'
@@ -483,9 +589,6 @@ def decide_cp(tokens, cwd):
         matches = expand_globs(source, cwd)
         if not matches:
             return 'ask', f'`{source}` matches nothing here; confirm this cp'
-        for match in matches:
-            if not is_inside(match, root, cwd):
-                return 'ask', f'`{match}` is outside the worktree at {root}; confirm this cp'
         expanded_sources.extend(matches)
 
     dest_absolute = os.path.normpath(os.path.join(cwd, dest))
@@ -565,6 +668,10 @@ def main():
         decision = decide_cp(tokens, cwd)
         if decision:
             emit(*decision)
+        return
+
+    if is_branch_delete(tokens):
+        emit(*decide_branch_delete(tokens, cwd))
         return
 
     if tokens[0] == 'git':

@@ -15,9 +15,13 @@
 
 - Never wrap a command in a subshell or group -- `( a && echo yes || echo no )`, `{ ... }` -- just to make its exit code readable; that introduces nuisance approval prompts. Run the bare commands and use exit codes instead.
 
+- Run `rm`, `mv`, `cp`, `git add`, `git commit`, and `git worktree remove` bare -- one per tool call, with no `&&`, `;`, pipes, or redirects. `hooks/worktree-command-permissions.py` refuses to reason about shell operators, because an approval covers the whole command line, so chaining or piping one of these turns an auto-approval back into a prompt. If you want trimmed output, run the command and read the result.
+
 - Don't `cd` into a directory and then run `git` in the same command; use `git -C <path> <read-only command>`, or a separate `cd` call followed by the git call. Never put more than one `cd` in a single command. Both shapes are hardcoded permission prompts.
 
+<!--
 - Never pass a commit message through the shell -- not `-m "..."`, and not a `"$(cat <<'EOF' ... EOF)"` heredoc. Write it to the project's `.claude/tmp/commit-msg.txt` with the `Write` tool, then `git commit -F .claude/tmp/commit-msg.txt`. Reuse that same filename each time so they don't pile up, and leave it in place afterward. This prevents unintended hard wraps being introduced by the terminal width.
+todo this may not be necessary now that using claude fullscreen TUI  -->
 
 - Commit message subject lines should be at most 70 characters. Body lines never hard wrap. Markdown emphasis and indentation are fine where they are *deliberate* -- a bullet list, a code sample, a nested item under a bullet. What I don't want is emphasis or indentation that showed up as a side effect of something reflowing the text. Prefix commits with the area/feature effected, not `feat`, `chore`, `fix`, etc.
 

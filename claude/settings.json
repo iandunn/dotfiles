@@ -78,7 +78,18 @@
       "Bash(git -C * stash list *)",
       "Bash(git -C * status *)",
       "Bash(git -C * symbolic-ref *)",
-      "Bash(git branch *)",
+      "Bash(git branch)",
+      "Bash(git branch -a*)",
+      "Bash(git branch -r*)",
+      "Bash(git branch -v*)",
+      "Bash(git branch -vv*)",
+      "Bash(git branch --all*)",
+      "Bash(git branch --contains*)",
+      "Bash(git branch --list*)",
+      "Bash(git branch --merged*)",
+      "Bash(git branch --no-merged*)",
+      "Bash(git branch --show-current)",
+      "Bash(git branch --sort*)",
       "Bash(git check-ignore *)",
       "Bash(git config --get *)",
       "Bash(git config --get-all *)",
@@ -299,8 +310,6 @@
       "Bash(git reset --hard*)",
       "Bash(git checkout .)",
       "Bash(git checkout -- .)",
-      "Bash(git branch -D*)",
-      "Bash(git branch --delete --force*)",
       "Bash(git checkout -- *)",
       "Bash(git checkout .*)",
       "Bash(git restore .*)",
@@ -311,7 +320,6 @@
       "Bash(git update-ref*)",
       "Bash(git tag -d*)",
       "Bash(git submodule deinit*)",
-      "Bash(git branch -d -f*)",
       "Bash(npm publish*)",
       "Bash(npm config*)",
       "Bash(npm login*)",
@@ -519,6 +527,21 @@
             "type": "command",
             "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
             "if": "Bash(git worktree remove*)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(git branch -D*)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(git branch -d*)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "if": "Bash(git branch --delete*)"
           }
         ]
       }

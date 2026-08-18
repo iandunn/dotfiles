@@ -151,6 +151,9 @@ class LinkedWorktreeTest(unittest.TestCase):
         Path(cls.worktree, 'b.tmp').write_text('untracked\n')
         os.symlink(cls.temp, os.path.join(cls.worktree, 'dir-out'))
 
+        os.mkdir(os.path.join(cls.main_tree, 'sub-fixture'))
+        Path(cls.main_tree, 'sub-fixture', 'fixture.txt').write_text('lives in main\n')
+
         os.mkdir(os.path.join(cls.worktree, 'sub'))
         Path(cls.worktree, 'sub', 'collide.txt').write_text('untracked, in the way\n')
         Path(cls.worktree, 'collide.txt').write_text('wants to land on the above\n')
@@ -358,8 +361,16 @@ class LinkedWorktreeTest(unittest.TestCase):
     def test_cp_into_symlinked_out_directory_asks(self):
         self.assertInWorktree(ASK, 'cp tracked.txt dir-out/')
 
-    def test_cp_source_outside_asks(self):
-        self.assertInWorktree(ASK, f'cp {self.outside} pulled-in.txt')
+    def test_cp_source_outside_allowed(self):
+        """cp only reads its sources, so pulling a fixture in from elsewhere is safe."""
+        self.assertInWorktree(ALLOW, f'cp {self.outside} pulled-in.txt')
+
+    def test_cp_recursive_from_main_tree_into_worktree_allowed(self):
+        self.assertInWorktree(ALLOW, f'cp -R {self.main_tree}/sub-fixture sub-fixture')
+
+    def test_cp_source_outside_onto_untracked_dest_asks(self):
+        """A free source still cannot land on the only copy of something."""
+        self.assertInWorktree(ASK, f'cp {self.outside} untracked-scratch.txt')
 
     def test_cp_dest_outside_asks(self):
         self.assertInWorktree(ASK, f'cp tracked.txt {self.temp}/escaped.txt')
@@ -392,6 +403,96 @@ class LinkedWorktreeTest(unittest.TestCase):
 
     def test_dollar_in_commit_message_asks(self):
         self.assertInWorktree(ASK, 'git commit -m "costs $5"')
+
+
+class BranchDeleteTest(unittest.TestCase):
+    """Deleting a worktree branch is allowed only when HEAD already holds its content."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.temp = tempfile.mkdtemp(prefix='branch-delete-test-')
+        cls.repo = os.path.join(cls.temp, 'repo')
+        os.makedirs(cls.repo)
+        git(cls.repo, 'init', '-b', 'main')
+        git(cls.repo, 'config', 'user.email', 'test@example.com')
+        git(cls.repo, 'config', 'user.name', 'Test')
+        Path(cls.repo, 'base.txt').write_text('base\n')
+        git(cls.repo, 'add', 'base.txt')
+        git(cls.repo, 'commit', '-m', 'initial')
+
+        # A branch whose two commits `go` collapsed into one differently-shaped
+        # commit on main: patch-ids cannot match, but the content is all there.
+        git(cls.repo, 'branch', 'worktree-squashed')
+        git(cls.repo, 'checkout', 'worktree-squashed')
+        Path(cls.repo, 'feature.txt').write_text('first half\n')
+        git(cls.repo, 'add', 'feature.txt')
+        git(cls.repo, 'commit', '-m', 'first half')
+        Path(cls.repo, 'feature.txt').write_text('first half\nsecond half\n')
+        git(cls.repo, 'add', 'feature.txt')
+        git(cls.repo, 'commit', '-m', 'second half')
+        git(cls.repo, 'checkout', 'main')
+        Path(cls.repo, 'feature.txt').write_text('first half\nsecond half\n')
+        git(cls.repo, 'add', 'feature.txt')
+        git(cls.repo, 'commit', '-m', 'squashed patch from the worktree')
+
+        # A branch carrying work that never landed anywhere.
+        git(cls.repo, 'branch', 'worktree-unlanded')
+        git(cls.repo, 'checkout', 'worktree-unlanded')
+        Path(cls.repo, 'orphan.txt').write_text('only copy\n')
+        git(cls.repo, 'add', 'orphan.txt')
+        git(cls.repo, 'commit', '-m', 'work that never landed')
+        git(cls.repo, 'checkout', 'main')
+
+        # A non-worktree branch whose content IS on HEAD, to prove the name gate.
+        git(cls.repo, 'branch', 'feature/real-work')
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.temp, ignore_errors=True)
+
+    def assertInRepo(self, expected, command):
+        out, code = run(command, cwd=self.repo)
+        self.assertEqual(code, 0, f'non-zero exit for: {command}')
+        self.assertEqual(decision(out), expected, f'wrong decision for: {command}')
+
+    def test_squashed_branch_allowed(self):
+        """The case `go` actually produces: content identical, patch-ids different."""
+        self.assertInRepo(ALLOW, 'git branch -D worktree-squashed')
+
+    def test_unlanded_branch_asks(self):
+        self.assertInRepo(ASK, 'git branch -D worktree-unlanded')
+
+    def test_non_worktree_branch_asks(self):
+        """Even fully-contained content does not license deleting a real branch."""
+        self.assertInRepo(ASK, 'git branch -D feature/real-work')
+
+    def test_unknown_branch_asks(self):
+        self.assertInRepo(ASK, 'git branch -D worktree-never-existed')
+
+    def test_multiple_branches_ask(self):
+        self.assertInRepo(ASK, 'git branch -D worktree-squashed worktree-unlanded')
+
+    def test_lowercase_delete_flag_gated(self):
+        self.assertInRepo(ALLOW, 'git branch -d worktree-squashed')
+
+    def test_long_delete_flag_gated(self):
+        self.assertInRepo(ASK, 'git branch --delete worktree-unlanded')
+
+    def test_force_cluster_gated(self):
+        self.assertInRepo(ASK, 'git branch -fD worktree-unlanded')
+
+    def test_branch_listing_not_gated(self):
+        out, code = run('git branch --list', cwd=self.repo)
+        self.assertEqual(code, 0)
+        self.assertIsNone(decision(out))
+
+    def test_branch_creation_not_gated(self):
+        out, code = run('git branch new-thing', cwd=self.repo)
+        self.assertEqual(code, 0)
+        self.assertIsNone(decision(out))
+
+    def test_chained_branch_delete_asks(self):
+        self.assertInRepo(ASK, 'git branch -D worktree-squashed && echo done')
 
 
 class ClaudeTmpExemptionTest(unittest.TestCase):
