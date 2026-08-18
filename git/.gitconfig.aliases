@@ -175,6 +175,8 @@
 	# don't use checkout because it's ambiguous
 	#
 	rest = restore
+	restp = restore --patch
+
 
 	#
 	# stash
@@ -196,5 +198,4 @@
 	# don't use checkout because it's ambiguous
 	#
 	sw   = "!source ~/dotfiles/bash/functions.sh && git_fuzzy_switch"
-	swb  = switch -b
-
+	swc  = switch -c
