@@ -31,7 +31,7 @@
 
 - Only add comments to code that explain *why* the code does something, not *what* it does — prefer descriptive variable naming etc instead.
 
-- Don't add comments that explain new code in relation to code that you changed. The person reading the code after it's merged wouldn't understand what that's about. Comments should be durable and self-contained.
+- Don't add comments that explain new code in relation to code that you changed, and don't add comments that are artifacts from our conversation transcript or iterative proccess. The person reading the code after it's merged should be able to understand the comment without knowing anything about our session. Comments should be durable and self-contained. Commit messages are the appropriate place to describe why something changed, not comments.
 
 - Wrap lines at 100 characters unless there's a lint rule that specifies lower.
 
