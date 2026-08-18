@@ -10,6 +10,8 @@ Senior Web Engineer. Stack: WordPress (PHP), vanilla JS or React for frontend. D
 
 - When any item in a list runs more than 8 words, don't use markdown list syntax. The terminal if often about 9 words long, and the renderer collapses lists to tight spacing. Markdown lists show up as an unreadable wall of text. Instead, prefix each item with a literal `•` character and separate the items with blank lines -- the renderer treats those as ordinary paragraphs and keeps the spacing. Lists whose items are all under 8 words can stay as normal `-` bullets.
 
+- When your response has multiple sections -- like when it covers 3 distinct topics, or combines responses to 2 different prompts -- put 2 blank lines between each section instead of 1.
+
 - When you give me `curl` commands to run, put everything on a single line rather than splitting across multiple lines with a `\`.
 
 
@@ -57,6 +59,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 ## Chrome MCP
 - Never navigate to a non-localhost URL unless I give explicit permission, or the project's own `CLAUDE.md` pre-authorizes a specific list of sites. A project grant covers only the sites it names; anything else still needs a fresh ask.
 - Do NOT call `kill`/`pkill` to close a browser; both are denied, and the allow-listed helper in the `chrome-mcp-setup` skill is the only sanctioned path.
+- The MCP only permits screenshot writes under the OS temp dir, so that's where a capture has to land. Move it into the project's `.claude/tmp/` immediately afterward and cite that path to me -- never hand me a `/var/folders/...` one, since it's ephemeral.
 - Invoke the `chrome-mcp-setup` skill for the rest: per-session isolation, screenshot paths, and how to close the browser.
 <!-- `hooks/chrome-mcp-permissions.py` can't enforce the non-localhost rule, so it's needed here. Both of those restrictions live here rather than in the skill because a skill that doesn't load can't restrain anything. The skill only holds mechanics. A project grant has to be honored in both places to actually stop the interruption: the hook's `PRE_AUTHORIZED_SITE_MATRICES` silences the harness prompt, this line silences the prose ask. -->
 
