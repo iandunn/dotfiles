@@ -84,6 +84,8 @@ info_message() {
 # Lives here rather than in aliases/ because it needs per-line logic and a stderr channel
 # that stays out of the clipboard.
 unwrap() {
+	# todo this may not be necessary now that using claude fullscreen TUI
+
 	pbpaste | perl -CSD -e '
 		use utf8;
 

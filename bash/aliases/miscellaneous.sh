@@ -22,5 +22,3 @@ alias fix-camera='sudo killall VDCAssistant'
 # This is insane that OSX makes you do this any time you want to open a file in an app
 # alias unquarantine='xattr -d com.apple.quarantine'
 # need to test more, make sure this doesn't open up vulnerabilities beyond just files i download yourself (and therefore trust)
-
-# `unwrap` moved to bash/functions.sh, where it can warn about ambiguous joins
