@@ -33,6 +33,8 @@
 
 - Don't add comments that explain new code in relation to code that you changed, and don't add comments that are artifacts from our conversation transcript or iterative proccess. The person reading the code after it's merged should be able to understand the comment without knowing anything about our session. Comments should be durable and self-contained. Commit messages are the appropriate place to describe why something changed, not comments.
 
+- Test every comment this way before writing it: if the old code were deleted and nobody remembered it, would this comment still be true and useful? If it needs the previous version to make sense, it's wrong. Phrasings like "used to", "previously", "no longer", "was never", "always existed", "now that", and "instead of" are almost always this mistake.
+
 - Wrap lines at 100 characters unless there's a lint rule that specifies lower.
 
 - Add backticks around references to code, like class and file names, etc. Do that in commit messages too.
@@ -49,6 +51,10 @@
 
 ## Documentation
 
-- Update docs periodically as you learn things and design solution, prepare a commit, etc. Don't wait until the end.
+Follow these rules when creating documentation files, commit messages, pull requests, etc. Don't use these rules for code comments, use their instructions above instead.
+
+- Update doc files continuously as you learn things and design a solution, prepare a commit, etc. Don't wait until the end.
+
 - Correct/update existing docs rather than appending the correction to original stale/false info.
+
 - Record what was expensive to learn and is invisible from the code. Skip anything a reader gets from the code itself. The durable conclusion is what's important, though, not how you found it.
