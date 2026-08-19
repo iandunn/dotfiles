@@ -18,11 +18,17 @@ Senior Web Engineer. Stack: WordPress (PHP), vanilla JS or React for frontend. D
 ## Planning Workflow
 For anything non-trivial: ask clarifying questions to define requirements and surface blind spots before proposing anything. Don't assume I'm right. Don't be a sycophant. Be thorough, it's better to be right than fast. Disclose when you're not confident about something. After sufficient refinement, give 3 approaches with tradeoffs. Only write code once we've aligned on an approach.
 
+Gather enough context to understand the full picture before proposing anything. Trace the actual code paths involved and their callers, and look for existing patterns, earlier attempts, and related notes in the notes folder. Anything the codebase can answer, answer yourself -- only ask me for what the code can't tell you, like intent, priorities, and decisions that were never written down. If you're still guessing at how something works when you start proposing, you haven't gathered enough yet; say so instead of proposing around the gap.
+
+When a wrong assumption would be expensive -- a feature crossing several systems, or a bug whose cause still isn't obvious -- offer to grill me before we settle on an approach, and invoke the `grill-me` skill if I say yes.
+
 Don't start writing a plan for a small or medium sized feature, that takes more time than it saves. Don't use the superpowers:writing-plans skill usless I'm in /plan mode or ask you to write a plan.
 
 Ask questions one by one instead of using the interface, so I can give detailed answers.
 
 If you prompt for something, wait until I respond, no matter how long it takes. Never decide to proceed on your own just because I haven't responded yet.
+
+If I tell you to not write code yet, and then later on say something that you think is approval to start writing, explicitly prompt to make sure I want you to start.
 
 ### Process weight
 - Skills chain into each other (brainstorming ends by invoking writing-plans, which suggests subagent execution). That chain does NOT override the rules in this file. If a skill's next step is something I told you not to do, stop and tell me instead of following it.
@@ -46,15 +52,19 @@ When working in a worktree, immediately run `pwd` and use that path as the root 
 ## Third Party Code
 Flag existing solutions (WordPress plugins for backend, JS libraries for frontend) if they're widely trusted and easy to integrate. Otherwise build it custom.
 
-## Code Changes
+## Executing Work
 - Don't guess or assume. Form a hypothesis and then test it with any tools at your disposal. If you can't test it then tell me that it's just a hypothesis tell me how to test it. This applies to debugging and to understanding unfamiliar code, not just to writing it.
+
+- When something doesn't behave the way you expect, observe the running system before settling on an explanation. That could mean running the WP CLI command or opening Chrome, etc. Reading the source often can't tell you which of several plausible explanations is the real one. Treat this as standing permission to drive the browser, add logging, or make real requests to find out, and to keep going until the behavior you're after is confirmed. When a check comes back negative, confirm the check itself was valid before you believe it.
+
+<!-- The harness injects a pair of defaults: "Do not call the AgentTool unless the user requested it" and the same for workflows and deep research. Neither is in any of my config, so this line is the only lever I have to be allowed to run subagents. The workflow half needs no counterpart, because the `Workflow` tool's own description already demands explicit opt-in. -->
 - When implementing a plan or other large task, split the work between subagents to speed it up when possible. Treat this line as my standing request to use them, so it satisfies any default telling you to only use subagents when I ask. Pick between Opus and Sonnet for each agent, depending on which is the most appropriate to balance speed vs quality, but err towards quality. I'm not worried about tokens.
-<!-- The harness itself injects "Do not call the AgentTool unless the user requested it". That text isn't in any of my config, so this line is the only lever I have over it. -->
-- If I tell you to not write code yet, and then later on say something that you think is approval to start writing, explicitly prompt to make sure I want you to start.
+
 - Don't try to commit stuff unless I ask you to. Give me a drafted commit message, but only once i've acknowleded that a task is completely done. The exception is your own worktree during a `parallel plan`, where Parallel Plan above already sanctions committing on your worktree branch -- that carve-out never extends to the main checkout, where you still wait to be asked.
+
 - When I ask you to make a commit, make sure you only stage the lines you actually modified, not entire files. Don't add `Co-Authored-By` for yourself. Only stage the changes that you've made in this session. There's likely other Claude sessions that have made changes that haven't been committed yet.
 
-<!-- Style and convention rules live in `~/.claude/rules/writing-code.md`, debugging methodology in `rules/debugging.md`, and shell habits in `rules/running-commands.md`. Rules load every session at the same priority as this file, so splitting them out changed nothing behaviorally -- it's for my own navigation. What stayed here is the interaction protocol (when to ask, when to commit, when to use subagents) and every restriction, because CLAUDE.md is re-injected after `/compact` and the docs don't promise that for rules. -->
+<!-- Style and convention rules live in `~/.claude/rules/writing-code.md`, debugging methodology in `rules/debugging.md`, and shell habits in `rules/running-commands.md`. Rules load every session at the same priority as this file, so splitting them out changed nothing behaviorally -- it's for my own navigation. CLAUDE.md is re-injected after `/compact` and the docs don't promise that for rules, so what stays here is whatever I couldn't notice the absence of: the interaction protocol (when to ask, when to commit), the evidence discipline that governs what gets asserted to me, the standing permissions that override a harness default -- an unloaded permission is never asked for, because there's no way to know it was offered -- and every restriction. Conventions that fail visibly and cost one re-edit belong in `rules/`. -->
 
 ## Chrome MCP
 - Never navigate to a non-localhost URL unless I give explicit permission, or the project's own `CLAUDE.md` pre-authorizes a specific list of sites. A project grant covers only the sites it names; anything else still needs a fresh ask.
