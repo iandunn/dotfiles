@@ -15,6 +15,8 @@
 
 - Never wrap a command in a subshell or group -- `( a && echo yes || echo no )`, `{ ... }` -- just to make its exit code readable; that introduces nuisance approval prompts. Run the bare commands and use exit codes instead.
 
+- Send one plain command per tool call. Chaining with `;` or `&&`, piping into `tail`/`head`, and `2>&1` redirects all leave the permission parser unable to decompose the line, so it prompts for confirmation rather than auto-approving commands it would otherwise recognise. Run linters, test suites, and anything else bare, and read the whole output.
+
 - Run `rm`, `mv`, `cp`, `git add`, `git commit`, and `git worktree remove` bare -- one per tool call, with no `&&`, `;`, pipes, or redirects. `hooks/worktree-command-permissions.py` refuses to reason about shell operators, because an approval covers the whole command line, so chaining or piping one of these turns an auto-approval back into a prompt. If you want trimmed output, run the command and read the result.
 
 - Don't `cd` into a directory and then run `git` in the same command; use `git -C <path> <read-only command>`, or a separate `cd` call followed by the git call. Never put more than one `cd` in a single command. Both shapes are hardcoded permission prompts.
