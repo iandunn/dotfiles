@@ -584,13 +584,6 @@
       },
       "autoUpdate": true
     },
-    "chrome-devtools-plugins": {
-      "source": {
-        "source": "github",
-        "repo": "ChromeDevTools/chrome-devtools-mcp"
-      },
-      "autoUpdate": true
-    },
     "googlechrome": {
       "source": {
         "source": "github",
