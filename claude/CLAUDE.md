@@ -66,10 +66,18 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 
 <!-- Style and convention rules live in `~/.claude/rules/writing-code.md`, prose aimed at people in `rules/writing-for-humans.md`, debugging methodology in `rules/debugging.md`, and shell habits in `rules/running-commands.md`. Rules load every session at the same priority as this file, so splitting them out changed nothing behaviorally -- it's for my own navigation. CLAUDE.md is re-injected after `/compact` and the docs don't promise that for rules, so what stays here is whatever I couldn't notice the absence of: the interaction protocol (when to ask, when to commit), the evidence discipline that governs what gets asserted to me, the standing permissions that override a harness default -- an unloaded permission is never asked for, because there's no way to know it was offered -- and every restriction. Conventions that fail visibly and cost one re-edit belong in `rules/`. -->
 
-## Chrome MCP
+### Don't optimize for the signal
+Every check I judge your work by is a proxy: a passing test, a clean linter, a checked box, my agreement. Your target is the thing being measured, never the measurement -- if you can't move the outcome, don't move the signal instead. Don't weaken, skip, or filter a test to reach green; don't silence a finding with `phpcs:ignore`, an `eslint-disable`, a PHPStan baseline entry, or a swallowed exception; don't special-case the input from my repro; don't quietly narrow scope and report the whole task done. When one of those genuinely is the right call, say so explicitly and let me agree.
+
+"It still fails, here's what I tried" and "I couldn't do this part" are good answers and I always prefer them to a manufactured pass. I don't necessarily want you to "succeed" in a narrow sense; I want you to tell me the truth above all else.
+
+
+## Browsers
+- Chrome, through the Chrome DevTools MCP, is the browser to reach for by default. Firefox and Safari are for the cases where a browser difference is itself the question -- propose one when you think it would settle something, and wait for my answer before launching it.
+- When I approve Firefox, give it a throwaway profile and no attachment to the instance I already have open: `--profile "$TMPDIR/ff-throwaway" --no-remote --new-instance`, plus `--headless` unless I need to watch it. Without `--profile` it targets my real profile and writes `prefs.js`, the session store, and `places.sqlite`; without `--no-remote` it fights the running instance for the profile lock. Never point any browser at the profile I use myself.
 - Never navigate to a non-localhost URL unless I give explicit permission, or the project's own `CLAUDE.md` pre-authorizes a specific list of sites. A project grant covers only the sites it names; anything else still needs a fresh ask.
 - Do NOT call `kill`/`pkill` to close a browser; both are denied, and the allow-listed helper in the `chrome-mcp-setup` skill is the only sanctioned path.
-- The MCP only permits screenshot writes under the OS temp dir, so that's where a capture has to land. Move it into the project's `.claude/tmp/` immediately afterward and cite that path to me -- never hand me a `/var/folders/...` one, since it's ephemeral.
+- The Chrome MCP only permits screenshot writes under the OS temp dir, so that's where a capture has to land. Move it into the project's `.claude/tmp/` immediately afterward and cite that path to me -- never hand me a `/var/folders/...` one, since it's ephemeral.
 - Invoke the `chrome-mcp-setup` skill for the rest: per-session isolation, screenshot paths, and how to close the browser.
 <!-- `hooks/chrome-mcp-permissions.py` can't enforce the non-localhost rule, so it's needed here. Both of those restrictions live here rather than in the skill because a skill that doesn't load can't restrain anything. The skill only holds mechanics. A project grant has to be honored in both places to actually stop the interruption: the hook's `PRE_AUTHORIZED_SITE_MATRICES` silences the harness prompt, this line silences the prose ask. -->
 
@@ -82,6 +90,8 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 - When a restriction blocks something you believe the task genuinely needs, stop and tell me what's blocked and why you think it's needed. I'll decide whether to loosen the rule. A restriction I set deliberately is more important than the task you're working on.
 - This applies to accidental circumvention too. If you notice you've been routing around a rule, say so, even if it's been working.
 - Run `composer update` every time you change `composer.json`, and `npm install` every time you change `package.json`. Never make changes without also installing them.
+- Ask before opening Firefox, Safari, or any other desktop application. This covers indirect launches: `open`, `open -a`, `osascript`, `npx playwright`, a webdriver binary, or a script that does any of those. What needs permission is a GUI application starting, not any particular command spelling.
+
 
 ### Worktree auto-approvals
 <!-- This needs to be here, separate from the hook, because... I forget, probably similiar to the reason the other ones are like this -->
