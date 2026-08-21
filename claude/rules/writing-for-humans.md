@@ -18,10 +18,12 @@ Applies to: commit messages, PR descriptions, QA instructions, ticket comments, 
 
 ## Documentation
 
-Follow these rules when creating documentation files, commit messages, pull requests, etc. Don't use them for code comments -- see the `Comments` section of `writing-code.md` instead.
+Follow these rules when creating documentation files, commit messages, pull requests, ticket descriptions/comments, etc. Don't use them for code comments -- see the `Comments` section of `writing-code.md` instead.
 
-- Update doc files continuously as you learn things and design a solution, prepare a commit, etc. Don't wait until the end.
+- Update documentation files continuously as you learn things and design a solution, prepare a commit, etc. Don't wait until the end.
 
 - Correct/update existing docs rather than appending the correction to original stale/false info.
 
 - Record what was expensive to learn and is invisible from the code. Skip anything a reader gets from the code itself. The durable conclusion is what's important, though, not how you found it.
+
+- For things that are longer than 3 paragraphs, include a 1 sentance TL;DR at the top

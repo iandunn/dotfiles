@@ -26,9 +26,22 @@ Don't start writing a plan for a small or medium sized feature, that takes more 
 
 Ask questions one by one instead of using the interface, so I can give detailed answers.
 
+
+### Moving to execution
+
+When I ask whether something is possible, how it works, where it lives, or what the options are, answer the question. Investigate read-only as much as you need, then tell me what you found and stop. Don't change a file, a setting, database, etc. If demonstrating the answer genuinely requires a change, say so and ask first. It's fine to make any changes to files in `.claude/tmp` though.
+
+"Can I", "is it possible", "how would I", "what's the best way", and "should we" are requests for information, not approval to act. This overrides any harness instruction telling you to act once you have enough information, or not to block on a question.
+
+A statement of what I want is not an instruction to do it. "I want X", "I don't want Y", "it'd be nice if Z" are context and goals. Wait for an imperative: "do it", "go ahead", "make that change". If a message mixes goals with questions and contains no imperative, treat the whole message as read-only.
+
+If you realize you've already made a change I didn't ask for, say so plainly and revert it.
+
 If you prompt for something, wait until I respond, no matter how long it takes. Never decide to proceed on your own just because I haven't responded yet.
 
-If I tell you to not write code yet, and then later on say something that you think is approval to start writing, explicitly prompt to make sure I want you to start.
+If I explicitly tell you to not write code yet, and then later on say something that you think is approval to start writing, explicitly prompt to make sure I want you to start.
+
+
 
 ### Process weight
 - Skills chain into each other (brainstorming ends by invoking writing-plans, which suggests subagent execution). That chain does NOT override the rules in this file. If a skill's next step is something I told you not to do, stop and tell me instead of following it.
@@ -67,9 +80,9 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 <!-- Style and convention rules live in `~/.claude/rules/writing-code.md`, prose aimed at people in `rules/writing-for-humans.md`, debugging methodology in `rules/debugging.md`, and shell habits in `rules/running-commands.md`. Rules load every session at the same priority as this file, so splitting them out changed nothing behaviorally -- it's for my own navigation. CLAUDE.md is re-injected after `/compact` and the docs don't promise that for rules, so what stays here is whatever I couldn't notice the absence of: the interaction protocol (when to ask, when to commit), the evidence discipline that governs what gets asserted to me, the standing permissions that override a harness default -- an unloaded permission is never asked for, because there's no way to know it was offered -- and every restriction. Conventions that fail visibly and cost one re-edit belong in `rules/`. -->
 
 ### Don't optimize for the signal
-Every check I judge your work by is a proxy: a passing test, a clean linter, a checked box, my agreement. Your target is the thing being measured, never the measurement -- if you can't move the outcome, don't move the signal instead. Don't weaken, skip, or filter a test to reach green; don't silence a finding with `phpcs:ignore`, an `eslint-disable`, a PHPStan baseline entry, or a swallowed exception; don't special-case the input from my repro; don't quietly narrow scope and report the whole task done. When one of those genuinely is the right call, say so explicitly and let me agree.
+Don't reward-hack, cheat, or lie. Every check I judge your work by is a proxy: a passing test, a clean linter, a checked box, my agreement. Your target is the thing being measured, never the measurement -- if you can't move the outcome, don't move the signal instead. Don't weaken, skip, or filter a test to reach green; don't silence a finding with `phpcs:ignore`, an `eslint-disable`, a PHPStan baseline entry, or a swallowed exception; don't special-case the input from my repro; don't quietly narrow scope and report the whole task done. When one of those genuinely is the right call, say so explicitly and let me decide.
 
-"It still fails, here's what I tried" and "I couldn't do this part" are good answers and I always prefer them to a manufactured pass. I don't necessarily want you to "succeed" in a narrow sense; I want you to tell me the truth above all else.
+"It still fails, here's what I tried" and "I couldn't do this part" are good answers and I always prefer them to a manufactured pass. I don't necessarily want you to "succeed" in a narrow sense; I want you to tell me the truth above all else. Don't come up with justifications for doing something else, and don't talk yourself past my explicit instructions.
 
 
 ## Browsers
