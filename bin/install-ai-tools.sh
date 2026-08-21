@@ -98,6 +98,7 @@ fi
 claude plugin marketplace add "$RELAY_PLUGINS_DIR"
 claude plugin install relay-eng@relay-plugins
 claude plugin install relay-pjm@relay-plugins
+claude plugin install relay-core@relay-plugins
 
 section "Daryll Doc Skills"
 claude plugin marketplace add darylldoyle/docs-skills

@@ -572,7 +572,8 @@
     "security-guidance@claude-plugins-official": true,
     "claude-security@claude-plugins-official": true,
     "relay-eng@relay-plugins": true,
-    "relay-pjm@relay-plugins": false
+    "relay-pjm@relay-plugins": false,
+    "relay-core@relay-plugins": true
   },
   "extraKnownMarketplaces": {
     "docs-skills-marketplace": {

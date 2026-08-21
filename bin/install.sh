@@ -61,6 +61,13 @@ for skill in $DOTFILES_DIR/claude/skills/*/; do
 	ln -sfn "${skill%/}" "$HOME/.claude/skills/$(basename $skill)"
 done
 
+WRITING_VOICE_SKILL=$HOME/Documents/writing-corpus/skill
+if [ -d "$WRITING_VOICE_SKILL" ]; then
+	ln -sfn "$WRITING_VOICE_SKILL" "$HOME/.claude/skills/writing-in-my-voice"
+else
+	echo "skipping writing-in-my-voice: clone the corpus repo to $WRITING_VOICE_SKILL first"
+fi
+
 ln -sf $DOTFILES_DIR/git/.gitconfig			$HOME/.gitconfig
 ln -sf $DOTFILES_DIR/git/.gitignore_global	$HOME/.gitignore_global
 ln -sf $DOTFILES_DIR/.config/gh				$HOME/.config/gh

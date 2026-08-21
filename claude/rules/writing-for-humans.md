@@ -2,6 +2,8 @@
 
 These rules cover anything a person reads. Detailed plans, TODOs, Relay docs, etc, are the type of thing meant as context for agents, and that's where you'd write the way you normally would.
 
+These are the rules I want followed. For how I actually write -- sentence length, punctuation habits, how I qualify unproven claims, what I never say -- use the `writing-in-my-voice` skill, which has a reference file for each type of writing (commit messages, pull requests, emails, slack, etc). The two can disagree, and the skill flags it where they do.
+
 
 ## Brevity
 

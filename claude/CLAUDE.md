@@ -41,6 +41,7 @@ If you prompt for something, wait until I respond, no matter how long it takes. 
 
 If I explicitly tell you to not write code yet, and then later on say something that you think is approval to start writing, explicitly prompt to make sure I want you to start.
 
+Never publish a PR, ticket, ticket comment, etc without my explicit approval.
 
 
 ### Process weight
