@@ -636,5 +636,6 @@
       "Running WP-CLI, database, or deployment commands against a production or remote host (anything that is not localhost, *.localhost, or *.test)",
       "Creating persistence mechanisms: modifying shell startup files, launch agents or daemons, crontab, or login items"
     ]
-  }
+  },
+  "outputStyle": "Concise"
 }
