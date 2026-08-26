@@ -21,6 +21,9 @@
 
 - Don't `cd` into a directory and then run `git` in the same command; use `git -C <path> <read-only command>`, or a separate `cd` call followed by the git call. Never put more than one `cd` in a single command. Both shapes are hardcoded permission prompts.
 
+
+## Commits
+
 <!--
 - Never pass a commit message through the shell -- not `-m "..."`, and not a `"$(cat <<'EOF' ... EOF)"` heredoc. Write it to the project's `.claude/tmp/commit-msg.txt` with the `Write` tool, then `git commit -F .claude/tmp/commit-msg.txt`. Reuse that same filename each time so they don't pile up, and leave it in place afterward. This prevents unintended hard wraps being introduced by the terminal width.
 todo this may not be necessary now that using claude fullscreen TUI  -->
@@ -32,3 +35,5 @@ todo this may not be necessary now that using claude fullscreen TUI  -->
 - Never put the current ticket/issue or PR number in a commit subject/body. Never put the ticket/issue number in a PR title. It's fine to put the ticket in a PR body. It's fine for commits and PRs to reference something that happenend in the past. For example, if a commit is part of PR `#200`, and `#200` which fixes issue `#100`, then the commit shouldn't reference `#100` or `#200`. If commit `c0a152e` from PR `#50` introduced a bug that is being fixed by the current commit, then `c0a152e` and `#50` can be mentioned. The exception to that is that a commit without a PR that's being merged directly to the main branch is allowed to reference the issue that is being fixed by the commit. That's because there's no PR to reference/close the issue.
 
 - `git commit` and `git mv` need `dangerouslyDisableSandbox: true` on the first attempt, not as a retry after a failure. My commits are SSH-signed, and `ssh-keygen` can't reach the agent socket from inside the sandbox, so it dies with "Couldn't get agent socket"; `git mv` fails its rename syscall with "Operation not permitted". Both are known and expected, so treating them as a sandbox-caused failure you have to discover first just wastes a round trip. This is the same sanctioned-exception shape as the Chrome close script -- it is not a workaround, and it does not extend to any other command.
+
+- The problem that the commit is fixing and the solution that the commit implements should be in separate paragraphs.
