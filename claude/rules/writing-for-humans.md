@@ -9,6 +9,8 @@ These are the rules I want followed. For how I actually write -- sentence length
 
 Applies to: commit messages, PR descriptions, QA instructions, ticket comments, code comments, documentation files.
 
+Interactive replies to me aren't covered here. Their rules live in the Response Style section of `CLAUDE.md`.
+
 - Simple commit: 1 sentence beyond the title. Complex commit: roughly 2 paragraphs. That's a target, and there may be exceptions where you can go above it, but that should be rare.
 
 - PR description: an overview only, because the details belong in the commit messages.
