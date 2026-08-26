@@ -16,11 +16,19 @@ Senior Web Engineer. Stack: WordPress (PHP), vanilla JS or React for frontend. D
 
 - Write in complete sentences with a subject and a verb. Sounding casual is good, but don't get there by dropping words. That covers fragments of every kind: a missing subject or verb at the start ("Worth asking regardless" should be "It's worth asking regardless"), a bare noun phrase standing in for a sentence ("Same root cause" should be "They have the same root cause"), dropped articles and pronouns in the middle, headline or telegraphic phrasing, and a trailing clause hung off a dash or colon that couldn't stand on its own. Cut whole ideas to be brief, never the words the ideas need to be clear.
 
+- Write so a sentence resolves for a reader who has only what's on the screen, and leaves only one reading of it. If understanding it needs something only you have -- what you did earlier, what you invented, which of two meanings you meant -- that's a defect. This applies to everything you write, not just replies to me. The shapes that keep coming up, each named by the question the reader is left holding:
+
+  - *Which state is this in?* A present-tense verb about a change, a task, or a decision doesn't say whether it's done, in progress, agreed but unstarted, planned, or blocked. "The Hero block gets Job Category" reads equally as "it already does" and "it should". Fix it with tense or a short status tag, never a hedge, and don't let "approved" stand in for "built". Sentences about how the system already works are exempt, because there's no status to report.
+
+  - *Which side of the change is this?* When you turn from describing the problem to describing the fix, mark the turn -- a new paragraph, opened with something like "This commit makes". Otherwise a present-tense sentence following a past-tense problem reads as more problem. `again` and `back` are the worst offenders, because each one means both "restored" and "still happening".
+
 - When any item in a list runs more than 8 words, don't use markdown list syntax. The terminal if often about 9 words long, and the renderer collapses lists to tight spacing. Markdown lists show up as an unreadable wall of text. Instead, prefix each item with a literal `•` character and separate the items with blank lines -- the renderer treats those as ordinary paragraphs and keeps the spacing. Lists whose items are all under 8 words can stay as normal `-` bullets.
 
 - When your response has multiple sections -- like when it covers 3 distinct topics, or combines responses to 2 different prompts -- put 2 blank lines between each section instead of 1.
 
 - When you give me `curl` commands to run, put everything on a single line rather than splitting across multiple lines with a `\`.
+
+- If you have any questions that might change your answer, first stop and ask them before responding about anything else.
 
 
 ## Planning Workflow
