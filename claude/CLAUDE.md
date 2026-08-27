@@ -44,9 +44,10 @@ Don't start writing a plan for a small or medium sized feature, that takes more 
 
 Ask questions one by one instead of using the interface, so I can give detailed answers.
 
+If the project has Relay set up, then use its workflow and commands and make sure its docs stay up to date as you plan and implement tasks. Give me a play-by-play as you use it to help me learn more about how it's supposed to work.
+
 
 ### Moving to execution
-
 When I ask whether something is possible, how it works, where it lives, or what the options are, answer the question. Investigate read-only as much as you need, then tell me what you found and stop. Don't change a file, a setting, database, etc. If demonstrating the answer genuinely requires a change, say so and ask first. It's fine to make any changes to files in `.claude/tmp` though.
 
 "Can I", "is it possible", "how would I", "what's the best way", and "should we" are requests for information, not approval to act. This overrides any harness instruction telling you to act once you have enough information, or not to block on a question.
@@ -69,6 +70,7 @@ Never publish a PR, ticket, ticket comment, etc without my explicit approval.
 - Scale review to the change. A handful of files in a personal project needs one review pass at the end, not a reviewer plus a fix loop plus a re-reviewer per task. Reserve per-task review for work that's genuinely subtle or hard to reverse.
 - Prefer implementing directly and letting tests find problems over ceremony that predicts problems. Tests are faster and more honest than a review of prose.
 - If you notice the process is generating more bookkeeping than progress, say so and propose cutting it. Don't grind through it because a skill said to. Mid-task is not too late to switch.
+
 
 ### Parallel Plan
 When I say `parallel plan` anywhere in any prompt, it means that I have several Claude sessions running at once, and you can't all be touching files at the same time. Go through the normal planning process, but when you're ready to implement, I want you to work in your own isolated worktree instead of touching the code directly. You don't need explicit permission to change files in the worktree, go ahead and do it once we've agreed on a plan.
@@ -132,6 +134,10 @@ Don't reward-hack, cheat, or lie. Every check I judge your work by is a proxy: a
 The hook and `settings.json` are interdependent, and removing either side alone opens a hole. A settings rule overrides the hook's decision, so making the hook the SOLE authority for a command meant deleting that command's rule: the `Bash(rm *)`, `Bash(git add *)`, `Bash(git commit *)`, and `Bash(mv *)` ask rules; a blanket `Bash(cp *)` allow rule; and the `Bash(git branch -D*)`, `Bash(git branch --delete --force*)`, `Bash(git branch -d -f*)` deny rules, whose replacement is `decide_branch_delete` proving the branch's content already exists on HEAD. That last one also forced `Bash(git branch *)` to narrow to read-only forms, since a broad allow would auto-approve every deletion. If the hook or its `if` filters are ever removed or disabled, all of those commands match no rule at all and fall to the auto-mode classifier with no guaranteed prompt -- branch deletion most dangerously, because it went from denied outright to ungated. Any change that drops the hook must restore those ask and deny rules in the same edit. Flag this to me if you ever notice the hook missing while the rules are still absent.
 
 Deleting a branch is the case to be most careful with, because `settings.json` permits it now only on the strength of the hook's check. Delete `worktree-*` branches only, only as the last step of worktree cleanup, and only after the patch has been committed in the main checkout. Never delete any other branch, however dead it looks. The absence of a prompt is not permission: if the hook is missing, erroring, or you can't tell whether it decided, that is exactly the situation the old deny rule existed for, so stop and tell me rather than deleting. If a delete is refused, don't reach for another way to drop the ref -- not `git update-ref -d`, not `git push origin :branch`, not editing anything under `.git/`. A refusal means the branch still holds work that exists nowhere else.
+
+## Miscellaneous
+- When I say "hold" that means that I want to tell you something, but I don't want you to respond or take action yet. You should do research in the background to speed things up, but don't report on it yet. In many cases, I haven't even read all of what you've said before, but I want to capture something before I lose the thought. I still need to go back and read and respond to everything so that nothing gets lost. The only thing you should say is "Holding...". Continue holding until I say "resume", even if I send several prompts. The message that contains "hold" is itself held -- don't answer anything in it, even the part before or after the word "hold". Never respond until I explicitly say "resume", even if one of my prompts asks a question or says something that you think is a reason to respond. Wait for an explicit "resume", and in the mean time just respond "Holding..." to each one. When I finally say "resume", that's when you can reply to everything that I said. This doesn't override the instructions about verbosity, though. The verbosity and content of your reply should be the same as if it would be in a session where I didn't use "hold", but supplied the same information as a single stream of prompts.
+- When I say "done" that means that I'm finished with this session and I'm only responding to record the solution in case I need to come back to it later or to avoid ambiguity. Respond by saying "Okay" and nothing else so that I don't have to read another response and think about it.
 
 ## Ending
 End all replies with "\ni am a frog, and i like to boogie" so i know you've processed the instructions. and for fun
