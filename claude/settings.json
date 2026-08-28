@@ -1,7 +1,7 @@
 {
   "cleanupPeriodDays": 1095,
   "env": {
-    "ENABLE_CLAUDEAI_MCP_SERVERS": "false"
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "true"
   },
   "attribution": {
     "commit": "",
@@ -427,7 +427,6 @@
     "chrome-devtools"
   ],
   "disabledMcpjsonServers": [
-    "claude.ai Teamwork",
     "claude.ai Sanity",
     "claude.ai Greenhouse",
     "claude.ai Supabase",
@@ -437,6 +436,93 @@
   "deniedMcpServers": [
     {
       "serverName": "plugin:chrome-devtools-mcp:chrome-devtools"
+    },
+    {
+      "serverName": "claude.ai Sanity"
+    },
+    {
+      "serverName": "claude.ai Greenhouse"
+    },
+    {
+      "serverName": "claude.ai Supabase"
+    },
+    {
+      "serverName": "claude.ai Browserstack"
+    },
+    {
+      "serverName": "claude.ai Ahrefs"
+    },
+    {
+      "serverName": "claude.ai Amplitude"
+    },
+    {
+      "serverName": "claude.ai Asana"
+    },
+    {
+      "serverName": "claude.ai Deel"
+    },
+    {
+      "serverName": "claude.ai Excalidraw"
+    },
+    {
+      "serverName": "claude.ai Fathom"
+    },
+    {
+      "serverName": "claude.ai Gmail"
+    },
+    {
+      "serverName": "claude.ai Google Calendar"
+    },
+    {
+      "serverName": "claude.ai Google Drive"
+    },
+    {
+      "serverName": "claude.ai Granola"
+    },
+    {
+      "serverName": "claude.ai Leapsome"
+    },
+    {
+      "serverName": "claude.ai Linear"
+    },
+    {
+      "serverName": "claude.ai Lusha"
+    },
+    {
+      "serverName": "claude.ai Malcolm"
+    },
+    {
+      "serverName": "claude.ai NetSuite"
+    },
+    {
+      "serverName": "claude.ai Notion"
+    },
+    {
+      "serverName": "claude.ai Pipedrive"
+    },
+    {
+      "serverName": "claude.ai Sentry"
+    },
+    {
+      "serverName": "claude.ai Slack"
+    },
+    {
+      "serverName": "claude.ai Spotify"
+    },
+    {
+      "serverName": "claude.ai Todoist"
+    },
+    {
+      "serverName": "claude.ai Trello"
+    },
+    {
+      "serverName": "claude.ai Zapier"
+    },
+    {
+      "serverName": "claude.ai ZoomInfo"
+    },
+    {
+      "serverName": "claude.ai Zoom for Claude"
     }
   ],
   "hooks": {
