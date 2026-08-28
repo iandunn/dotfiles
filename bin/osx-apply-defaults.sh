@@ -212,6 +212,9 @@ defaults write -g NSRequiresAquaSystemAppearance -bool Yes
 defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
 defaults write com.googlecode.iterm2 PrefsCustomFolder -string "$HOME/dotfiles/iterm2"
 
+# Tell iTerm2 to skip the multiline paste warning because I have Command-V bound to a special paste setting that converts newlines to spaces.
+defaults write com.googlecode.iterm2 NoSyncDoNotWarnBeforeMultilinePaste_selection -int 0.
+
 
 # Disable Gatekeeper so I can open files I downloaded.
 sudo spctl --master-disable
