@@ -13,6 +13,8 @@
 
 - `cr` and `nr` are my aliases for `composer run` and `npm run`
 
+- Name VIP-CLI targets with a single leading `@org.env` token: `vip @foo.staging wp post list`. That's the only spelling `hooks/command-allowlist-permissions.py` accepts -- it hard-denies `-e`/`--env`/`-a`/`--app` flags, a second `@` token, or an `@` token after the subcommand, because two target spellings on one line would leave it guessing which one VIP honors. It also denies `wp`/`vip` binaries at paths outside its `BINARY_ALLOWED_PATHS`; if you hit that deny legitimately, tell me instead of rewording the command.
+
 - Never wrap a command in a subshell or group -- `( a && echo yes || echo no )`, `{ ... }` -- just to make its exit code readable; that introduces nuisance approval prompts. Run the bare commands and use exit codes instead.
 
 - Send one plain command per tool call. Chaining with `;` or `&&`, piping into `tail`/`head`, and `2>&1` redirects all leave the permission parser unable to decompose the line, so it prompts for confirmation rather than auto-approving commands it would otherwise recognise. Run linters, test suites, and anything else bare, and read the whole output.

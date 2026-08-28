@@ -410,7 +410,6 @@
       "Bash(npm update *)",
       "Bash(npm uninstall *)",
       "Bash(npm remove *)",
-      "Bash(vip *)",
       "Bash(find * -exec *)",
       "Edit(~/.claude/**)"
     ],
@@ -451,7 +450,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/wp-cli-permissions.sh"
+            "command": "python3 ~/.claude/hooks/command-allowlist-permissions.py"
           }
         ]
       },
@@ -465,17 +464,22 @@
           },
           {
             "type": "command",
-            "command": "~/.claude/hooks/wp-cli-permissions.sh",
+            "command": "python3 ~/.claude/hooks/command-allowlist-permissions.py",
             "if": "Bash(wp *)"
           },
           {
             "type": "command",
-            "command": "~/.claude/hooks/wp-cli-permissions.sh",
+            "command": "python3 ~/.claude/hooks/command-allowlist-permissions.py",
+            "if": "Bash(vip *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/command-allowlist-permissions.py",
             "if": "Bash(/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp *)"
           },
           {
             "type": "command",
-            "command": "~/.claude/hooks/wp-cli-permissions.sh",
+            "command": "python3 ~/.claude/hooks/command-allowlist-permissions.py",
             "if": "Bash(\"/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp\" *)"
           },
           {
