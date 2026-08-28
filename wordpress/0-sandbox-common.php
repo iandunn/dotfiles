@@ -13,6 +13,7 @@ define( 'TENUPSSO_DISABLE', true );
 
 
 // Automatically install the latest RC
+define( 'WP_AUTO_UPDATE_CORE', 'rc' );
 add_filter( 'allow_dev_auto_core_updates', '__return_true' );
 add_filter( 'allow_minor_auto_core_updates', '__return_true' );
 add_filter( 'allow_major_auto_core_updates', '__return_true' );
