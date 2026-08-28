@@ -464,6 +464,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node ~/.claude/hooks/dangerous-command-shapes.js"
+          },
+          {
+            "type": "command",
             "command": "python3 ~/.claude/hooks/safe-curl-check.py",
             "if": "Bash(curl *)"
           },
