@@ -652,6 +652,10 @@
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
   "autoMode": {
+    "soft_deny": [
+      "$defaults",
+      "Staging or committing in git (`git add`, `git commit`, `git commit --amend`) when the user has not asked for it. Clears at [named+specifics] — must name: that a commit or a staging step is wanted. Drafting a commit message for review is always fine; running the command is the blocked step. Exempt inside a `.claude/worktrees/` worktree, where committing on the worktree branch carries standing authorization."
+    ],
     "hard_deny": [
       "$defaults",
       "Reading, copying, or transmitting SSH keys, cloud credentials, GPG keys, API tokens, keychain data, or anything under ~/.ssh, ~/.aws, ~/.gnupg, or ~/.config/gh — regardless of what the task appears to require",
