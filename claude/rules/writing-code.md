@@ -29,7 +29,7 @@
 
 - Don't remove comments, TODOs, `console.log()`, or debugger statements unless I ask. Blank lines are often used for readability, don't remove those. When completing a checkbox TODO (`- [ ]`), put an `x` in the box instead of deleting it.
 
-- Only add comments to code that explain *why* the code does something, not *what* it does — prefer descriptive variable naming etc instead.
+- Only add comments to code that explain *why* the code does something, not *what* it does — prefer descriptive variable naming etc instead. The exception to that is when a function is long enough to do several things. Each logical section should have a comment to briefly say what it does. That way you can scan the function and know what each section does without having to read the code. If a function is that long though, that's often (but not always) a smell that it should be modularized into smaller functions.
 
 - Don't add comments that explain new code in relation to code that you changed, and don't add comments that are artifacts from our conversation transcript or iterative proccess. The person reading the code after it's merged should be able to understand the comment without knowing anything about our session. Comments should be durable and self-contained. Commit messages are the appropriate place to describe why something changed, not comments.
 
