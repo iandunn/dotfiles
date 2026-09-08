@@ -7,6 +7,9 @@ rather than prompted: a VIP target named any way other than a single leading `@o
 and a covered binary at a path outside `BINARY_ALLOWED_PATHS`. Add a new CLI by adding an entry
 to COMMANDS; nothing else needs to change.
 
+Most entries are prefix matches. `WP_VALIDATED` holds the ones where the arguments after the
+subcommand decide whether it's safe, which a prefix can't express.
+
 This hook is the SOLE permission authority for the commands it covers, because a `settings.json`
 `ask` rule would override its `allow`. See the "Command allowlist hooks" section of
 `claude/CLAUDE.md` for which rules were removed to make that true, and what to restore if this
@@ -24,10 +27,47 @@ ALLOW = 'allow'
 ASK = 'ask'
 DENY = 'deny'
 
-# A prefix match authorizes the whole command line, but bash runs all of it, so a safe prefix
-# followed by a metacharacter (`option get x && wp db reset --yes`) would ride through on the
-# prefix. Anything carrying one gets a prompt.
-SHELL_METACHARACTERS = (';', '&', '|', '$', '`', '(', ')', '<', '>', '\n')
+# Metacharacters refused wherever they sit. Both expand inside double quotes, and `$'...'` makes
+# the quoting itself hard to reason about, so no line carrying one is vouched for.
+ALWAYS_DISQUALIFYING_METACHARACTERS = ('$', '`')
+
+# Metacharacters that only matter outside quotes. A prefix match authorizes the whole command
+# line, but bash runs all of it, so a safe prefix followed by one of these (`option get x && wp db
+# reset --yes`) would ride through on the prefix. Inside quotes of either kind bash treats every
+# one of them literally, which is what lets a SQL subquery's parens through.
+UNQUOTED_METACHARACTERS = (';', '&', '|', '(', ')', '<', '>', '\n')
+
+# Characters that begin a redirect, checked against BENIGN_REDIRECT for a `/dev/null` or
+# file-descriptor target before they're treated as disqualifying.
+REDIRECT_CHARACTERS = ('>', '<', '&')
+
+# Redirects that throw output away or shuffle file descriptors, matched at the position of the
+# `>`/`<`/`&` (any leading fd digit has already been read as an ordinary character). These can't
+# write a real file or start a second command, so they don't disqualify a line: `2>/dev/null`,
+# `>>/dev/null`, `&>/dev/null`, `< /dev/null`, and fd duplication like `2>&1`. The trailing
+# lookahead keeps `/dev/null` a whole word, so a redirect to `/dev/null.bak` or `/dev/nullx` still
+# prompts, and restricts `>&` to a bare fd number so `>&somefile` (a real write) still prompts.
+BENIGN_REDIRECT = re.compile(
+    r'(?:&?>>?\s*/dev/null|<\s*/dev/null|>&[0-9]+)(?![\w./-])'
+)
+
+# The same redirects, plus the optional leading file-descriptor digit, matched as whole tokens so
+# they can be dropped from the command line before it's tokenized. Bash consumes a redirection
+# before the command sees its argv, so leaving `2>/dev/null` in the token list would hand `wp` a
+# phantom positional -- harmless to a prefix match, but enough to make `db query`'s one-statement
+# check miscount. `(?<!\S)` keeps the leading digit its own token so a value like `wp_2` isn't
+# clipped.
+STRIP_REDIRECT = re.compile(
+    r'(?<!\S)[0-9]*(?:&?>>?\s*/dev/null|<\s*/dev/null|>&[0-9]+)(?![\w./-])'
+)
+
+# Tools that reach a binary without a shell in between, so the metacharacter guard has nothing to
+# defend and is skipped for them. Local WP's `localwp-agent-tools` addon splits its `args` string
+# with its own parser and passes the resulting array to Node's `execFile`, which takes an argv
+# directly -- see `lib/tools/wpcli.js` in that addon. Parens, `;`, and `$()` are inert there, and
+# leaving the guard on blocked every SQL query with a function call in it. Anything added here
+# must be verified the same way: an argv-taking call with no shell, checked in the code that runs.
+SHELL_FREE_TOOLS = frozenset({'mcp__local-wp__wp_cli'})
 
 # VIP environments whose data is disposable enough to auto-approve reads and writes against.
 # Deliberately conservative: production is absent by design, and so is every environment not
@@ -76,6 +116,41 @@ WP_DISQUALIFYING_GLOBAL_FLAGS = frozenset({'--context', '--exec', '--http', '--r
 # Flags the allowlist itself covers, so the global-flag walk must hand them over instead of
 # stepping past them.
 WP_TERMINAL_FLAGS = frozenset({'--info', '--version'})
+
+# The statements `wp db query` may run without a prompt. Anchoring at the first keyword means a
+# leading comment fails too, so `/*x*/ DELETE ...` can't hide behind one. A parenthesized query
+# or a CTE fails as well; both are read-only in practice, but recognizing them would mean parsing
+# SQL rather than matching its opening word.
+READ_ONLY_SQL_START = re.compile(r'\s*(?:select|show|describe|desc|explain)\b', re.IGNORECASE)
+
+# What turns a nominally read-only statement into something else. `INTO` catches
+# `SELECT ... INTO OUTFILE`, which writes a file wherever the database user can reach;
+# `LOAD_FILE` reads one back into the output. `ANALYZE` matters because `EXPLAIN ANALYZE` runs the
+# statement it's given rather than just planning it, and MySQL 8 accepts a `DELETE` there. A `;`
+# would let a second statement ride along, because mysql runs every statement in the string it's
+# handed.
+FORBIDDEN_SQL_PATTERNS = (
+    re.compile(r';'),
+    re.compile(r'\binto\b', re.IGNORECASE),
+    re.compile(r'\bload_file\b', re.IGNORECASE),
+    re.compile(r'\banalyze\b', re.IGNORECASE),
+)
+
+# The flags `wp db query` may carry. WP-CLI hands assoc args it doesn't recognize to mysql, so an
+# unlisted flag could smuggle in a second statement (`--execute=`) or a config file that runs one
+# (`--init-command=`, `--defaults-file=`). The list is closed for that reason, and holds mysql's
+# output formatting flags plus WP-CLI's own globals, which are safe after the subcommand as well
+# as before it.
+WP_DB_QUERY_ALLOWED_FLAGS = WP_SKIPPABLE_GLOBAL_FLAGS | frozenset({
+    '--batch',
+    '--column-names',
+    '--html',
+    '--silent',
+    '--skip-column-names',
+    '--table',
+    '--vertical',
+    '--xml',
+})
 
 WP_ALLOWED = [
     '--info',
@@ -130,6 +205,7 @@ WP_ALLOWED = [
     'plugin is-installed',
     'plugin list',
     'plugin update',
+    'post create',
     'post get',
     'post list',
     'post meta get',
@@ -234,6 +310,55 @@ def respond(decision, reason):
     sys.exit(0)
 
 
+def shell_metacharacter_reason(raw):
+    """Return why bash might run something extra beyond the matched prefix, or None.
+
+    Quoting is what decides for most metacharacters: bash treats `;`, `&`, `|`, `(`, `)`, `<`,
+    `>`, and a newline literally inside quotes of either kind, so a `(` in a SQL subquery cannot
+    start anything. Tracking quote state rather than scanning the raw string is the difference
+    between vouching for `db query "SELECT COUNT(*) ..."` and prompting for it.
+
+    An unterminated quote or a trailing backslash counts as a reason, because the rest of the line
+    can't be read.
+    """
+    for character in ALWAYS_DISQUALIFYING_METACHARACTERS:
+        if character in raw:
+            return f'"{character}" can expand to another command even inside double quotes'
+
+    quote = None
+    escaped = False
+    index = 0
+
+    while index < len(raw):
+        character = raw[index]
+
+        if escaped:
+            escaped = False
+        elif character == '\\' and quote != "'":
+            escaped = True
+        elif quote:
+            if character == quote:
+                quote = None
+        elif character in ('"', "'"):
+            quote = character
+        elif character in REDIRECT_CHARACTERS:
+            match = BENIGN_REDIRECT.match(raw, index)
+            if match:
+                index = match.end()
+                continue
+            return f'{character!r} outside quotes can redirect output or chain a second command'
+        elif character in UNQUOTED_METACHARACTERS:
+            return f'{character!r} outside quotes can chain a second command onto the prefix'
+
+        index += 1
+
+    if quote is not None:
+        return 'a quote is left open, so the rest of the line cannot be read'
+    if escaped:
+        return 'the line ends in a backslash, so it continues where this hook cannot see'
+    return None
+
+
 def matched_prefix(tokens, allowed):
     """Return the allowlist entry whose tokens lead `tokens`, or None.
 
@@ -243,6 +368,65 @@ def matched_prefix(tokens, allowed):
         prefix_tokens = prefix.split()
         if tokens[:len(prefix_tokens)] == prefix_tokens:
             return prefix
+    return None
+
+
+def validate_db_query(tokens, raw):
+    """Decide a `wp db query` invocation, where the SQL and the flags are what make it safe.
+
+    `tokens` starts at `db`; `raw` is the whole command line. Exactly one positional argument is
+    required: with no SQL at all, `wp db query` reads a statement from stdin, and with more than
+    one there's no single thing to check.
+    """
+    arguments = tokens[2:]
+    flags = [argument for argument in arguments if argument.startswith('-')]
+    statements = [argument for argument in arguments if not argument.startswith('-')]
+
+    if len(statements) != 1:
+        return ASK, 'wp db query needs exactly one SQL argument for this hook to check'
+
+    for flag in flags:
+        if flag.partition('=')[0] not in WP_DB_QUERY_ALLOWED_FLAGS:
+            return ASK, f'"{flag}" is not an allowlisted wp db query flag'
+
+    if not READ_ONLY_SQL_START.match(statements[0]):
+        return ASK, 'wp db query SQL does not start with a read-only statement'
+
+    # Searched against the whole command line rather than the parsed statement, because this
+    # hook's `shlex` parse and the Local WP addon's own argument splitter disagree over
+    # backslashes, and a raw-string search can't be fooled by that disagreement. The `;` pattern
+    # is the only thing catching a second statement, since a quoted `;` clears the metacharacter
+    # guard on the Bash path and no guard runs at all on a shell-free one.
+    for pattern in FORBIDDEN_SQL_PATTERNS:
+        if pattern.search(raw):
+            return ASK, f'wp db query matches "{pattern.pattern}", so it may not be read-only'
+
+    return ALLOW, '"wp db query" is allowlisted for read-only SQL'
+
+
+# Allowlist entries a prefix match can't express, keyed the same way so `matched_prefix` finds
+# them. Consulted before the prefix lists, and shared by the VIP delegate path.
+WP_VALIDATED = {
+    'db query': validate_db_query,
+}
+
+
+def match_wp_allowlist(subcommand_tokens, allowed, raw):
+    """Return a (decision, reason) pair for WP-CLI subcommand tokens, or None if nothing matched."""
+    validated = matched_prefix(subcommand_tokens, WP_VALIDATED)
+    if validated:
+        return WP_VALIDATED[validated](subcommand_tokens, raw)
+
+    prefix = matched_prefix(subcommand_tokens, allowed)
+    if prefix:
+        # WP-CLI honors `--exec`, `--require`, `--ssh`, and `--http` wherever they sit, not just
+        # ahead of the subcommand, so a prefix match has to rule them out across the whole line
+        # rather than trusting `normalize_wp` to have caught them among the leading flags.
+        for token in subcommand_tokens:
+            flag = token.partition('=')[0]
+            if flag in WP_DISQUALIFYING_GLOBAL_FLAGS:
+                return ASK, f'"{flag}" can run arbitrary code or retarget the command'
+        return ALLOW, f'"wp {prefix}" is allowlisted'
     return None
 
 
@@ -326,19 +510,19 @@ def normalize_wp(tokens):
     return tokens[index:], None
 
 
-def decide_wp(tokens, config):
+def decide_wp(tokens, config, raw):
     subcommand_tokens, disqualifying_flag = normalize_wp(tokens)
 
     if disqualifying_flag:
         return ASK, f'"{disqualifying_flag}" can run arbitrary code or retarget the command'
 
-    prefix = matched_prefix(subcommand_tokens, config['allowed'])
-    if prefix:
-        return ALLOW, f'"wp {prefix}" is allowlisted'
+    outcome = match_wp_allowlist(subcommand_tokens, config['allowed'], raw)
+    if outcome:
+        return outcome
     return ASK, 'wp command is not allowlisted'
 
 
-def decide_vip(tokens, config):
+def decide_vip(tokens, config, raw):
     """Decide a VIP invocation, gating on the environment before the subcommand allowlist."""
     subcommand_tokens, environment, violation = normalize_vip(tokens)
 
@@ -367,9 +551,12 @@ def decide_vip(tokens, config):
         if disqualifying_flag:
             return ASK, f'"{disqualifying_flag}" can run arbitrary code or retarget the command'
 
-        prefix = matched_prefix(proxied_tokens, delegate)
-        if prefix:
-            return ALLOW, f'"wp {prefix}" is allowlisted, on VIP environment "{environment}"'
+        outcome = match_wp_allowlist(proxied_tokens, delegate, raw)
+        if outcome:
+            decision, reason = outcome
+            if decision == ALLOW:
+                reason = f'{reason}, on VIP environment "{environment}"'
+            return decision, reason
         return ASK, 'proxied WP-CLI command is not allowlisted'
 
     prefix = matched_prefix(subcommand_tokens, config['allowed'])
@@ -384,12 +571,12 @@ NORMALIZERS = {
 }
 
 
-def decide(base_command, tokens):
+def decide(base_command, tokens, raw):
     config = COMMANDS[base_command]
 
     normalizer = NORMALIZERS.get(config.get('normalizer'))
     if normalizer:
-        return normalizer(tokens, config)
+        return normalizer(tokens, config, raw)
 
     prefix = matched_prefix(tokens, config['allowed'])
     if prefix:
@@ -426,6 +613,7 @@ def resolve_base_command(tokens):
 def main():
     payload = json.load(sys.stdin)
     tool_input = payload.get('tool_input', {})
+    shell_free = payload.get('tool_name') in SHELL_FREE_TOOLS
 
     # The Local WP MCP server passes the WP-CLI arguments alone; the Bash tool passes the whole
     # command line, binary included.
@@ -443,11 +631,18 @@ def main():
     if not raw_arguments and not COVERED_COMMAND_MENTION.search(raw):
         no_opinion()
 
-    if any(character in raw for character in SHELL_METACHARACTERS):
-        respond(ASK, 'command carries a shell metacharacter, so a prefix match cannot vouch for it')
+    if not shell_free:
+        metacharacter_reason = shell_metacharacter_reason(raw)
+        if metacharacter_reason:
+            respond(ASK, f'{metacharacter_reason}, so a prefix match cannot vouch for this command')
+
+    # On the shell path the guard has already confirmed every redirect targets `/dev/null` or an
+    # fd, so dropping them leaves the argv `wp` actually receives. The MCP path has no shell, so
+    # its `args` are passed verbatim and nothing is stripped.
+    command_for_tokens = raw if raw_arguments else STRIP_REDIRECT.sub(' ', raw)
 
     try:
-        tokens = shlex.split(raw)
+        tokens = shlex.split(command_for_tokens)
     except ValueError:
         respond(ASK, 'command could not be parsed into arguments')
 
@@ -466,7 +661,7 @@ def main():
             respond(ASK, 'a covered command sits behind a launcher this hook cannot vouch for')
         no_opinion()
 
-    respond(*decide(base_command, tokens))
+    respond(*decide(base_command, tokens, raw))
 
 
 if __name__ == '__main__':

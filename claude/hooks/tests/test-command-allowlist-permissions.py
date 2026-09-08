@@ -70,6 +70,7 @@ class WpAllowlistTest(DecisionTest):
         self.assertAllows('wp core update')
         self.assertAllows('wp plugin update akismet')
         self.assertAllows('wp transient delete update_plugins')
+        self.assertAllows('wp post create --post_title=Test --post_status=draft')
 
     def test_destructive_subcommands_ask(self):
         self.assertAsks('wp user create admin admin@example.com')
@@ -118,6 +119,24 @@ class WpGlobalFlagTest(DecisionTest):
     def test_unknown_leading_global_asks(self):
         self.assertAsks('wp --not-a-real-global post list')
 
+    def test_trailing_code_loading_globals_ask(self):
+        """WP-CLI honors these after the subcommand too, so a prefix match must rule them out."""
+        self.assertAsks('wp cli version --exec="phpinfo();"')
+        self.assertAsks('wp option get siteurl --require=/tmp/evil.php')
+        self.assertAsks('wp option get siteurl --ssh=user@host')
+        self.assertAsks('wp post list --http=example.com')
+
+    def test_trailing_global_asks_on_the_vip_delegate(self):
+        self.assertAsks('vip @app.staging wp option get siteurl --require=/tmp/evil.php')
+
+    def test_trailing_global_asks_on_the_mcp_path(self):
+        stdout, code = run({
+            'tool_name': 'mcp__local-wp__wp_cli',
+            'tool_input': {'args': 'option get siteurl --require=/tmp/evil.php'},
+        })
+        self.assertEqual(code, 0)
+        self.assertEqual(decision(stdout), ASK)
+
 
 class MetacharacterGuardTest(DecisionTest):
 
@@ -139,6 +158,37 @@ class MetacharacterGuardTest(DecisionTest):
     def test_quoted_substitution_still_asks(self):
         """The guard runs before tokenizing, so quotes can't hide a metacharacter from it."""
         self.assertAsks('wp option get "$(id)"')
+
+
+class DevNullRedirectTest(DecisionTest):
+    """A redirect to `/dev/null` or a file descriptor throws output away, so it doesn't disqualify
+    an otherwise allowlisted command."""
+
+    def test_redirects_to_dev_null_allowed(self):
+        self.assertAllows('wp site list --skip-packages 2>/dev/null')
+        self.assertAllows('wp option get home >/dev/null')
+        self.assertAllows('wp option get home 2> /dev/null')
+        self.assertAllows('wp option get home &>/dev/null')
+        self.assertAllows('wp option get home >>/dev/null')
+        self.assertAllows('wp option get home < /dev/null')
+
+    def test_fd_duplication_allowed(self):
+        self.assertAllows('wp option get home 2>&1')
+
+    def test_db_query_with_a_dev_null_redirect_allowed(self):
+        """The redirect is stripped before tokenizing, so it isn't counted as a second statement."""
+        self.assertAllows('wp db query "SELECT COUNT(*) FROM wp_blogs" --skip-column-names 2>/dev/null')
+
+    def test_redirect_to_a_real_file_still_asks(self):
+        self.assertAsks('wp post list > /tmp/out')
+        self.assertAsks('wp option get home >/dev/null.bak')
+        self.assertAsks('wp option get home >/dev/nullx')
+        self.assertAsks('wp option get home >&somefile')
+
+    def test_redirect_cannot_smuggle_a_second_command(self):
+        self.assertAsks('wp option get x 2>/dev/null; rm -rf /tmp/x')
+        self.assertAsks('wp option get x 2>/dev/null && rm -rf /tmp/x')
+        self.assertAsks('wp db query "SELECT 1 FROM wp_posts" "DROP TABLE x" 2>/dev/null')
 
 
 class BinaryResolutionTest(DecisionTest):
@@ -291,6 +341,133 @@ class McpInputTest(DecisionTest):
 
     def test_empty_args_ask(self):
         self.assertEqual(self.outcome_from_args(''), ASK)
+
+    def test_metacharacters_are_inert_without_a_shell(self):
+        """The addon hands an argv to `execFile`, so nothing here reaches a shell."""
+        self.assertEqual(self.outcome_from_args('db query "SELECT COUNT(*) FROM wp_posts"'), ALLOW)
+        self.assertEqual(
+            self.outcome_from_args('db query "SELECT ID FROM wp_posts WHERE ID > 5"'), ALLOW
+        )
+        self.assertEqual(self.outcome_from_args('db query "SELECT \'$(whoami)\'"'), ALLOW)
+
+    def test_real_redirect_rule_query_allowed(self):
+        """The 2026-08-31 prompt this entry was added for."""
+        args = (
+            'db query "SELECT p.ID, MAX(CASE WHEN m.meta_key=\'_redirect_rule_from\' THEN '
+            'm.meta_value END) AS rfrom FROM wp_17_posts p JOIN wp_17_postmeta m ON '
+            "m.post_id=p.ID WHERE p.post_type='redirect_rule' GROUP BY p.ID HAVING rfrom LIKE "
+            "'%department%'\" --skip-column-names --url=publix.test/jobs"
+        )
+        self.assertEqual(self.outcome_from_args(args), ALLOW)
+
+    def test_writes_still_ask_without_the_guard(self):
+        self.assertEqual(self.outcome_from_args('db query "DELETE FROM wp_posts WHERE ID = 1"'), ASK)
+        self.assertEqual(self.outcome_from_args('db query "SELECT 1; DROP TABLE wp_posts"'), ASK)
+
+
+class WpDbQueryTest(DecisionTest):
+    """`db query` is validated rather than prefix-matched, because its arguments decide the risk."""
+
+    def test_read_only_statements_allowed(self):
+        self.assertAllows("wp db query 'SELECT option_value FROM wp_options'")
+        self.assertAllows("wp db query 'select option_value FROM wp_options'")
+        self.assertAllows("wp db query 'SHOW TABLES'")
+        self.assertAllows("wp db query 'DESCRIBE wp_posts'")
+        self.assertAllows("wp db query 'EXPLAIN SELECT 1 FROM wp_posts'")
+
+    def test_writing_statements_ask(self):
+        self.assertAsks("wp db query 'DELETE FROM wp_posts'")
+        self.assertAsks("wp db query 'UPDATE wp_options SET option_value = 1'")
+        self.assertAsks("wp db query 'INSERT INTO wp_options VALUES 1'")
+        self.assertAsks("wp db query 'DROP TABLE wp_posts'")
+        self.assertAsks("wp db query 'TRUNCATE wp_posts'")
+        self.assertAsks("wp db query 'GRANT ALL ON x TO y'")
+
+    def test_leading_comment_cannot_hide_a_write(self):
+        self.assertAsks("wp db query '/*! SELECT */ DELETE FROM wp_posts'")
+
+    def test_select_that_writes_or_reads_files_asks(self):
+        self.assertAsks("wp db query 'SELECT 1 FROM wp_posts INTO OUTFILE \"/tmp/x\"'")
+        self.assertAsks("wp db query 'SELECT LOAD_FILE \"/etc/passwd\"'")
+
+    def test_explain_analyze_asks_because_it_executes(self):
+        self.assertAsks("wp db query 'EXPLAIN ANALYZE DELETE FROM wp_posts'")
+
+    def test_second_statement_asks(self):
+        self.assertAsks("wp db query 'SELECT 1 FROM wp_posts; DROP TABLE wp_posts'")
+
+    def test_unlisted_flag_asks(self):
+        """WP-CLI passes flags it doesn't recognize to mysql, so `--execute` runs a real query."""
+        self.assertAsks(
+            'wp db query "SELECT 1 FROM wp_posts" --execute="DROP TABLE wp_posts"'
+        )
+        self.assertAsks('wp db query "SELECT 1 FROM wp_posts" --defaults-file=/tmp/my.cnf')
+
+    def test_output_flags_and_globals_allowed(self):
+        self.assertAllows('wp db query "SELECT 1 FROM wp_posts" --skip-column-names')
+        self.assertAllows('wp db query "SELECT 1 FROM wp_posts" --url=publix.test/jobs')
+
+    def test_missing_sql_asks(self):
+        """With no statement, `wp db query` reads one from stdin."""
+        self.assertAsks('wp db query')
+        self.assertAsks('wp db query --skip-column-names')
+
+    def test_two_positionals_ask(self):
+        self.assertAsks('wp db query "SELECT 1 FROM wp_posts" "DROP TABLE wp_posts"')
+
+    def test_other_db_subcommands_are_unaffected(self):
+        self.assertAllows('wp db tables')
+        self.assertAsks('wp db export dump.sql')
+
+    def test_quoted_subquery_allowed_on_the_bash_path(self):
+        """Bash treats a quoted paren literally, so a subquery can't chain a second command."""
+        self.assertAllows('wp db query "SELECT COUNT(*) FROM wp_posts"')
+        self.assertAllows(
+            'wp --skip-packages db query "SELECT p.ID FROM wp_posts p WHERE '
+            "p.ID=(SELECT post_parent FROM wp_posts WHERE ID=10966)\" --skip-column-names"
+        )
+        self.assertAllows(
+            'wp --skip-packages db query "SELECT tbl FROM (SELECT \'wp_options\' AS tbl, '
+            "COUNT(*) AS n FROM wp_options WHERE option_value LIKE '%pdf%') x\" "
+            '--skip-column-names'
+        )
+
+    def test_expansion_in_the_sql_still_asks(self):
+        self.assertAsks('wp db query "SELECT $(whoami) FROM wp_posts"')
+        self.assertAsks('wp db query "SELECT `whoami` FROM wp_posts"')
+
+    def test_local_app_binary_spelling_allowed(self):
+        binary = '/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp'
+        self.assertAllows(f"{binary} db query 'SELECT 1 FROM wp_posts'")
+
+    def test_vip_delegate_inherits_the_entry(self):
+        self.assertAllows("vip @app.staging wp db query 'SELECT 1 FROM wp_posts'")
+        self.assertAsks("vip @app.staging wp db query 'DELETE FROM wp_posts'")
+        self.assertAsks("vip @app.production wp db query 'SELECT 1 FROM wp_posts'")
+
+
+class ShellQuotingTest(DecisionTest):
+    """The metacharacter guard tracks quote state, because bash does."""
+
+    def test_unquoted_separators_ask(self):
+        self.assertAsks('wp option get siteurl; wp db reset --yes')
+        self.assertAsks('wp option get siteurl & wp db reset --yes')
+        self.assertAsks('wp option get siteurl > /tmp/out')
+
+    def test_quoted_separators_allowed(self):
+        self.assertAllows("wp option update blogname 'Foo; Bar'")
+        self.assertAllows('wp option update blogname "Foo | Bar"')
+        self.assertAllows("wp post list --post_type='page' --format=json")
+
+    def test_expansion_asks_however_it_is_quoted(self):
+        self.assertAsks("wp option update blogname 'literal $HOME'")
+        self.assertAsks('wp option update blogname "$(whoami)"')
+
+    def test_escaped_separator_outside_quotes_allowed(self):
+        self.assertAllows('wp option update blogname Foo\\;Bar')
+
+    def test_trailing_backslash_asks(self):
+        self.assertAsks('wp option get siteurl \\')
 
 
 class NoOpinionTest(DecisionTest):
