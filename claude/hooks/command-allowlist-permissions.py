@@ -634,7 +634,9 @@ def main():
     if not shell_free:
         metacharacter_reason = shell_metacharacter_reason(raw)
         if metacharacter_reason:
-            respond(ASK, f'{metacharacter_reason}, so a prefix match cannot vouch for this command')
+            respond(ASK, f'{metacharacter_reason}, so a prefix match cannot vouch for this command. '
+                         'Send one bare command per call (running-commands.md); split a chain or '
+                         'drop a redirect rather than rewording to get past this hook.')
 
     # On the shell path the guard has already confirmed every redirect targets `/dev/null` or an
     # fd, so dropping them leaves the argv `wp` actually receives. The MCP path has no shell, so

@@ -182,7 +182,7 @@
       "WebFetch(domain:widenv2.docs.apiary.io)",
       "WebFetch(domain:wpackagist.org)",
       "WebFetch(domain:www.salesforce.com)",
-	  "WebFetch(domain:www.homedepot.com)",
+      "WebFetch(domain:www.homedepot.com)",
       "WebFetch(domain:www.lowes.com)",
       "WebFetch(domain:www.rockwool.com)",
       "WebFetch(domain:www.owenscorning.com)",
@@ -523,6 +523,9 @@
     },
     {
       "serverName": "claude.ai Zoom for Claude"
+    },
+    {
+      "serverName": "claude.ai Atlassian Rovo"
     }
   ],
   "hooks": {
