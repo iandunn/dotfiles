@@ -404,6 +404,48 @@ class LinkedWorktreeTest(unittest.TestCase):
     def test_dollar_in_commit_message_asks(self):
         self.assertInWorktree(ASK, 'git commit -m "costs $5"')
 
+    def test_multi_paragraph_commit_message_allowed(self):
+        """Newlines inside the -m argument are one quoted string, not a second command."""
+        self.assertInWorktree(
+            ALLOW,
+            'git commit -m "Docs: Correct the quality\n\nThe pipeline writes at 95, not 92."',
+        )
+
+    def test_newline_outside_quotes_asks(self):
+        self.assertInWorktree(ASK, 'git add a.log\ngit push')
+
+    def test_semicolon_inside_quotes_allowed(self):
+        self.assertInWorktree(ALLOW, 'git commit -m "Hooks: Fix the guard; it scanned raw text"')
+
+    def test_redirect_inside_quotes_allowed(self):
+        self.assertInWorktree(ALLOW, 'git commit -m "Hooks: Prefer > over >> when truncating"')
+
+    def test_backtick_inside_single_quotes_allowed(self):
+        """The commit convention backticks code references, so single quotes must carry them."""
+        self.assertInWorktree(ALLOW, "git commit -m 'Hooks: Rewrite `has_shell_operators`'")
+
+    def test_dollar_inside_single_quotes_allowed(self):
+        self.assertInWorktree(ALLOW, "git commit -m 'Costs $5 to run'")
+
+    def test_backtick_inside_double_quotes_asks(self):
+        self.assertInWorktree(ASK, 'git commit -m "Hooks: Rewrite `whoami`"')
+
+    def test_ansi_c_quoting_asks(self):
+        """`$'...'` is caught because its `$` is read while still unquoted."""
+        self.assertInWorktree(ASK, "git commit -m $'first\\nsecond'")
+
+    def test_escaped_dollar_inside_double_quotes_allowed(self):
+        self.assertInWorktree(ALLOW, 'git commit -m "Costs \\$5 to run"')
+
+    def test_unterminated_quote_asks(self):
+        self.assertInWorktree(ASK, 'git commit -m "never closed')
+
+    def test_trailing_backslash_asks(self):
+        self.assertInWorktree(ASK, 'git add a.log \\')
+
+    def test_command_substitution_outside_quotes_asks(self):
+        self.assertInWorktree(ASK, 'git add $(ls)')
+
 
 class BranchDeleteTest(unittest.TestCase):
     """Deleting a worktree branch is allowed only when HEAD already holds its content."""
@@ -530,10 +572,67 @@ class ClaudeTmpExemptionTest(unittest.TestCase):
         out, _ = run('rm .claude/tmp/a.txt other.txt', cwd='/tmp')
         self.assertEqual(decision(out), ASK)
 
-    def test_rm_absolute_tmp_path_not_exempt(self):
-        """The allow rules are relative-only, so the exemption is too."""
+    def test_rm_absolute_tmp_path_elsewhere_not_exempt(self):
+        """Silence is relative-only, and this scratch belongs to another directory."""
         out, _ = run('rm /Users/x/project/.claude/tmp/a.txt', cwd='/tmp')
         self.assertEqual(decision(out), ASK)
+
+
+class AbsoluteClaudeTmpTest(unittest.TestCase):
+    """An absolutely-spelled sweep into the cwd's own .claude/tmp/ is allowed by the hook.
+
+    Silence cannot serve here: settings.json's `.claude/tmp/` rules are literal
+    prefixes that no absolute path matches.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.temp = tempfile.mkdtemp(prefix='worktree-hook-abs-tmp-')
+        cls.project = os.path.realpath(os.path.join(cls.temp, 'project'))
+        cls.scratch = os.path.join(cls.project, '.claude', 'tmp')
+        cls.other_scratch = os.path.join(
+            os.path.realpath(cls.temp), 'other', '.claude', 'tmp')
+
+        os.makedirs(cls.scratch)
+        os.makedirs(cls.other_scratch)
+        Path(cls.scratch, 'preview.py').write_text('scratch\n')
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.temp, ignore_errors=True)
+
+    def assertInProject(self, expected, command):
+        out, code = run(command, cwd=self.project)
+        self.assertEqual(code, 0, f'non-zero exit for: {command}')
+        self.assertEqual(decision(out), expected, f'wrong decision for: {command}')
+
+    def test_absolute_mv_out_of_a_worktree_into_own_scratch_allowed(self):
+        """The reported failure: absolute paths, cwd in the main checkout."""
+        source = os.path.join(
+            self.project, '.claude', 'worktrees', 'pipeline', '.claude', 'tmp', 'preview.py')
+        self.assertInProject(
+            ALLOW, f'mv {source} {os.path.join(self.scratch, "preview.py")}')
+
+    def test_absolute_rm_inside_own_scratch_allowed(self):
+        self.assertInProject(ALLOW, f'rm {os.path.join(self.scratch, "preview.py")}')
+
+    def test_absolute_cp_into_own_scratch_allowed(self):
+        self.assertInProject(ALLOW, f'cp shot.png {os.path.join(self.scratch, "shot.png")}')
+
+    def test_scratch_directory_itself_allowed(self):
+        """Parity with the relative rules, which exempt the directory too."""
+        self.assertInProject(ALLOW, f'rm -rf {self.scratch}')
+
+    def test_absolute_mv_into_another_directorys_scratch_asks(self):
+        dest = os.path.join(self.other_scratch, 'preview.py')
+        self.assertInProject(ASK, f'mv preview.py {dest}')
+
+    def test_absolute_rm_outside_own_scratch_asks(self):
+        self.assertInProject(ASK, f'rm {os.path.join(self.project, "important.txt")}')
+
+    def test_expandable_operand_in_own_scratch_asks(self):
+        """Single quotes get it past the operator guard, so the operand check must catch it."""
+        self.assertInProject(ASK, f"rm '{os.path.join(self.scratch, '$NAME.txt')}'")
 
 
 if __name__ == '__main__':

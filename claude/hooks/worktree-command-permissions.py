@@ -3,12 +3,28 @@
 PreToolUse permission gate for `cp`, `git add`, `git commit`, `rm`, `mv`, and
 `git worktree remove`.
 
-Before any gate runs, one shared guard: a gated command whose raw text contains
-shell operators (`;`, `&`, `|`, `>`, `<`, `$`, backtick, newline) always asks.
-An "allow" from this hook covers the ENTIRE command line, so without this,
-`git commit -m x && <anything>` would ride a worktree approval out of the
-worktree. Parsing operators correctly is the attacker's game; refusing to
-reason about them is the defensible move.
+Before any gate runs, one shared guard: a gated command carrying a shell
+operator that could run something beyond it always asks. An "allow" from this
+hook covers the ENTIRE command line, so without this, `git commit -m x &&
+<anything>` would ride a worktree approval out of the worktree.
+
+The guard tracks quote state rather than scanning the raw line, because bash
+does. `;`, `&`, `|`, `<`, `>`, and a newline chain a second command only
+outside quotes; inside quotes of either kind bash treats each of them
+literally. That distinction is what lets a multi-paragraph `git commit -m`
+message through, whose body is one quoted argument no matter how many newlines
+it holds. `$` and a backtick expand inside double quotes as well, so they are
+refused there and unquoted alike, and permitted only inside single quotes,
+where bash performs no expansion or escaping whatsoever. `$'...'` cannot slip
+past on that permission: its `$` is read while still unquoted, before the quote
+opens. An unterminated quote or a trailing backslash asks, since the rest of
+the line cannot be read.
+
+Single-quoted `$` and backticks are permitted because the commit convention in
+CLAUDE.md puts backticks around code references, so refusing them would prompt
+for nearly every commit message this gate exists to approve. The rm/mv/cp gates
+re-check their own operands for `$` and backtick regardless, so relaxing the
+guard here does not relax containment there.
 
 Four independent gates, each keyed on what actually makes the command safe:
 
@@ -78,6 +94,16 @@ allow rules exist to approve. Silence hands the decision back to them. The
 shared operator guard runs first, so a chained or `$`-bearing command never
 reaches this exemption.
 
+The same sweep written with ABSOLUTE paths is allowed here rather than passed
+back, and that asymmetry is deliberate. Those settings.json rules are literal
+prefixes that an absolute path can never match, so silence would drop the
+command to the auto-mode classifier with no guaranteed approval. Since
+`running-commands.md` tells agents to write absolute paths, that spelling is
+the one scratch cleanup actually arrives in. The operand must land inside the
+WORKING DIRECTORY's own `.claude/tmp/`, not merely some path containing those
+segments, which is what stops it sanctioning a sweep into another project's
+scratch. The resulting grant matches what the relative rules already give.
+
 `mv` -- auto-approved only when the working directory is a sanctioned worktree,
 every operand (sources AND destination) is contained, and nothing unrecoverable
 gets overwritten. Unlike `rm`, sources need no tracked requirement: a move
@@ -99,6 +125,10 @@ Source globs are expanded and containment-checked like rm's. A destination
 that is a relative path under `.claude/tmp/` makes the hook stay silent, same
 rationale as the rm exemption: sweeping scratch into `.claude/tmp/` is
 sanctioned cleanup owned by settings.json's `mv * .claude/tmp/*` allow rules.
+An absolute destination inside the working directory's own `.claude/tmp/` is
+allowed here instead, for the reason the rm exemption gives. Only the
+destination is examined either way, since that is the operand that decides
+where the file ends up.
 
 `cp` -- same shape as mv: the destination is where the danger lives, and it
 gets mv's checks (contained, nothing untracked overwritten, realpath-resolved
@@ -168,6 +198,14 @@ Note that the hardcoded bash checks in Claude Code (`cd-git-compound`,
 re-escalated after a hook allow -- only "rule", "safetyCheck", and
 "sandboxOverride" are. A hook "allow" therefore does clear those three.
 
+A `git commit` run with `dangerouslyDisableSandbox` inside a sanctioned
+worktree has been observed completing with no prompt. That was an auto-mode
+session, where the classifier could have approved the re-escalated sandbox
+override on its own rather than the allow clearing it, and the autoMode
+`soft_deny` list exempts worktree commits by name. Sessions here run in auto
+mode, so the promptless outcome is the real one either way; what it does not
+establish is how the same command behaves with auto mode off.
+
 A linked worktree is detected by comparing `git rev-parse --git-dir` against
 `--git-common-dir`: they resolve to the same path in the main working tree and
 differ in a linked worktree (git-dir is <common-dir>/worktrees/<name>).
@@ -209,20 +247,56 @@ GIT_GLOBAL_FLAGS_TAKING_A_VALUE = {
 }
 
 
-SHELL_OPERATOR_CHARS = (';', '&', '|', '>', '<', '$', '`', '\n')
+# Operators that expand into another command wherever bash still expands anything, which is
+# everywhere but inside single quotes.
+EXPANDING_OPERATORS = ('$', '`')
+
+# Operators that chain a second command only when they sit outside quotes. Inside quotes of
+# either kind bash treats every one of them literally, which is what lets the newlines in a
+# multi-paragraph commit message through.
+CHAINING_OPERATORS = (';', '&', '|', '<', '>', '\n')
 
 
-def has_shell_operators(command):
-    return any(char in command for char in SHELL_OPERATOR_CHARS)
+def shell_operator_reason(command):
+    """Return why bash might run more than this one gated command, or None."""
+    quote = None
+    escaped = False
+
+    for character in command:
+        if escaped:
+            escaped = False
+        elif character == '\\' and quote != "'":
+            escaped = True
+        elif quote == "'":
+            if character == "'":
+                quote = None
+        elif quote == '"':
+            if character == '"':
+                quote = None
+            elif character in EXPANDING_OPERATORS:
+                return f'{character!r} expands even inside double quotes'
+        elif character in ('"', "'"):
+            quote = character
+        elif character in EXPANDING_OPERATORS:
+            return f'{character!r} outside quotes can expand into another command'
+        elif character in CHAINING_OPERATORS:
+            return f'{character!r} outside quotes can chain a second command onto this one'
+
+    if quote is not None:
+        return 'a quote is left open, so the rest of the line cannot be read'
+    if escaped:
+        return 'the line ends in a backslash, so it continues where this hook cannot see'
+    return None
 
 
 def is_gated_command(command):
     """True for the commands this hook gates, checked on the raw string.
 
     Deliberately loose on git: only add/commit/worktree-remove are gated, but
-    when this is consulted the command carries shell operators, and matching
-    subcommands precisely under those conditions is exactly the parsing game
-    the operator guard exists to refuse.
+    this decides which lines the operator guard runs on, and a line carrying an
+    operator is exactly the kind whose subcommand cannot be identified
+    reliably. Answering yes for every git line costs nothing, since a git line
+    with no operator falls through to the real subcommand check below.
     """
     stripped = command.strip()
     if stripped.startswith('command '):
@@ -237,6 +311,42 @@ def is_relative_claude_tmp_path(operand):
     normalized = os.path.normpath(operand)
     scratch_dir = os.path.join('.claude', 'tmp')
     return normalized == scratch_dir or normalized.startswith(scratch_dir + os.sep)
+
+
+def is_cwd_claude_tmp_path(operand, cwd):
+    """True if the operand resolves inside the working directory's own `.claude/tmp/`.
+
+    The final component is left unresolved for the same reason containment does
+    it: a symlink operand names the link, not what it points at.
+    """
+    scratch_root = os.path.join(os.path.realpath(cwd), '.claude', 'tmp')
+    absolute = os.path.normpath(os.path.join(cwd, operand))
+    parent = os.path.realpath(os.path.dirname(absolute))
+    resolved = os.path.join(parent, os.path.basename(absolute))
+    return resolved == scratch_root or resolved.startswith(scratch_root + os.sep)
+
+
+def sweeps_into_cwd_scratch(operands, cwd):
+    """True if every operand lands in this working directory's `.claude/tmp/`.
+
+    This is the absolutely-spelled twin of the `is_relative_claude_tmp_path`
+    exemption, and it exists because `running-commands.md` tells agents to write
+    absolute paths, so that is the spelling scratch cleanup actually arrives in.
+    The two are handled differently: a relative operand makes the hook stay
+    silent so settings.json's `.claude/tmp/` allow rules decide, while an
+    absolute one is allowed here, because those rules are literal prefixes that
+    an absolute path can never match and silence would drop the command to the
+    auto-mode classifier with no guaranteed approval.
+
+    Scoping to the working directory's own scratch directory, rather than any
+    path with `.claude/tmp/` in it, is what keeps this from sanctioning a sweep
+    into some other project's scratch. The grant that results is the same one
+    the relative rules already give.
+    """
+    return bool(operands) and all(
+        not expands_after_this_hook(operand) and is_cwd_claude_tmp_path(operand, cwd)
+        for operand in operands
+    )
 
 
 def strip_command_prefix(tokens):
@@ -457,6 +567,9 @@ def decide_rm(tokens, cwd):
     if operands and all(is_relative_claude_tmp_path(operand) for operand in operands):
         return None
 
+    if sweeps_into_cwd_scratch(operands, cwd):
+        return 'allow', "Every operand is in this directory's own .claude/tmp/ scratch"
+
     root = sanctioned_worktree_root(cwd)
     if not root:
         return 'ask', 'Not inside a .claude/worktrees/ worktree; confirm this rm'
@@ -494,6 +607,9 @@ def decide_mv(tokens, cwd):
 
     if operands and is_relative_claude_tmp_path(operands[-1]):
         return None
+
+    if operands and sweeps_into_cwd_scratch(operands[-1:], cwd):
+        return 'allow', "mv into this directory's own .claude/tmp/ scratch"
 
     root = sanctioned_worktree_root(cwd)
     if not root:
@@ -559,6 +675,9 @@ def decide_cp(tokens, cwd):
 
     if operands and is_relative_claude_tmp_path(operands[-1]):
         return None
+
+    if operands and sweeps_into_cwd_scratch(operands[-1:], cwd):
+        return 'allow', "cp into this directory's own .claude/tmp/ scratch"
 
     root = sanctioned_worktree_root(cwd)
     if not root:
@@ -627,9 +746,11 @@ def main():
     command = data.get('tool_input', {}).get('command', '')
     cwd = data.get('cwd') or os.getcwd()
 
-    if is_gated_command(command) and has_shell_operators(command):
-        emit('ask', 'Shell operators chain this beyond a single gated command; confirm it')
-        return
+    if is_gated_command(command):
+        operator_reason = shell_operator_reason(command)
+        if operator_reason:
+            emit('ask', f'{operator_reason}, so this may reach beyond one gated command; confirm it')
+            return
 
     if is_worktree_remove(command):
         try:
