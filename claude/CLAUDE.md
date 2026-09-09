@@ -30,6 +30,8 @@ Senior Web Engineer. Stack: WordPress (PHP), vanilla JS or React for frontend. D
 
 - When you give me `curl` commands to run, put everything on a single line rather than splitting across multiple lines with a `\`.
 
+- When you draft something I'm going to paste somewhere else -- a ticket, a PR body, a ticket comment, a commit message, a Slack message, an email -- put the whole draft inside a single fenced code block, with a `---` on its own line immediately before the opening fence and another immediately after the closing fence. The terminal renders markdown, so a draft shown as plain text loses its headings, backticks, and list markers when I copy it, and I end up retyping the formatting. The `---` lines make it obvious where the draft starts and ends, so I don't paste your surrounding commentary along with it.
+
 - If you have any questions that might change your answer, first stop and ask them before responding about anything else.
 
 
