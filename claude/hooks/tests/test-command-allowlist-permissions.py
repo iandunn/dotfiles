@@ -61,6 +61,8 @@ class WpAllowlistTest(DecisionTest):
         self.assertAllows('wp plugin list')
         self.assertAllows('wp plugin list --format=json')
         self.assertAllows('wp option get siteurl')
+        self.assertAllows('wp site option get some_token_url')
+        self.assertAllows('wp site option list')
         self.assertAllows('wp user list')
         self.assertAllows('wp help')
 
@@ -80,6 +82,8 @@ class WpAllowlistTest(DecisionTest):
         self.assertAsks('wp db reset')
         self.assertAsks('wp db import backup.sql')
         self.assertAsks('wp post delete 1')
+        self.assertAsks('wp site option update home http://example.test')
+        self.assertAsks('wp site option delete my_option')
         self.assertAsks('wp eval "echo 1;"')
 
     def test_narrower_transient_delete_does_not_widen(self):

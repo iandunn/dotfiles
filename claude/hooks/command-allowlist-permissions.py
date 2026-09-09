@@ -219,6 +219,8 @@ WP_ALLOWED = [
     'role list',
     'sidebar list',
     'site list',
+    'site option get',
+    'site option list',
     'site url',
     'taxonomy get',
     'taxonomy list',
