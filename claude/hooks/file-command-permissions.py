@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-PreToolUse permission gate for `cp`, `git add`, `git commit`, `rm`, `mv`, and
-`git worktree remove`.
+PreToolUse permission gate for `cp`, `git add`, `git commit`, `rm`, `mv`,
+`git worktree remove`, and the read-only git subcommands in
+GIT_READ_ONLY_SUBCOMMANDS.
 
 Before any gate runs, one shared guard: a gated command carrying a shell
 operator that could run something beyond it always asks. An "allow" from this
@@ -193,9 +194,36 @@ uncommitted work, so it stays behind a prompt. This gate is deliberately
 flag-based rather than path-based: git has already established that the target
 is a linked worktree, which is a stronger guarantee than any path prefix.
 
+`git [-C <path>] <read-only subcommand>` -- auto-approved for a subcommand in
+GIT_READ_ONLY_SUBCOMMANDS when no global option other than `-C <path>` sits
+between `git` and the subcommand, and no argument after it names a program to
+run or a file to write. A settings.json rule like `Bash(git -C * diff *)`
+cannot express the first half: its wildcard spans as many tokens as it likes,
+so `git -C . -c diff.external=/bin/sh diff HEAD~1 HEAD` matched it and ran the
+injected program with no prompt. Each global option is a way to change what a
+read-only subcommand executes (`-c` sets any config, `--exec-path` swaps the
+git binaries themselves), so none of them is vouched for. The `-C` path itself
+is unrestricted, matching what those rules granted: reading a repository
+anywhere on the machine is the point of the flag.
+
+The second half covers the options a prefix rule like `Bash(git grep *)` waves
+through, each observed running or writing with no prompt:
+
+    --output[=<file>]            diff/log/show/stash list write their output there
+    grep -O / --open-files-in-pager  runs the named program on the matching files
+    fetch --upload-pack          runs the named program to serve the fetch
+    fetch <non-remote-name>      a path or URL is served by a program fetch runs
+                                 locally, and an `ext::<command>` helper IS one
+
+`git fetch` therefore auto-approves only against a plain remote name (or none,
+for `--all`); a refspec with `:` in it prompts too, which is a false positive
+accepted for the simpler rule.
+
 This hook is the SOLE authority for these commands: the corresponding entries
-(`rm`, `git add`, `git commit`, `mv` in ask; a blanket `cp *` in allow) were
-removed from settings.json's permission lists,
+(`rm`, `git add`, `git commit`, `mv` in ask; a blanket `cp *`, the ten
+`git -C * <subcommand> *` rules, and the bare `git diff *`, `git fetch *`,
+`git grep *`, `git log *`, and `git show *` rules in allow) were removed from
+settings.json's permission lists,
 because settings rules are evaluated regardless of hook output and would
 override the hook's "allow" (see the "Hook decisions don't bypass permission
 rules" note in the Claude Code permissions docs). Emitting "ask" here
@@ -256,6 +284,23 @@ GIT_GLOBAL_FLAGS_TAKING_A_VALUE = {
     '--super-prefix', '--config-env',
 }
 
+# Subcommands that leave the working tree alone, auto-approved with no global option beyond `-C`
+# and no program-running or file-writing argument. A multi-word entry has to match the tokens
+# after the subcommand too, so `stash list` reads while `stash drop` falls through to whatever
+# settings.json says.
+GIT_READ_ONLY_SUBCOMMANDS = frozenset({
+    ('diff',), ('fetch',), ('grep',), ('log',), ('ls-tree',), ('remote', 'get-url'), ('show',),
+    ('stash', 'list'), ('status',), ('symbolic-ref',),
+})
+
+# A `git fetch` operand that is only a remote name. Anything else -- a URL, a filesystem path, or a
+# `<helper>::<address>` like `ext::sh -c ...` -- can make fetch run a program. Git refuses a remote
+# name beginning with `.`, which is what keeps `.` and `..` on the path side of the line.
+GIT_REMOTE_NAME = re.compile(r'[A-Za-z0-9_][A-Za-z0-9._-]*')
+
+# A short-option cluster carrying grep's `-O`, whose optional value names the pager to run.
+GIT_GREP_PAGER_CLUSTER = re.compile(r'-[^-]*O')
+
 
 # Operators that expand into another command wherever bash still expands anything, which is
 # everywhere but inside single quotes.
@@ -307,11 +352,12 @@ def shell_operator_reason(command):
 def is_gated_command(command):
     """True for the commands this hook gates, checked on the raw string.
 
-    Deliberately loose on git: only add/commit/worktree-remove are gated, but
-    this decides which lines the operator guard runs on, and a line carrying an
-    operator is exactly the kind whose subcommand cannot be identified
-    reliably. Answering yes for every git line costs nothing, since a git line
-    with no operator falls through to the real subcommand check below.
+    Deliberately loose on git: only add, commit, worktree remove, branch
+    deletion, and the read-only subcommands are gated, but this decides which
+    lines the operator guard runs on, and a line carrying an operator is
+    exactly the kind whose subcommand cannot be identified reliably. Answering
+    yes for every git line costs nothing, since a git line with no operator
+    falls through to the real subcommand check below.
     """
     stripped = command.strip()
     if stripped.startswith('command '):
@@ -403,16 +449,56 @@ def strip_command_prefix(tokens):
 
 
 def git_globals_and_subcommand(tokens):
-    """Split `git [globals] <subcommand> ...` into (globals, subcommand)."""
+    """Split `git [globals] <subcommand> ...` into (globals, subcommand, subcommand index)."""
     globals_used = []
     index = 1
     while index < len(tokens):
         token = tokens[index]
         if not token.startswith('-'):
-            return globals_used, token
+            return globals_used, token, index
         globals_used.append(token)
         index += 2 if token in GIT_GLOBAL_FLAGS_TAKING_A_VALUE else 1
-    return globals_used, None
+    return globals_used, None, None
+
+
+def is_read_only_git_subcommand(tokens, subcommand_index):
+    """True if the tokens from the subcommand onward start with a GIT_READ_ONLY_SUBCOMMANDS entry."""
+    if subcommand_index is None:
+        return False
+    return any(
+        tuple(tokens[subcommand_index:subcommand_index + len(entry)]) == entry
+        for entry in GIT_READ_ONLY_SUBCOMMANDS
+    )
+
+
+def is_long_option(argument, option):
+    """True if the argument spells `option`, or an abbreviation git accepts, with or without `=value`.
+
+    Git's parser takes any unambiguous prefix of a long option, so `--open=vim` is
+    `--open-files-in-pager=vim`. A prefix short enough to be ambiguous also matches
+    here; git would reject it, so asking costs nothing.
+    """
+    name = argument.split('=', 1)[0]
+    return len(name) > 2 and name.startswith('--') and option.startswith(name)
+
+
+def git_read_only_option_reason(subcommand, arguments):
+    """Why an argument makes a read-only git subcommand run a program or write a file, or None."""
+    for argument in arguments:
+        if is_long_option(argument, '--output'):
+            return f'`{argument}` makes git {subcommand} write a file'
+        if subcommand == 'grep' and (
+            is_long_option(argument, '--open-files-in-pager')
+            or GIT_GREP_PAGER_CLUSTER.match(argument)
+        ):
+            return f'`{argument}` makes git grep run a program on the matching files'
+        if subcommand == 'fetch':
+            if is_long_option(argument, '--upload-pack'):
+                return f'`{argument}` names a program for git fetch to run'
+            if not argument.startswith('-') and not GIT_REMOTE_NAME.fullmatch(argument):
+                return (f'`{argument}` is not a plain remote name, and a URL, path, or '
+                        '`ext::` helper can make git fetch run a program')
+    return None
 
 
 def is_worktree_remove(command):
@@ -874,7 +960,20 @@ def main():
         return
 
     if tokens[0] == 'git':
-        git_globals, subcommand = git_globals_and_subcommand(tokens)
+        git_globals, subcommand, subcommand_index = git_globals_and_subcommand(tokens)
+        if is_read_only_git_subcommand(tokens, subcommand_index):
+            if git_globals and git_globals != ['-C']:
+                extra = [flag for flag in git_globals if flag != '-C'] or ['-C']
+                emit('ask', f'`{extra[0]}` ahead of the subcommand can change what git {subcommand} '
+                            'runs; confirm it')
+                return
+            option_reason = git_read_only_option_reason(subcommand, tokens[subcommand_index + 1:])
+            if option_reason:
+                emit('ask', f'{option_reason}; confirm it')
+            else:
+                emit('allow', f'git {subcommand} with no program-running or file-writing option; '
+                              'auto-approved')
+            return
         if subcommand not in ('add', 'commit'):
             return
         if git_globals:

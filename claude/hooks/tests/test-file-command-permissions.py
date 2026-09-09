@@ -208,10 +208,8 @@ class LinkedWorktreeTest(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIsNone(decision(out))
 
-    def test_git_status_not_gated(self):
-        out, code = run('git status', cwd=self.worktree)
-        self.assertEqual(code, 0)
-        self.assertIsNone(decision(out))
+    def test_git_status_allowed(self):
+        self.assertInWorktree(ALLOW, 'git status')
 
     def test_rm_relative_tracked_file_allowed(self):
         self.assertInWorktree(ALLOW, 'rm tracked.txt')
@@ -708,6 +706,98 @@ class MvIntoScratchSourceTest(unittest.TestCase):
     def test_relative_destination_takes_the_same_path(self):
         """The settings rules are gone, so a relative dest cannot route around this."""
         self.assertInProject(ASK, f'mv {self.outside}/taxes.pdf .claude/tmp/')
+
+
+class GitReadOnlySubcommandTest(unittest.TestCase):
+    """A read-only subcommand is safe only with no global option beyond `-C` and no program-running argument."""
+
+    def assertDecision(self, expected, command):
+        out, code = run(command)
+        self.assertEqual(code, 0, f'non-zero exit for: {command}')
+        self.assertEqual(decision(out), expected, f'wrong decision for: {command}')
+
+    def test_diff_allowed(self):
+        self.assertDecision(ALLOW, 'git -C /some/repo diff HEAD~1 HEAD')
+
+    def test_bare_status_allowed(self):
+        self.assertDecision(ALLOW, 'git -C /some/repo status')
+
+    def test_multi_word_subcommand_allowed(self):
+        self.assertDecision(ALLOW, 'git -C /some/repo stash list')
+        self.assertDecision(ALLOW, 'git -C /some/repo remote get-url origin')
+
+    def test_multi_word_prefix_alone_not_gated(self):
+        """`stash` and `remote` have writing forms, so only the listed pairs are vouched for."""
+        self.assertDecision(None, 'git -C /some/repo stash drop')
+        self.assertDecision(None, 'git -C /some/repo remote add upstream x')
+
+    def test_config_override_after_dash_c_asks(self):
+        """The shape the old settings.json wildcard approved: an external diff driver runs."""
+        self.assertDecision(ASK, 'git -C /some/repo -c diff.external=/bin/echo diff HEAD~1 HEAD')
+
+    def test_config_override_before_dash_c_asks(self):
+        self.assertDecision(ASK, 'git -c core.pager=/bin/echo -C /some/repo log -1')
+
+    def test_exec_path_asks(self):
+        self.assertDecision(ASK, 'git -C /some/repo --exec-path=/tmp/evil status')
+
+    def test_doubled_dash_c_asks(self):
+        self.assertDecision(ASK, 'git -C /some/repo -C /other/repo status')
+
+    def test_without_dash_c_allowed(self):
+        self.assertDecision(ALLOW, 'git diff HEAD~1 HEAD')
+        self.assertDecision(ALLOW, 'git log --oneline -5')
+
+    def test_config_override_without_dash_c_asks(self):
+        self.assertDecision(ASK, 'git -c core.pager=/bin/echo diff HEAD~1 HEAD')
+
+    def test_writing_subcommand_not_gated(self):
+        self.assertDecision(None, 'git -C /some/repo push origin main')
+
+    def test_chained_command_asks(self):
+        self.assertDecision(ASK, 'git -C /some/repo status && rm -rf /some/repo')
+
+    def test_output_option_asks(self):
+        """`--output` is a diff option, so every subcommand that takes diff options writes with it."""
+        self.assertDecision(ASK, 'git -C /some/repo diff --output=/tmp/x HEAD~1 HEAD')
+        self.assertDecision(ASK, 'git log --output /tmp/x -1')
+        self.assertDecision(ASK, 'git show --output=/tmp/x HEAD')
+        self.assertDecision(ASK, 'git -C /some/repo stash list --output=/tmp/x')
+
+    def test_output_indicator_option_allowed(self):
+        """Only `--output` itself writes; the `--output-indicator-*` options are cosmetic."""
+        self.assertDecision(ALLOW, 'git diff --output-indicator-new=+ HEAD~1 HEAD')
+
+    def test_grep_open_in_pager_asks(self):
+        self.assertDecision(ASK, 'git -C /some/repo grep -O/bin/echo boogie')
+        self.assertDecision(ASK, 'git grep -nO boogie')
+        self.assertDecision(ASK, 'git grep --open-files-in-pager=vim boogie')
+        self.assertDecision(ASK, 'git grep --open-files-in-pager boogie')
+
+    def test_abbreviated_long_option_asks(self):
+        """Git accepts any unambiguous prefix of a long option, so the check must too."""
+        self.assertDecision(ASK, 'git grep --open=/bin/echo boogie')
+        self.assertDecision(ASK, 'git fetch --upl=/bin/echo origin')
+        self.assertDecision(ASK, 'git diff --out=/tmp/x HEAD~1 HEAD')
+
+    def test_grep_without_pager_allowed(self):
+        self.assertDecision(ALLOW, 'git -C /some/repo grep -n boogie -- claude/CLAUDE.md')
+        self.assertDecision(ALLOW, 'git grep --only-matching boogie')
+
+    def test_fetch_upload_pack_asks(self):
+        self.assertDecision(ASK, 'git -C /some/repo fetch --upload-pack=/bin/echo origin')
+        self.assertDecision(ASK, 'git fetch --upload-pack /bin/echo origin')
+
+    def test_fetch_non_remote_operand_asks(self):
+        self.assertDecision(ASK, 'git -C /some/repo fetch .')
+        self.assertDecision(ASK, 'git fetch /some/other/repo')
+        self.assertDecision(ASK, "git fetch 'ext::sh -c echo%20INJECTED'")
+        self.assertDecision(ASK, 'git fetch https://example.com/repo.git')
+
+    def test_fetch_remote_name_allowed(self):
+        self.assertDecision(ALLOW, 'git -C /some/repo fetch origin')
+        self.assertDecision(ALLOW, 'git fetch --all --prune')
+        self.assertDecision(ALLOW, 'git fetch origin main')
 
 
 if __name__ == '__main__':
