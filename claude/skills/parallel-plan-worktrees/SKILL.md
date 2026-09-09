@@ -1,7 +1,7 @@
 ---
 name: parallel-plan-worktrees
 description: "Mechanics of parallel-plan workflow: creating an isolated worktree with `EnterWorktree`, patching changes back to the main tree on `go`, and cleaning up afterward."
-when_to_use: "Use when user says `parallel plan` (before creating the worktree) or `go` (before patching changes back). Covers mechanics only -- the guardrails that must hold even if this skill never loads live in CLAUDE.md."
+when_to_use: "Use when user says `parallel plan` or `pplan` (before creating the worktree) or `go` (before patching changes back). Covers mechanics only -- the guardrails that must hold even if this skill never loads live in CLAUDE.md."
 ---
 
 <!-- Why this is split across two places: the guardrails in CLAUDE.md are the ones that are expensive to recover from if they aren't loaded -- clobbering the main checkout, or editing the wrong tree for an hour. CLAUDE.md is loaded every session unconditionally, so those stay there. Everything in this file is mechanics: which tool to call, which flag does what, what to clean up. Getting those wrong costs a retry, not lost work, so they can load on demand. If you edit one side, check whether the other side needs the matching change. -->
