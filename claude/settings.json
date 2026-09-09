@@ -118,8 +118,6 @@
       "Bash(log show *)",
       "Bash(ls *)",
       "Bash(mkdir *)",
-      "Bash(mv * .claude/tmp/)",
-      "Bash(mv * .claude/tmp/*)",
       "Bash(node --version)",
       "Bash(npm --version)",
       "Bash(npm audit *)",
@@ -582,72 +580,72 @@
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(cp *)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(command cp *)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(rm *)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(command rm *)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(mv *)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(command mv *)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(git add*)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(git commit*)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(git -C * add*)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(git -C * commit*)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(git worktree remove*)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(git branch -D*)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(git branch -d*)"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/worktree-command-permissions.py",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(git branch --delete*)"
           }
         ]

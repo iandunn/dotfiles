@@ -14,7 +14,7 @@
  * Runs unfiltered on every Bash call, because the first shape can begin with any command.
  *
  * Read-only and recoverable git forms pass through: `settings.json` allows the read-only
- * subcommands and `git config --get`, and `worktree-command-permissions.py` owns
+ * subcommands and `git config --get`, and `file-command-permissions.py` owns
  * `git -C <worktree> add|commit`.
  *
  * ⚠️ Forked from https://github.com/anthropics/claude-code/issues/16561#issuecomment-4276632142.

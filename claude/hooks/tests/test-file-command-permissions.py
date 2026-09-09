@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Tests for worktree-command-permissions.py.
-Run with: python3 test-worktree-command-permissions.py
+Tests for file-command-permissions.py.
+Run with: python3 test-file-command-permissions.py
 """
 import json
 import os
@@ -12,7 +12,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPT = Path(__file__).parent.parent / 'worktree-command-permissions.py'
+SCRIPT = Path(__file__).parent.parent / 'file-command-permissions.py'
 ALLOW = 'allow'
 ASK = 'ask'
 
@@ -554,11 +554,14 @@ class ClaudeTmpExemptionTest(unittest.TestCase):
     def test_command_rm_tmp_file_silent(self):
         self.assertSilent('command rm .claude/tmp/scratch.txt')
 
-    def test_mv_sweep_into_tmp_silent(self):
-        self.assertSilent('mv scratch.txt .claude/tmp/')
+    def test_mv_sweep_into_tmp_decided_by_the_hook(self):
+        """`mv` into scratch is the hook's alone, so a relative dest is not silent."""
+        out, _ = run('mv scratch.txt .claude/tmp/', cwd='/tmp')
+        self.assertEqual(decision(out), ALLOW)
 
-    def test_mv_sweep_to_tmp_filename_silent(self):
-        self.assertSilent('mv scratch.txt .claude/tmp/scratch.txt')
+    def test_mv_sweep_to_tmp_filename_decided_by_the_hook(self):
+        out, _ = run('mv scratch.txt .claude/tmp/scratch.txt', cwd='/tmp')
+        self.assertEqual(decision(out), ALLOW)
 
     def test_cp_into_tmp_silent(self):
         self.assertSilent('cp debug.png .claude/tmp/')
@@ -633,6 +636,72 @@ class AbsoluteClaudeTmpTest(unittest.TestCase):
     def test_expandable_operand_in_own_scratch_asks(self):
         """Single quotes get it past the operator guard, so the operand check must catch it."""
         self.assertInProject(ASK, f"rm '{os.path.join(self.scratch, '$NAME.txt')}'")
+
+
+class MvIntoScratchSourceTest(unittest.TestCase):
+    """`mv` into scratch deletes its source, so only agent-produced sources sweep freely."""
+
+    @classmethod
+    def setUpClass(cls):
+        # The fixture cannot live under the OS temp directory: every path there
+        # qualifies as an agent-produced source, which is the distinction under
+        # test. This repository's own scratch directory is outside it.
+        parent = Path(__file__).resolve().parents[3] / '.claude' / 'tmp'
+        parent.mkdir(parents=True, exist_ok=True)
+        cls.temp = tempfile.mkdtemp(prefix='mv-scratch-source-test-', dir=parent)
+        cls.project = os.path.realpath(os.path.join(cls.temp, 'project'))
+        cls.scratch = os.path.join(cls.project, '.claude', 'tmp')
+        cls.outside = os.path.join(os.path.realpath(cls.temp), 'documents')
+
+        os.makedirs(cls.scratch)
+        os.makedirs(cls.outside)
+
+        git(cls.project, 'init', '-b', 'main')
+        git(cls.project, 'config', 'user.email', 'test@example.com')
+        git(cls.project, 'config', 'user.name', 'Test')
+        Path(cls.project, 'tracked.php').write_text('<?php\n')
+        git(cls.project, 'add', 'tracked.php')
+        git(cls.project, 'commit', '-m', 'initial')
+
+        Path(cls.project, 'stray-output.json').write_text('{}\n')
+        Path(cls.outside, 'taxes.pdf').write_text('mine\n')
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.temp, ignore_errors=True)
+
+    def assertInProject(self, expected, command):
+        out, code = run(command, cwd=self.project)
+        self.assertEqual(code, 0, f'non-zero exit for: {command}')
+        self.assertEqual(decision(out), expected, f'wrong decision for: {command}')
+
+    def test_untracked_file_in_the_project_sweeps(self):
+        self.assertInProject(ALLOW, f'mv stray-output.json {self.scratch}/')
+
+    def test_os_temp_source_sweeps(self):
+        """The Chrome MCP can only write a screenshot to the OS temp directory."""
+        capture = os.path.join(tempfile.gettempdir(), 'shot.png')
+        self.assertInProject(ALLOW, f'mv {capture} {self.scratch}/')
+
+    def test_file_outside_the_project_asks(self):
+        """The displacement case: a file of the user's, not scratch of the agent's."""
+        self.assertInProject(ASK, f'mv {self.outside}/taxes.pdf {self.scratch}/')
+
+    def test_tracked_file_asks(self):
+        """Moving a tracked file into scratch changes the repository; that is not cleanup."""
+        self.assertInProject(ASK, f'mv tracked.php {self.scratch}/')
+
+    def test_mixed_sources_ask(self):
+        self.assertInProject(
+            ASK, f'mv stray-output.json {self.outside}/taxes.pdf {self.scratch}/')
+
+    def test_target_directory_flag_asks(self):
+        """GNU `-t` names the destination as a flag value, so the last operand is a source."""
+        self.assertInProject(ASK, f'mv -t stray-dir/ {self.scratch}/preview.py')
+
+    def test_relative_destination_takes_the_same_path(self):
+        """The settings rules are gone, so a relative dest cannot route around this."""
+        self.assertInProject(ASK, f'mv {self.outside}/taxes.pdf .claude/tmp/')
 
 
 if __name__ == '__main__':

@@ -121,21 +121,30 @@ where the checks concentrate:
     flags beyond -f/-i/-n/-v      ask; e.g. GNU `-t` moves the destination to a
                                   flag and defeats the last-operand rule
 
-Source globs are expanded and containment-checked like rm's. A destination
-that is a relative path under `.claude/tmp/` makes the hook stay silent, same
-rationale as the rm exemption: sweeping scratch into `.claude/tmp/` is
-sanctioned cleanup owned by settings.json's `mv * .claude/tmp/*` allow rules.
-An absolute destination inside the working directory's own `.claude/tmp/` is
-allowed here instead, for the reason the rm exemption gives. Only the
-destination is examined either way, since that is the operand that decides
-where the file ends up.
+Source globs are expanded and containment-checked like rm's.
 
-`cp` -- same shape as mv: the destination is where the danger lives, and it
-gets mv's checks (contained, nothing untracked overwritten, realpath-resolved
-directory dests, `.claude/tmp/` dest silence). Unlike mv, SOURCES may live
-outside the worktree: cp only reads them, so copying a fixture in from the main
-checkout writes nothing outside and destroys nothing. (mv cannot have that
-freedom -- an outside source means deleting a file from the main checkout.) The
+A destination inside the working directory's own `.claude/tmp/` takes a
+separate path, `decide_mv_into_scratch`, written either relatively or
+absolutely. Sweeping scratch there is sanctioned cleanup, but `mv` deletes the
+source, so the checks invert: the destination is already known to be scratch,
+and it is the SOURCES that decide whether this is cleanup or displacement. A
+source qualifies when it is under an OS temp directory -- where the Chrome MCP
+must write screenshots before CLAUDE.md has them moved into the project -- or
+is an untracked file inside the working directory, which is where an agent's
+stray output lands. Anything else asks, so a file of the user's cannot be
+displaced into scratch without confirmation. This gate is the sole authority
+for that shape: settings.json's `mv * .claude/tmp/*` allow rules were removed,
+since they would override it and reinstate the unrestricted grant.
+
+`cp` -- the destination is where the danger lives, and it gets mv's worktree
+checks (contained, nothing untracked overwritten, realpath-resolved directory
+dests). A destination under `.claude/tmp/` is exempt the way rm's operands are:
+silent when relative, allowed here when absolute. That grant needs no source
+restriction, because a copy leaves the original in place and so cannot displace
+anything. SOURCES may likewise live outside the worktree: cp only reads them, so
+copying a fixture in from the main checkout writes nothing outside and destroys
+nothing. (mv cannot have that freedom -- an outside source means deleting a file
+from wherever it came from.) The
 one cp-specific rule: a RECURSIVE copy onto a landing path that already exists
 asks, because a directory merge can silently replace untracked files arbitrarily
 deep, and checking that honestly costs more than a prompt.
@@ -227,6 +236,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tempfile
 
 
 def emit(decision, reason):
@@ -347,6 +357,37 @@ def sweeps_into_cwd_scratch(operands, cwd):
         not expands_after_this_hook(operand) and is_cwd_claude_tmp_path(operand, cwd)
         for operand in operands
     )
+
+
+def temp_roots():
+    """The directories the OS hands out for temporary files, fully resolved."""
+    return [
+        os.path.realpath(path)
+        for path in (tempfile.gettempdir(), '/tmp', '/var/folders')
+    ]
+
+
+def is_agent_scratch_source(operand, cwd):
+    """True if the operand names something an agent produced rather than a file of the user's.
+
+    Two shapes qualify. Anything under an OS temporary directory does, because
+    the Chrome MCP can only write screenshots there and CLAUDE.md then asks for
+    them to be moved into the project. So does an untracked file inside the
+    working directory, which is where an agent's stray output lands. A tracked
+    file is excluded: moving one into scratch is a change to the repository, not
+    cleanup.
+    """
+    absolute = os.path.normpath(os.path.join(cwd, operand))
+    parent = os.path.realpath(os.path.dirname(absolute))
+    resolved = os.path.join(parent, os.path.basename(absolute))
+
+    for root in temp_roots():
+        if resolved == root or resolved.startswith(root + os.sep):
+            return True
+
+    cwd_root = os.path.realpath(cwd)
+    inside_cwd = resolved == cwd_root or resolved.startswith(cwd_root + os.sep)
+    return inside_cwd and not is_tracked(resolved, cwd)
 
 
 def strip_command_prefix(tokens):
@@ -596,6 +637,40 @@ def decide_rm(tokens, cwd):
     return 'allow', f'Non-recursive rm of tracked files inside the worktree at {root}'
 
 
+def decide_mv_into_scratch(flags, operands, cwd):
+    """Decide an `mv` whose destination is this working directory's own `.claude/tmp/`.
+
+    Sweeping a scratch file into the project's scratch directory is sanctioned
+    cleanup, but `mv` deletes the source, so an unrestricted grant would let any
+    file on the machine be displaced into scratch with no prompt. Restricting
+    the SOURCES to what an agent produced is what separates cleanup from
+    displacement; the destination needs no further check, since it has already
+    been established to be inside this directory's scratch. The flag whitelist
+    still applies, because GNU `-t` names the destination as a flag value and
+    would leave the real destination somewhere this gate never examined.
+    """
+    for flag in flags:
+        if not re.fullmatch(r'-[finv]+', flag):
+            return 'ask', f'`{flag}` changes how mv picks its destination; confirm this mv'
+
+    if len(operands) < 2:
+        return 'ask', 'This mv has no source and destination to check; confirm it'
+
+    for source in operands[:-1]:
+        if expands_after_this_hook(source):
+            return 'ask', f'`{source}` expands to a path this hook cannot see; confirm this mv'
+        matches = expand_globs(source, cwd)
+        if not matches:
+            return 'ask', f'`{source}` matches nothing here; confirm this mv'
+        for match in matches:
+            if not is_agent_scratch_source(match, cwd):
+                return 'ask', (f'`{match}` is neither under an OS temp directory nor an '
+                               'untracked file in this directory, so this mv would displace '
+                               'it rather than sweep up scratch; confirm it')
+
+    return 'allow', "mv of agent scratch into this directory's own .claude/tmp/"
+
+
 def decide_mv(tokens, cwd):
     """Allow mv when everything it touches stays inside a sanctioned worktree and
     nothing unrecoverable gets overwritten.
@@ -605,11 +680,9 @@ def decide_mv(tokens, cwd):
     """
     flags, operands = rm_flags_and_operands(tokens)
 
-    if operands and is_relative_claude_tmp_path(operands[-1]):
-        return None
-
-    if operands and sweeps_into_cwd_scratch(operands[-1:], cwd):
-        return 'allow', "mv into this directory's own .claude/tmp/ scratch"
+    if operands and (is_relative_claude_tmp_path(operands[-1])
+                     or sweeps_into_cwd_scratch(operands[-1:], cwd)):
+        return decide_mv_into_scratch(flags, operands, cwd)
 
     root = sanctioned_worktree_root(cwd)
     if not root:

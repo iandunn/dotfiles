@@ -19,7 +19,7 @@
 
 - Send one plain command per tool call. Chaining with `;` or `&&`, piping into `tail`/`head`, and `2>&1` redirects all leave the permission parser unable to decompose the line, so it prompts for confirmation rather than auto-approving commands it would otherwise recognise. Run linters, test suites, and anything else bare, and read the whole output.
 
-- Run `rm`, `mv`, `cp`, `git add`, `git commit`, and `git worktree remove` bare -- one per tool call, with no `&&`, `;`, pipes, or redirects. `hooks/worktree-command-permissions.py` refuses shell operators that sit *outside* quotes, because an approval covers the whole command line, so chaining or piping one of these turns an auto-approval back into a prompt. If you want trimmed output, run the command and read the result.
+- Run `rm`, `mv`, `cp`, `git add`, `git commit`, and `git worktree remove` bare -- one per tool call, with no `&&`, `;`, pipes, or redirects. `hooks/file-command-permissions.py` refuses shell operators that sit *outside* quotes, because an approval covers the whole command line, so chaining or piping one of these turns an auto-approval back into a prompt. If you want trimmed output, run the command and read the result.
 
 - Quoted arguments are safe, so a multi-paragraph `git commit -m` message auto-approves inside a worktree; its newlines are part of one quoted string. Write commit messages in single quotes when they contain backticks, which the same hook still refuses inside double quotes because bash expands them there. An apostrophe inside a single-quoted message is spelled `'\''`.
 
