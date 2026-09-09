@@ -272,10 +272,15 @@ def shell_operator_reason(command):
     quote = None
     escaped = False
 
-    for character in command:
+    for index, character in enumerate(command):
         if escaped:
             escaped = False
         elif character == '\\' and quote != "'":
+            # Bash splices the next line onto this one before parsing, so `rm \` followed by a
+            # newline and ` -rf x` runs `rm -rf x`; reading the newline as an escaped literal
+            # would hide that.
+            if command[index + 1:index + 2] == '\n':
+                return 'a backslash-newline splices the next line onto this command'
             escaped = True
         elif quote == "'":
             if character == "'":

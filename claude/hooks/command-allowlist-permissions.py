@@ -282,11 +282,14 @@ COMMANDS = {
 }
 
 
-# Matches a covered command name as its own word. `-` counts as a word character so that
-# `wp-content` and `wp-config.php` don't read as mentions of `wp`; `/bin/wp`, `wp option`, and
-# `x&&wp` still do.
+# Matches a covered command name as its own shell word. The name has to end where a word bash is
+# about to run can end -- whitespace, a metacharacter, a quote, or a `$`/`\` that the shell
+# resolves before running it -- so `/bin/wp`, `wp option`, `x&&wp`, `wp$X`, and a fully quoted
+# `"/Applications/.../wp" post list` all read as mentions, while `wp-content`, `wp/v2/media`, and
+# `wp:featuredmedia` are just text. A name reached through a path separator still counts, because
+# `/bin/wp` needs it to.
 COVERED_COMMAND_MENTION = re.compile(
-    r'(?<![\w-])(?:' + '|'.join(re.escape(name) for name in COMMANDS) + r')(?![\w-])'
+    r'(?<![\w-])(?:' + '|'.join(re.escape(name) for name in COMMANDS) + r')(?=[\s;&|()<>"\'`$\\]|$)'
 )
 
 
@@ -321,7 +324,9 @@ def shell_metacharacter_reason(raw):
     between vouching for `db query "SELECT COUNT(*) ..."` and prompting for it.
 
     An unterminated quote or a trailing backslash counts as a reason, because the rest of the line
-    can't be read.
+    can't be read. So does a backslash-newline: bash splices the next line onto this one before
+    parsing, so `wp\` followed by a newline and ` db reset` runs `wp db reset`, and a check that
+    reads the newline as an escaped literal would see nothing wrong.
     """
     for character in ALWAYS_DISQUALIFYING_METACHARACTERS:
         if character in raw:
@@ -337,6 +342,8 @@ def shell_metacharacter_reason(raw):
         if escaped:
             escaped = False
         elif character == '\\' and quote != "'":
+            if raw[index + 1:index + 2] == '\n':
+                return 'a backslash-newline splices the next line onto this command'
             escaped = True
         elif quote:
             if character == quote:

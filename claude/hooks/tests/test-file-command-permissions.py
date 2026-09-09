@@ -443,6 +443,12 @@ class LinkedWorktreeTest(unittest.TestCase):
     def test_trailing_backslash_asks(self):
         self.assertInWorktree(ASK, 'git add a.log \\')
 
+    def test_line_continuation_asks(self):
+        """Bash joins the lines before parsing, so `rm \\` plus a newline runs whatever follows."""
+        self.assertInWorktree(ASK, 'rm \\\n -rf a.log')
+        self.assertInWorktree(ASK, 'git add a.log \\\n b.log')
+        self.assertInWorktree(ASK, 'git commit -m "Hooks: Add \\\n a test"')
+
     def test_command_substitution_outside_quotes_asks(self):
         self.assertInWorktree(ASK, 'git add $(ls)')
 

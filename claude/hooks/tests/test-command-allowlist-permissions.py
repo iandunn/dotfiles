@@ -473,6 +473,12 @@ class ShellQuotingTest(DecisionTest):
     def test_trailing_backslash_asks(self):
         self.assertAsks('wp option get siteurl \\')
 
+    def test_line_continuation_asks(self):
+        """Bash joins the lines before parsing, so `wp\\` plus a newline runs whatever follows."""
+        self.assertAsks('wp\\\n db reset --yes')
+        self.assertAsks('wp option get siteurl \\\n --format=json')
+        self.assertAsks('wp option get "siteurl\\\n" && wp db reset --yes')
+
 
 class NoOpinionTest(DecisionTest):
     """The `if:` filters fail open on lines Claude Code can't decompose, so the hook also runs on
@@ -497,6 +503,12 @@ class NoOpinionTest(DecisionTest):
     def test_wp_inside_a_larger_token_is_left_alone(self):
         self.assertSilent("grep 'wp option' notes.txt")
 
+    def test_wp_followed_by_a_path_or_namespace_separator_is_not_a_mention(self):
+        """A REST route or a namespaced field is data, even on a line the guard would refuse."""
+        self.assertSilent('command grep -rn "wp/v2/media" --include=*.php themes | head -25')
+        self.assertSilent('grep -rn "wp:featuredmedia" themes | head -25')
+        self.assertSilent('grep -rn "vip/v1/sync" themes | head -25')
+
     def test_covered_command_behind_a_launcher_asks(self):
         """The hook can't vouch for an execution it isn't parsing, but it can insist on a prompt."""
         self.assertAsks('env wp db reset --yes')
@@ -514,6 +526,13 @@ class NoOpinionTest(DecisionTest):
 
     def test_compound_line_that_runs_vip_still_asks(self):
         self.assertAsks('vip @app.staging wp post list | head -3')
+
+    def test_name_glued_to_an_expansion_still_asks(self):
+        """`wp$X` runs `wp` when `X` is empty, so it must not slip past the mention check just
+        because no whitespace follows the name."""
+        self.assertAsks('wp$X db reset --yes')
+        self.assertAsks('wp${X} db reset --yes')
+        self.assertAsks('vip$X @app.production config set foo bar')
 
 
 class MalformedInputTest(DecisionTest):
