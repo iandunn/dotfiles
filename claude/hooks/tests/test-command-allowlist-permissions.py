@@ -144,17 +144,17 @@ class WpGlobalFlagTest(DecisionTest):
 
 class MetacharacterGuardTest(DecisionTest):
 
-    def test_chained_command_asks(self):
-        self.assertAsks('wp option get siteurl && wp db reset --yes')
+    def test_chained_command_denied(self):
+        self.assertDenies('wp option get siteurl && wp db reset --yes')
 
-    def test_semicolon_asks(self):
-        self.assertAsks('wp option get siteurl; rm -rf /tmp/x')
+    def test_semicolon_denied(self):
+        self.assertDenies('wp option get siteurl; rm -rf /tmp/x')
 
     def test_command_substitution_asks(self):
         self.assertAsks('wp option get $(id)')
 
-    def test_pipe_asks(self):
-        self.assertAsks('wp option get siteurl | tee /tmp/x')
+    def test_pipe_denied(self):
+        self.assertDenies('wp option get siteurl | tee /tmp/x')
 
     def test_redirect_asks(self):
         self.assertAsks('wp post list > /tmp/x')
@@ -190,8 +190,8 @@ class DevNullRedirectTest(DecisionTest):
         self.assertAsks('wp option get home >&somefile')
 
     def test_redirect_cannot_smuggle_a_second_command(self):
-        self.assertAsks('wp option get x 2>/dev/null; rm -rf /tmp/x')
-        self.assertAsks('wp option get x 2>/dev/null && rm -rf /tmp/x')
+        self.assertDenies('wp option get x 2>/dev/null; rm -rf /tmp/x')
+        self.assertDenies('wp option get x 2>/dev/null && rm -rf /tmp/x')
         self.assertAsks('wp db query "SELECT 1 FROM wp_posts" "DROP TABLE x" 2>/dev/null')
 
 
@@ -453,9 +453,12 @@ class WpDbQueryTest(DecisionTest):
 class ShellQuotingTest(DecisionTest):
     """The metacharacter guard tracks quote state, because bash does."""
 
-    def test_unquoted_separators_ask(self):
-        self.assertAsks('wp option get siteurl; wp db reset --yes')
-        self.assertAsks('wp option get siteurl & wp db reset --yes')
+    def test_unquoted_separators_denied(self):
+        self.assertDenies('wp option get siteurl; wp db reset --yes')
+        self.assertDenies('wp option get siteurl & wp db reset --yes')
+
+    def test_unquoted_redirect_to_a_file_asks(self):
+        """A write to a real file has no split the agent could make, so it stays a prompt."""
         self.assertAsks('wp option get siteurl > /tmp/out')
 
     def test_quoted_separators_allowed(self):
@@ -521,13 +524,13 @@ class NoOpinionTest(DecisionTest):
         """The accepted cost of the launcher check: a bare `wp` token prompts even as data."""
         self.assertAsks('grep wp notes.txt')
 
-    def test_compound_line_that_runs_wp_still_asks(self):
+    def test_compound_line_that_runs_wp_still_refused(self):
         """The mention check must not weaken the metacharacter guard."""
-        self.assertAsks('wp option get siteurl && wp db reset --yes')
-        self.assertAsks('cd /site && wp site list --fields=blog_id 2>&1 | head -20')
+        self.assertDenies('wp option get siteurl && wp db reset --yes')
+        self.assertDenies('cd /site && wp site list --fields=blog_id 2>&1 | head -20')
 
-    def test_compound_line_that_runs_vip_still_asks(self):
-        self.assertAsks('vip @app.staging wp post list | head -3')
+    def test_compound_line_that_runs_vip_still_refused(self):
+        self.assertDenies('vip @app.staging wp post list | head -3')
 
     def test_name_glued_to_an_expansion_still_asks(self):
         """`wp$X` runs `wp` when `X` is empty, so it must not slip past the mention check just

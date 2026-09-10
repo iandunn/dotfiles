@@ -4,10 +4,12 @@ Auto-approves CLI subcommands that appear on a per-command allowlist, and forces
 every other invocation of a covered command. Lines that never mention a covered command exit
 silently, so `settings.json` rules apply to them normally. A few shapes are denied outright
 rather than prompted: a VIP target named any way other than a single leading `@org.env` token,
-and a covered binary at a path outside `BINARY_ALLOWED_PATHS`. Add a new CLI by adding an entry
-to COMMANDS; nothing else needs to change.
+a covered binary at a path outside `BINARY_ALLOWED_PATHS`, and a line that chains a second
+command with `;`, `&`, `|`, or a newline, where splitting it into one call per command is a fix
+the caller can always apply. Add a new CLI by adding an entry to COMMANDS; nothing else needs to
+change.
 
-The metacharacter guard's scanning lives in `shell_line_shapes`, shared with
+The scanning behind that last one lives in `shell_line_shapes`, shared with
 `file-command-permissions.py` so the two cannot disagree about how bash reads a line. It also
 supplies the one exemption: a redirect to `/dev/null` or a file descriptor.
 
@@ -311,12 +313,23 @@ def respond(decision, reason):
 
 
 def shell_metacharacter_decision(raw):
-    """Return (decision, reason) when bash might run more than the matched prefix, or None."""
+    """Return (decision, reason) when bash might run more than the matched prefix, or None.
+
+    A chaining operator is refused outright rather than prompted, because the agent that wrote
+    it always has a mechanical fix: send each command as its own tool call. Everything else --
+    an expansion, a redirect to a real file, a subshell, a line that can't be read to the end --
+    still prompts, because there's no rewrite to point the agent at.
+    """
     finding = shell_line_shapes.first_operator(raw)
     if finding is None:
         return None
 
-    _kind, description = finding
+    kind, description = finding
+    if kind == shell_line_shapes.CHAIN:
+        return DENY, (
+            f'{description}, so a prefix match cannot vouch for this command. Send each command '
+            'as its own tool call (running-commands.md); do not reword the line to get past this.'
+        )
     return ASK, (
         f'{description}, so a prefix match cannot vouch for this command. Send one bare command '
         'per call (running-commands.md); split a chain or drop a redirect rather than rewording '

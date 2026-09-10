@@ -21,8 +21,13 @@ refused there and unquoted alike, and permitted only inside single quotes,
 where bash performs no expansion or escaping whatsoever. `$'...'` cannot slip
 past on that permission: its `$` is read while still unquoted, before the quote
 opens.
-An unterminated quote or a trailing backslash asks, since the rest of the line
-cannot be read.
+
+What the guard does about a finding depends on whether the caller could have
+avoided it. `;`, `&`, `|`, and a newline are DENIED, because splitting the line
+into one tool call per command is a fix the caller can always apply, and saying
+so is more useful than asking a person to approve a line nobody needed to
+write. A redirect to a real file, an expansion, a subshell, an unterminated
+quote, and a trailing backslash all ASK, because no such rewrite exists.
 
 A redirect to `/dev/null` or a file descriptor doesn't count as reaching beyond
 the command at all: it throws output away, and it is stripped before the
@@ -330,12 +335,25 @@ GIT_GREP_PAGER_CLUSTER = re.compile(r'-[^-]*O')
 
 
 def shell_operator_decision(command):
-    """Return (decision, reason) when bash might run more than this one gated command, or None."""
+    """Return (decision, reason) when bash might run more than this one gated command, or None.
+
+    A chaining operator is refused outright rather than prompted, because the agent that wrote it
+    always has a mechanical fix: run each command in its own tool call. Refusing states that fix
+    where the agent can act on it, instead of asking a person to approve something nobody needed
+    to write. Everything else prompts, because there's no equivalent rewrite -- a `$` can expand
+    to anything, a `> file` decomposes only into a different tool, and a line whose quoting can't
+    be read to the end can't be advised about at all.
+    """
     finding = shell_line_shapes.first_operator(command)
     if finding is None:
         return None
 
-    _kind, description = finding
+    kind, description = finding
+    if kind == shell_line_shapes.CHAIN:
+        return 'deny', (
+            f'{description}, so this may reach beyond one gated command. Run each command in '
+            'its own tool call (running-commands.md); do not reword the line to get past this.'
+        )
     return 'ask', f'{description}, so this may reach beyond one gated command; confirm it'
 
 

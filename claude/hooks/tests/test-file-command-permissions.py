@@ -15,6 +15,7 @@ from pathlib import Path
 SCRIPT = Path(__file__).parent.parent / 'file-command-permissions.py'
 ALLOW = 'allow'
 ASK = 'ask'
+DENY = 'deny'
 
 
 def run(command, cwd=None):
@@ -386,18 +387,18 @@ class LinkedWorktreeTest(unittest.TestCase):
     def test_cp_long_flag_asks(self):
         self.assertInWorktree(ASK, 'cp --recursive sub sub-copy')
 
-    def test_chained_git_commit_asks(self):
-        """An allow spans the whole line, so operators must force a prompt."""
-        self.assertInWorktree(ASK, 'git commit -m "x" && git push')
+    def test_chained_git_commit_denied(self):
+        """An allow spans the whole line, so a chain has to be split into separate calls."""
+        self.assertInWorktree(DENY, 'git commit -m "x" && git push')
 
-    def test_chained_cp_asks(self):
-        self.assertInWorktree(ASK, 'cp a.log b.log; ls')
+    def test_chained_cp_denied(self):
+        self.assertInWorktree(DENY, 'cp a.log b.log; ls')
 
     def test_redirected_rm_asks(self):
         self.assertInWorktree(ASK, 'rm tracked.txt > out.txt')
 
-    def test_chained_worktree_remove_asks(self):
-        self.assertInWorktree(ASK, 'git worktree remove .claude/worktrees/feature && echo done')
+    def test_chained_worktree_remove_denied(self):
+        self.assertInWorktree(DENY, 'git worktree remove .claude/worktrees/feature && echo done')
 
     def test_dollar_in_commit_message_asks(self):
         self.assertInWorktree(ASK, 'git commit -m "costs $5"')
@@ -409,8 +410,8 @@ class LinkedWorktreeTest(unittest.TestCase):
             'git commit -m "Docs: Correct the quality\n\nThe pipeline writes at 95, not 92."',
         )
 
-    def test_newline_outside_quotes_asks(self):
-        self.assertInWorktree(ASK, 'git add a.log\ngit push')
+    def test_newline_outside_quotes_denied(self):
+        self.assertInWorktree(DENY, 'git add a.log\ngit push')
 
     def test_semicolon_inside_quotes_allowed(self):
         self.assertInWorktree(ALLOW, 'git commit -m "Hooks: Fix the guard; it scanned raw text"')
@@ -537,8 +538,8 @@ class BranchDeleteTest(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIsNone(decision(out))
 
-    def test_chained_branch_delete_asks(self):
-        self.assertInRepo(ASK, 'git branch -D worktree-squashed && echo done')
+    def test_chained_branch_delete_denied(self):
+        self.assertInRepo(DENY, 'git branch -D worktree-squashed && echo done')
 
 
 class ClaudeTmpExemptionTest(unittest.TestCase):
@@ -758,8 +759,8 @@ class GitReadOnlySubcommandTest(DecisionTest):
     def test_writing_subcommand_not_gated(self):
         self.assertDecision(None, 'git -C /some/repo push origin main')
 
-    def test_chained_command_asks(self):
-        self.assertDecision(ASK, 'git -C /some/repo status && rm -rf /some/repo')
+    def test_chained_command_denied(self):
+        self.assertDecision(DENY, 'git -C /some/repo status && rm -rf /some/repo')
 
     def test_output_option_asks(self):
         """`--output` is a diff option, so every subcommand that takes diff options writes with it."""
