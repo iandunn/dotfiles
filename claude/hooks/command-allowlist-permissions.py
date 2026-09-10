@@ -7,6 +7,10 @@ rather than prompted: a VIP target named any way other than a single leading `@o
 and a covered binary at a path outside `BINARY_ALLOWED_PATHS`. Add a new CLI by adding an entry
 to COMMANDS; nothing else needs to change.
 
+The metacharacter guard's scanning lives in `shell_line_shapes`, shared with
+`file-command-permissions.py` so the two cannot disagree about how bash reads a line. It also
+supplies the one exemption: a redirect to `/dev/null` or a file descriptor.
+
 Most entries are prefix matches. `WP_VALIDATED` holds the ones where the arguments after the
 subcommand decide whether it's safe, which a prefix can't express.
 
@@ -18,48 +22,39 @@ hook is ever dropped.
 Won't work for WP-CLI if `mcp__local-wp__wp_cli` is in `permissions.allow`. Keep it out of there.
 """
 import json
+import os
 import re
 import shlex
 import sys
 from pathlib import Path
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    import shell_line_shapes
+except ImportError as _import_error:
+    # A traceback would exit non-zero, which Claude Code reads as "no opinion", dropping every
+    # command this hook covers to the auto-mode classifier. Prompting instead fails closed, the
+    # same way the catch-all at the bottom of this file does.
+    print(json.dumps({
+        'hookSpecificOutput': {
+            'hookEventName': 'PreToolUse',
+            'permissionDecision': 'ask',
+            'permissionDecisionReason': (
+                f'shell_line_shapes failed to load, so this hook cannot vouch for the '
+                f'command: {_import_error}'
+            ),
+        }
+    }))
+    sys.exit(0)
+
 ALLOW = 'allow'
 ASK = 'ask'
 DENY = 'deny'
 
-# Metacharacters refused wherever they sit. Both expand inside double quotes, and `$'...'` makes
-# the quoting itself hard to reason about, so no line carrying one is vouched for.
-ALWAYS_DISQUALIFYING_METACHARACTERS = ('$', '`')
+BENIGN_REDIRECT = shell_line_shapes.BENIGN_REDIRECT
 
-# Metacharacters that only matter outside quotes. A prefix match authorizes the whole command
-# line, but bash runs all of it, so a safe prefix followed by one of these (`option get x && wp db
-# reset --yes`) would ride through on the prefix. Inside quotes of either kind bash treats every
-# one of them literally, which is what lets a SQL subquery's parens through.
-UNQUOTED_METACHARACTERS = (';', '&', '|', '(', ')', '<', '>', '\n')
-
-# Characters that begin a redirect, checked against BENIGN_REDIRECT for a `/dev/null` or
-# file-descriptor target before they're treated as disqualifying.
-REDIRECT_CHARACTERS = ('>', '<', '&')
-
-# Redirects that throw output away or shuffle file descriptors, matched at the position of the
-# `>`/`<`/`&` (any leading fd digit has already been read as an ordinary character). These can't
-# write a real file or start a second command, so they don't disqualify a line: `2>/dev/null`,
-# `>>/dev/null`, `&>/dev/null`, `< /dev/null`, and fd duplication like `2>&1`. The trailing
-# lookahead keeps `/dev/null` a whole word, so a redirect to `/dev/null.bak` or `/dev/nullx` still
-# prompts, and restricts `>&` to a bare fd number so `>&somefile` (a real write) still prompts.
-BENIGN_REDIRECT = re.compile(
-    r'(?:&?>>?\s*/dev/null|<\s*/dev/null|>&[0-9]+)(?![\w./-])'
-)
-
-# The same redirects, plus the optional leading file-descriptor digit, matched as whole tokens so
-# they can be dropped from the command line before it's tokenized. Bash consumes a redirection
-# before the command sees its argv, so leaving `2>/dev/null` in the token list would hand `wp` a
-# phantom positional -- harmless to a prefix match, but enough to make `db query`'s one-statement
-# check miscount. `(?<!\S)` keeps the leading digit its own token so a value like `wp_2` isn't
-# clipped.
-STRIP_REDIRECT = re.compile(
-    r'(?<!\S)[0-9]*(?:&?>>?\s*/dev/null|<\s*/dev/null|>&[0-9]+)(?![\w./-])'
-)
+STRIP_REDIRECT = shell_line_shapes.STRIP_REDIRECT
 
 # Tools that reach a binary without a shell in between, so the metacharacter guard has nothing to
 # defend and is skipped for them. Local WP's `localwp-agent-tools` addon splits its `args` string
@@ -315,57 +310,18 @@ def respond(decision, reason):
     sys.exit(0)
 
 
-def shell_metacharacter_reason(raw):
-    """Return why bash might run something extra beyond the matched prefix, or None.
+def shell_metacharacter_decision(raw):
+    """Return (decision, reason) when bash might run more than the matched prefix, or None."""
+    finding = shell_line_shapes.first_operator(raw)
+    if finding is None:
+        return None
 
-    Quoting is what decides for most metacharacters: bash treats `;`, `&`, `|`, `(`, `)`, `<`,
-    `>`, and a newline literally inside quotes of either kind, so a `(` in a SQL subquery cannot
-    start anything. Tracking quote state rather than scanning the raw string is the difference
-    between vouching for `db query "SELECT COUNT(*) ..."` and prompting for it.
-
-    An unterminated quote or a trailing backslash counts as a reason, because the rest of the line
-    can't be read. So does a backslash-newline: bash splices the next line onto this one before
-    parsing, so `wp\` followed by a newline and ` db reset` runs `wp db reset`, and a check that
-    reads the newline as an escaped literal would see nothing wrong.
-    """
-    for character in ALWAYS_DISQUALIFYING_METACHARACTERS:
-        if character in raw:
-            return f'"{character}" can expand to another command even inside double quotes'
-
-    quote = None
-    escaped = False
-    index = 0
-
-    while index < len(raw):
-        character = raw[index]
-
-        if escaped:
-            escaped = False
-        elif character == '\\' and quote != "'":
-            if raw[index + 1:index + 2] == '\n':
-                return 'a backslash-newline splices the next line onto this command'
-            escaped = True
-        elif quote:
-            if character == quote:
-                quote = None
-        elif character in ('"', "'"):
-            quote = character
-        elif character in REDIRECT_CHARACTERS:
-            match = BENIGN_REDIRECT.match(raw, index)
-            if match:
-                index = match.end()
-                continue
-            return f'{character!r} outside quotes can redirect output or chain a second command'
-        elif character in UNQUOTED_METACHARACTERS:
-            return f'{character!r} outside quotes can chain a second command onto the prefix'
-
-        index += 1
-
-    if quote is not None:
-        return 'a quote is left open, so the rest of the line cannot be read'
-    if escaped:
-        return 'the line ends in a backslash, so it continues where this hook cannot see'
-    return None
+    _kind, description = finding
+    return ASK, (
+        f'{description}, so a prefix match cannot vouch for this command. Send one bare command '
+        'per call (running-commands.md); split a chain or drop a redirect rather than rewording '
+        'to get past this hook.'
+    )
 
 
 def matched_prefix(tokens, allowed):
@@ -641,11 +597,9 @@ def main():
         no_opinion()
 
     if not shell_free:
-        metacharacter_reason = shell_metacharacter_reason(raw)
-        if metacharacter_reason:
-            respond(ASK, f'{metacharacter_reason}, so a prefix match cannot vouch for this command. '
-                         'Send one bare command per call (running-commands.md); split a chain or '
-                         'drop a redirect rather than rewording to get past this hook.')
+        metacharacter_decision = shell_metacharacter_decision(raw)
+        if metacharacter_decision:
+            respond(*metacharacter_decision)
 
     # On the shell path the guard has already confirmed every redirect targets `/dev/null` or an
     # fd, so dropping them leaves the argv `wp` actually receives. The MCP path has no shell, so

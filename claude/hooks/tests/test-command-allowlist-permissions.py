@@ -463,9 +463,11 @@ class ShellQuotingTest(DecisionTest):
         self.assertAllows('wp option update blogname "Foo | Bar"')
         self.assertAllows("wp post list --post_type='page' --format=json")
 
-    def test_expansion_asks_however_it_is_quoted(self):
-        self.assertAsks("wp option update blogname 'literal $HOME'")
+    def test_expansion_asks_unless_single_quoted(self):
+        """Bash expands inside double quotes but not single ones, so the guard follows suit."""
+        self.assertAllows("wp option update blogname 'literal $HOME'")
         self.assertAsks('wp option update blogname "$(whoami)"')
+        self.assertAsks("wp option update blogname $'literal'")
 
     def test_escaped_separator_outside_quotes_allowed(self):
         self.assertAllows('wp option update blogname Foo\\;Bar')

@@ -708,13 +708,17 @@ class MvIntoScratchSourceTest(unittest.TestCase):
         self.assertInProject(ASK, f'mv {self.outside}/taxes.pdf .claude/tmp/')
 
 
-class GitReadOnlySubcommandTest(unittest.TestCase):
-    """A read-only subcommand is safe only with no global option beyond `-C` and no program-running argument."""
+class DecisionTest(unittest.TestCase):
+    """Runs the hook against a command line and checks the verdict it emits."""
 
     def assertDecision(self, expected, command):
         out, code = run(command)
         self.assertEqual(code, 0, f'non-zero exit for: {command}')
         self.assertEqual(decision(out), expected, f'wrong decision for: {command}')
+
+
+class GitReadOnlySubcommandTest(DecisionTest):
+    """A read-only subcommand is safe only with no global option beyond `-C` and no program-running argument."""
 
     def test_diff_allowed(self):
         self.assertDecision(ALLOW, 'git -C /some/repo diff HEAD~1 HEAD')
@@ -798,6 +802,24 @@ class GitReadOnlySubcommandTest(unittest.TestCase):
         self.assertDecision(ALLOW, 'git -C /some/repo fetch origin')
         self.assertDecision(ALLOW, 'git fetch --all --prune')
         self.assertDecision(ALLOW, 'git fetch origin main')
+
+
+class BenignRedirectTest(DecisionTest):
+    """A redirect to `/dev/null` or a file descriptor throws output away, so it can't reach past
+    the gated command, and it's stripped before the arguments are read."""
+
+    def test_redirects_to_dev_null_allowed(self):
+        self.assertDecision(ALLOW, 'git status 2>/dev/null')
+        self.assertDecision(ALLOW, 'git grep -n boogie -- . 2>&1')
+        self.assertDecision(ALLOW, 'git log --oneline -5 >/dev/null')
+
+    def test_stripped_before_fetch_reads_its_operands(self):
+        """Left in the token list, `2>&1` would read as an operand that isn't a remote name."""
+        self.assertDecision(ALLOW, 'git fetch origin 2>/dev/null')
+
+    def test_redirect_to_a_real_file_asks(self):
+        self.assertDecision(ASK, 'git diff > /tmp/out.txt')
+        self.assertDecision(ASK, 'git status >/dev/null.bak')
 
 
 if __name__ == '__main__':

@@ -5,21 +5,28 @@ PreToolUse permission gate for `cp`, `git add`, `git commit`, `rm`, `mv`,
 GIT_READ_ONLY_SUBCOMMANDS.
 
 Before any gate runs, one shared guard: a gated command carrying a shell
-operator that could run something beyond it always asks. An "allow" from this
-hook covers the ENTIRE command line, so without this, `git commit -m x &&
-<anything>` would ride a worktree approval out of the worktree.
+operator that could run something beyond it never gets an allow. An "allow"
+from this hook covers the ENTIRE command line, so without this, `git commit -m
+x && <anything>` would ride a worktree approval out of the worktree.
 
-The guard tracks quote state rather than scanning the raw line, because bash
-does. `;`, `&`, `|`, `<`, `>`, and a newline chain a second command only
-outside quotes; inside quotes of either kind bash treats each of them
+The scanning lives in `shell_line_shapes`, shared with
+`command-allowlist-permissions.py` so the two cannot disagree about how bash
+reads a line. It tracks quote state rather than scanning the raw string,
+because bash does. `;`, `&`, `|`, `<`, `>`, and a newline separate commands
+only outside quotes; inside quotes of either kind bash treats each of them
 literally. That distinction is what lets a multi-paragraph `git commit -m`
 message through, whose body is one quoted argument no matter how many newlines
 it holds. `$` and a backtick expand inside double quotes as well, so they are
 refused there and unquoted alike, and permitted only inside single quotes,
 where bash performs no expansion or escaping whatsoever. `$'...'` cannot slip
 past on that permission: its `$` is read while still unquoted, before the quote
-opens. An unterminated quote or a trailing backslash asks, since the rest of
-the line cannot be read.
+opens.
+An unterminated quote or a trailing backslash asks, since the rest of the line
+cannot be read.
+
+A redirect to `/dev/null` or a file descriptor doesn't count as reaching beyond
+the command at all: it throws output away, and it is stripped before the
+arguments are read so it can't be mistaken for an operand.
 
 Single-quoted `$` and backticks are permitted because the commit convention in
 CLAUDE.md puts backticks around code references, so refusing them would prompt
@@ -266,6 +273,26 @@ import subprocess
 import sys
 import tempfile
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    import shell_line_shapes
+except ImportError as error:
+    # Letting the traceback stand would exit non-zero, which Claude Code reads as "no opinion",
+    # dropping every command this hook gates to the auto-mode classifier. Failing closed with a
+    # prompt is the whole point of the hook.
+    print(json.dumps({
+        'hookSpecificOutput': {
+            'hookEventName': 'PreToolUse',
+            'permissionDecision': 'ask',
+            'permissionDecisionReason': (
+                f'shell_line_shapes failed to load, so this hook cannot vouch for the '
+                f'command: {error}'
+            ),
+        }
+    }))
+    sys.exit(0)
+
 
 def emit(decision, reason):
     print(json.dumps({
@@ -302,51 +329,14 @@ GIT_REMOTE_NAME = re.compile(r'[A-Za-z0-9_][A-Za-z0-9._-]*')
 GIT_GREP_PAGER_CLUSTER = re.compile(r'-[^-]*O')
 
 
-# Operators that expand into another command wherever bash still expands anything, which is
-# everywhere but inside single quotes.
-EXPANDING_OPERATORS = ('$', '`')
+def shell_operator_decision(command):
+    """Return (decision, reason) when bash might run more than this one gated command, or None."""
+    finding = shell_line_shapes.first_operator(command)
+    if finding is None:
+        return None
 
-# Operators that chain a second command only when they sit outside quotes. Inside quotes of
-# either kind bash treats every one of them literally, which is what lets the newlines in a
-# multi-paragraph commit message through.
-CHAINING_OPERATORS = (';', '&', '|', '<', '>', '\n')
-
-
-def shell_operator_reason(command):
-    """Return why bash might run more than this one gated command, or None."""
-    quote = None
-    escaped = False
-
-    for index, character in enumerate(command):
-        if escaped:
-            escaped = False
-        elif character == '\\' and quote != "'":
-            # Bash splices the next line onto this one before parsing, so `rm \` followed by a
-            # newline and ` -rf x` runs `rm -rf x`; reading the newline as an escaped literal
-            # would hide that.
-            if command[index + 1:index + 2] == '\n':
-                return 'a backslash-newline splices the next line onto this command'
-            escaped = True
-        elif quote == "'":
-            if character == "'":
-                quote = None
-        elif quote == '"':
-            if character == '"':
-                quote = None
-            elif character in EXPANDING_OPERATORS:
-                return f'{character!r} expands even inside double quotes'
-        elif character in ('"', "'"):
-            quote = character
-        elif character in EXPANDING_OPERATORS:
-            return f'{character!r} outside quotes can expand into another command'
-        elif character in CHAINING_OPERATORS:
-            return f'{character!r} outside quotes can chain a second command onto this one'
-
-    if quote is not None:
-        return 'a quote is left open, so the rest of the line cannot be read'
-    if escaped:
-        return 'the line ends in a backslash, so it continues where this hook cannot see'
-    return None
+    _kind, description = finding
+    return 'ask', f'{description}, so this may reach beyond one gated command; confirm it'
 
 
 def is_gated_command(command):
@@ -911,9 +901,9 @@ def main():
     cwd = data.get('cwd') or os.getcwd()
 
     if is_gated_command(command):
-        operator_reason = shell_operator_reason(command)
-        if operator_reason:
-            emit('ask', f'{operator_reason}, so this may reach beyond one gated command; confirm it')
+        decision = shell_operator_decision(command)
+        if decision:
+            emit(*decision)
             return
 
     if is_worktree_remove(command):
@@ -928,8 +918,13 @@ def main():
             emit('allow', 'git worktree remove without --force cannot delete a dirty or non-worktree path')
         return
 
+    # The guard above has confirmed every redirect left in the line targets `/dev/null` or a file
+    # descriptor. Bash consumes a redirection before the command sees its argv, so dropping them
+    # here is what leaves the tokens the command is actually run with; leaving `2>&1` in would
+    # hand `git fetch` a phantom operand that reads as a suspicious remote name.
+    command_for_tokens = shell_line_shapes.STRIP_REDIRECT.sub(' ', command)
     try:
-        tokens = strip_command_prefix(shlex.split(command))
+        tokens = strip_command_prefix(shlex.split(command_for_tokens))
     except ValueError:
         emit('ask', 'Could not parse the arguments of this command; confirm it')
         return
