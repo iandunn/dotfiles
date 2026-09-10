@@ -804,6 +804,32 @@ class GitReadOnlySubcommandTest(DecisionTest):
         self.assertDecision(ALLOW, 'git fetch --all --prune')
         self.assertDecision(ALLOW, 'git fetch origin main')
 
+    def test_diff_no_index_asks(self):
+        """`--no-index` reads two arbitrary files off disk with no repository involved."""
+        self.assertDecision(ASK, 'git diff --no-index /etc/hosts /dev/null')
+        self.assertDecision(ASK, 'git diff --no-index -- a b')
+        self.assertDecision(ASK, 'git -C /some/repo diff --no-index x y')
+
+    def test_diff_with_an_operand_outside_the_repo_asks(self):
+        """Git goes no-index on its own when either of two operands is outside the working tree,
+        and a `--` doesn't stop it."""
+        self.assertDecision(ASK, 'git diff /etc/hosts /etc/passwd')
+        self.assertDecision(ASK, 'git diff /etc/hosts README.md')
+        self.assertDecision(ASK, 'git diff -- /etc/hosts /etc/passwd')
+        self.assertDecision(ASK, 'git diff --stat ../../../../outside.txt README.md')
+        self.assertDecision(ASK, 'git diff ~/x README.md')
+        self.assertDecision(ASK, 'git -C /some/repo diff /etc/hosts /etc/passwd')
+        self.assertDecision(ASK, 'git -C /some/repo diff ../x y')
+
+    def test_diff_of_repository_content_still_allowed(self):
+        self.assertDecision(ALLOW, 'git diff HEAD~1 HEAD')
+        self.assertDecision(ALLOW, 'git diff main feature')
+        self.assertDecision(ALLOW, 'git diff HEAD~1 HEAD -- README.md')
+        self.assertDecision(ALLOW, 'git diff --stat README.md claude/CLAUDE.md')
+        self.assertDecision(ALLOW, 'git diff /etc/hosts')
+        self.assertDecision(ALLOW, 'git diff /etc/hosts /etc/passwd /etc/group')
+        self.assertDecision(ALLOW, 'git -C /some/repo diff HEAD~1 HEAD')
+
     def test_two_word_read_only_subcommands_allowed(self):
         self.assertDecision(ALLOW, 'git stash list')
         self.assertDecision(ALLOW, 'git stash show stash@{0}')

@@ -229,6 +229,9 @@ through, each observed running or writing with no prompt:
     fetch --upload-pack          runs the named program to serve the fetch
     fetch <non-remote-name>      a path or URL is served by a program fetch runs
                                  locally, and an `ext::<command>` helper IS one
+    diff --no-index, or diff with two operands and either outside the working
+                                 tree: git prints both files from disk, wherever
+                                 they are, with no repository involved
 
 `git fetch` therefore auto-approves only against a plain remote name (or none,
 for `--all`); a refspec with `:` in it prompts too, which is a false positive
@@ -510,6 +513,71 @@ def git_read_only_option_reason(subcommand, arguments):
             if not argument.startswith('-') and not GIT_REMOTE_NAME.fullmatch(argument):
                 return (f'`{argument}` is not a plain remote name, and a URL, path, or '
                         '`ext::` helper can make git fetch run a program')
+    return None
+
+
+def git_effective_cwd(tokens, subcommand_index, cwd):
+    """The directory git runs in: the hook's cwd, moved by a `-C <path>` ahead of the subcommand."""
+    for index in range(1, subcommand_index):
+        if tokens[index] == '-C' and index + 1 < subcommand_index:
+            return os.path.normpath(os.path.join(cwd, tokens[index + 1]))
+    return cwd
+
+
+def git_toplevel(directory):
+    """The realpath of the working tree containing `directory`, or None outside any repository."""
+    try:
+        result = subprocess.run(
+            ['git', '-C', directory, 'rev-parse', '--show-toplevel'],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    return os.path.realpath(result.stdout.strip())
+
+
+def git_diff_no_index_reason(tokens, subcommand_index, cwd):
+    """Why this `git diff` would compare files on disk rather than repository content, or None.
+
+    `--no-index` says so outright, but git also switches to that mode on its own whenever exactly
+    two operands are given and either one lies outside the working tree -- a `--` doesn't stop
+    it, so `git diff -- /etc/hosts /etc/passwd` prints both files in full. Compared that way, git
+    is a file reader with no connection to the repository, so it doesn't earn the read-only
+    allow; the prompt puts it on the same footing as any other command that reads an arbitrary
+    path. Revisions and pathspecs both resolve inside the working tree, which is what keeps
+    `git diff HEAD~1 HEAD` on the allow side.
+    """
+    operands = []
+    end_of_options = False
+    for argument in tokens[subcommand_index + 1:]:
+        if end_of_options:
+            operands.append(argument)
+        elif argument == '--':
+            end_of_options = True
+        elif is_long_option(argument, '--no-index'):
+            return f'`{argument}` makes git diff compare files on disk rather than the repository'
+        elif not argument.startswith('-'):
+            operands.append(argument)
+
+    if len(operands) != 2:
+        return None
+
+    git_cwd = git_effective_cwd(tokens, subcommand_index, cwd)
+    toplevel = git_toplevel(git_cwd)
+    for operand in operands:
+        if expands_after_this_hook(operand):
+            return f'`{operand}` expands after this hook reads it, so its target cannot be checked'
+        if toplevel is None:
+            # Outside any repository every two-operand diff is a no-index one, but a
+            # revision-looking operand here is most likely a `-C` aimed at a path this machine
+            # doesn't have, so only an operand that plainly names a filesystem location counts.
+            outside = os.path.isabs(operand) or os.path.normpath(operand).startswith('..')
+        else:
+            outside = not is_inside(operand, toplevel, git_cwd)
+        if outside:
+            return f'`{operand}` is outside the repository, so git diff would read it from disk'
     return None
 
 
@@ -990,6 +1058,8 @@ def main():
                             'runs; confirm it')
                 return
             option_reason = git_read_only_option_reason(subcommand, tokens[subcommand_index + 1:])
+            if not option_reason and subcommand == 'diff':
+                option_reason = git_diff_no_index_reason(tokens, subcommand_index, cwd)
             if option_reason:
                 emit('ask', f'{option_reason}; confirm it')
             else:
