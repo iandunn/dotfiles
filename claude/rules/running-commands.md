@@ -28,7 +28,7 @@
 - Don't `cd` into a directory and then run `git` in the same command; use `git -C <path> <read-only command>`, or a separate `cd` call followed by the git call. Never put more than one `cd` in a single command. Both shapes are hardcoded permission prompts.
 
 
-## Commits
+## Commits / PRs
 
 <!--
 - Never pass a commit message through the shell -- not `-m "..."`, and not a `"$(cat <<'EOF' ... EOF)"` heredoc. Write it to the project's `.claude/tmp/commit-msg.txt` with the `Write` tool, then `git commit -F .claude/tmp/commit-msg.txt`. Reuse that same filename each time so they don't pile up, and leave it in place afterward. This prevents unintended hard wraps being introduced by the terminal width.
@@ -43,3 +43,9 @@ todo this may not be necessary now that using claude fullscreen TUI  -->
 - `git commit` and `git mv` need `dangerouslyDisableSandbox: true` on the first attempt, not as a retry after a failure. My commits are SSH-signed, and `ssh-keygen` can't reach the agent socket from inside the sandbox, so it dies with "Couldn't get agent socket"; `git mv` fails its rename syscall with "Operation not permitted". Both are known and expected, so treating them as a sandbox-caused failure you have to discover first just wastes a round trip. This is the same sanctioned-exception shape as the Chrome close script -- it is not a workaround, and it does not extend to any other command.
 
 - The problem that the commit is fixing and the solution that the commit implements should be in separate paragraphs.
+
+- If I ask you to open a PR, use `gh pr create -w` so that I can read and approve it in the browser before it's submitted.
+
+- Include QA steps when drafting tickets and PR descriptions.
+
+- Before creating a commit, launch a subagent using Fable to do a security review and wait for it to come back. If everything comes back clean, then commit. If not, then tell me and plan a fix while you're waiting on me. If the session would have produced multiple commits, then tell the subagent to review everything that you plan to commit, rather than doing a review for each individual commit.

@@ -23,7 +23,8 @@ Run all verification (`tsc`, `lint`, `test`) from inside the worktree, and confi
 1. **Commit the work on the worktree branch first.** `git diff <base>..HEAD` below only sees committed work, so an uncommitted tree produces an empty patch. It also leaves the worktree clean, so `ExitWorktree` won't later refuse to remove it.
 2. **Generate the patch while still inside the worktree**, since the diff has to be taken from the worktree branch: `git diff <base>..HEAD > <patch path>`. Write it outside the worktree (the session scratchpad) so it survives the worktree being removed.
 3. **Exit the worktree with `ExitWorktree` and `action: "keep"`.** That restores the session's working directory to the main checkout and leaves the branch and its commits on disk. Use `"keep"` rather than `"remove"`: until the patch lands, that branch is the only other copy of the work.
-4. **`git apply <patch path>` from the restored working directory** -- a bare invocation, no `-C` and no `cd`. Run `git apply --check` first; the main tree may have advanced while the worktree was open.
+4. Create a new branch off of the main/integration branch. i.e., `git checkout -b <new branch name> $(git bmain)`
+5. **`git apply <patch path>` from the restored working directory** -- a bare invocation, no `-C` and no `cd`. Run `git apply --check` first; the main tree may have advanced while the worktree was open.
 
 Committing on the worktree branch is fine; advancing main is not.
 

@@ -17,6 +17,7 @@ alias nr='npm run'
 alias startminstack="npm start -- --color | grep --color=always -v '^    at .*/node_modules/'" # npm start w/ minimal stack trace, https://stackoverflow.com/a/35505086/450127
 alias cleanbuild='npm ci && npm run build'
 alias nr='npm run'
+alias npmix='composer update && git checkout composer.lock'
 alias yr='yarn run'
 alias ywr='yarn workspaces run'
 
