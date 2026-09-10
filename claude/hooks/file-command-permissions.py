@@ -325,7 +325,7 @@ GIT_GLOBAL_FLAGS_TAKING_A_VALUE = {
 # settings.json says.
 GIT_READ_ONLY_SUBCOMMANDS = frozenset({
     ('diff',), ('fetch',), ('grep',), ('log',), ('ls-tree',), ('remote', 'get-url'), ('show',),
-    ('stash', 'list'), ('status',), ('symbolic-ref',),
+    ('stash', 'list'), ('stash', 'show'), ('status',), ('symbolic-ref',),
 })
 
 # A `git fetch` operand that is only a remote name. Anything else -- a URL, a filesystem path, or a

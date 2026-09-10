@@ -804,6 +804,23 @@ class GitReadOnlySubcommandTest(DecisionTest):
         self.assertDecision(ALLOW, 'git fetch --all --prune')
         self.assertDecision(ALLOW, 'git fetch origin main')
 
+    def test_two_word_read_only_subcommands_allowed(self):
+        self.assertDecision(ALLOW, 'git stash list')
+        self.assertDecision(ALLOW, 'git stash show stash@{0}')
+        self.assertDecision(ALLOW, 'git -C /some/repo remote get-url upstream')
+
+    def test_two_word_subcommand_must_match_both_words(self):
+        """`stash` alone reaches the working tree, so only the read-only pair is vouched for."""
+        self.assertDecision(None, 'git stash')
+        self.assertDecision(None, 'git stash push -m wip')
+        self.assertDecision(None, 'git stash pop')
+        self.assertDecision(None, 'git remote add origin git@example.com:x/y.git')
+
+    def test_write_option_on_a_two_word_subcommand_asks(self):
+        """`stash show` and `stash list` take diff and log options, `--output` among them."""
+        self.assertDecision(ASK, 'git stash show --output=/tmp/x')
+        self.assertDecision(ASK, 'git stash list --output=/tmp/x')
+
     def test_other_read_only_subcommands_allowed(self):
         self.assertDecision(ALLOW, 'git status --short')
         self.assertDecision(ALLOW, 'git ls-tree --name-only HEAD')
