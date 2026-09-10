@@ -696,6 +696,8 @@
   "worktree": {
     "baseRef": "head"
   },
+  "enableWorkflows": true,
+  "workflowKeywordTriggerEnabled": false,
   "statusLine": {
     "type": "command",
     "command": "npx -y ccstatusline@latest",
@@ -764,8 +766,7 @@
     ]
   },
   "effortLevel": "high",
-  "enableWorkflows": true,
-  "ultracode": true,
+  "ultracode": false,
   "advisorModel": "fable",
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
