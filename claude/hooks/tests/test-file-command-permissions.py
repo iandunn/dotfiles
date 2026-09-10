@@ -804,6 +804,11 @@ class GitReadOnlySubcommandTest(DecisionTest):
         self.assertDecision(ALLOW, 'git fetch --all --prune')
         self.assertDecision(ALLOW, 'git fetch origin main')
 
+    def test_other_read_only_subcommands_allowed(self):
+        self.assertDecision(ALLOW, 'git status --short')
+        self.assertDecision(ALLOW, 'git ls-tree --name-only HEAD')
+        self.assertDecision(ALLOW, 'git symbolic-ref --short HEAD')
+
 
 class BenignRedirectTest(DecisionTest):
     """A redirect to `/dev/null` or a file descriptor throws output away, so it can't reach past

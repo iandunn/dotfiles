@@ -85,12 +85,8 @@
       "Bash(git check-ignore *)",
       "Bash(git config --get *)",
       "Bash(git config --get-all *)",
-      "Bash(git ls-tree *)",
-      "Bash(git remote get-url origin)",
       "Bash(git stash *)",
       "Bash(git stash list *)",
-      "Bash(git status *)",
-      "Bash(git symbolic-ref *)",
       "Bash(git worktree list*)",
       "Bash(git worktree prune*)",
       "Bash(glab --version)",
@@ -632,6 +628,26 @@
             "type": "command",
             "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(git show*)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
+            "if": "Bash(git status*)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
+            "if": "Bash(git ls-tree*)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
+            "if": "Bash(git symbolic-ref*)"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
+            "if": "Bash(git remote*)"
           },
           {
             "type": "command",
