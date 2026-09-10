@@ -29,9 +29,12 @@ so is more useful than asking a person to approve a line nobody needed to
 write. A redirect to a real file, an expansion, a subshell, an unterminated
 quote, and a trailing backslash all ASK, because no such rewrite exists.
 
-A redirect to `/dev/null` or a file descriptor doesn't count as reaching beyond
-the command at all: it throws output away, and it is stripped before the
-arguments are read so it can't be mistaken for an operand.
+Two shapes don't count as reaching beyond the command at all. A redirect to
+`/dev/null` or a file descriptor throws output away, and it is stripped before
+the arguments are read so it can't be mistaken for an operand. A pipeline
+ending in `head`, `tail`, or `wc` is judged as the command that feeds it, since
+those three read stdin and write stdout and can do nothing else; the tail comes
+off before the guard runs.
 
 Single-quoted `$` and backticks are permitted because the commit convention in
 CLAUDE.md puts backticks around code references, so refusing them would prompt
@@ -352,7 +355,8 @@ def shell_operator_decision(command):
     if kind == shell_line_shapes.CHAIN:
         return 'deny', (
             f'{description}, so this may reach beyond one gated command. Run each command in '
-            'its own tool call (running-commands.md); do not reword the line to get past this.'
+            'its own tool call (running-commands.md). A trailing `| head`, `| tail`, or `| wc` '
+            'is the only pipeline this hook accepts; do not reword the line to get past this.'
         )
     return 'ask', f'{description}, so this may reach beyond one gated command; confirm it'
 
@@ -917,6 +921,11 @@ def main():
 
     command = data.get('tool_input', {}).get('command', '')
     cwd = data.get('cwd') or os.getcwd()
+
+    # `head`, `tail`, and `wc` can only trim what the gated command already printed, so a
+    # pipeline ending in one is judged as the command that feeds it. Stripping the tail before
+    # anything else keeps that pipe from reading as a chain, and keeps it out of the token list.
+    command = shell_line_shapes.strip_output_limiting_tail(command)
 
     if is_gated_command(command):
         decision = shell_operator_decision(command)

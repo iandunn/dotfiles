@@ -11,7 +11,8 @@ change.
 
 The scanning behind that last one lives in `shell_line_shapes`, shared with
 `file-command-permissions.py` so the two cannot disagree about how bash reads a line. It also
-supplies the one exemption: a redirect to `/dev/null` or a file descriptor.
+supplies the two exemptions: a redirect to `/dev/null` or a file descriptor, and a pipeline
+ending in `head`, `tail`, or `wc`, which is judged as the command feeding it.
 
 Most entries are prefix matches. `WP_VALIDATED` holds the ones where the arguments after the
 subcommand decide whether it's safe, which a prefix can't express.
@@ -328,7 +329,9 @@ def shell_metacharacter_decision(raw):
     if kind == shell_line_shapes.CHAIN:
         return DENY, (
             f'{description}, so a prefix match cannot vouch for this command. Send each command '
-            'as its own tool call (running-commands.md); do not reword the line to get past this.'
+            'as its own tool call (running-commands.md). A trailing `| head`, `| tail`, or '
+            '`| wc` is the only pipeline this hook accepts; do not reword the line to get past '
+            'this.'
         )
     return ASK, (
         f'{description}, so a prefix match cannot vouch for this command. Send one bare command '
@@ -610,6 +613,9 @@ def main():
         no_opinion()
 
     if not shell_free:
+        # `head`, `tail`, and `wc` can only trim what the covered command already printed, so a
+        # pipeline ending in one is judged as the command that feeds it.
+        raw = shell_line_shapes.strip_output_limiting_tail(raw)
         metacharacter_decision = shell_metacharacter_decision(raw)
         if metacharacter_decision:
             respond(*metacharacter_decision)

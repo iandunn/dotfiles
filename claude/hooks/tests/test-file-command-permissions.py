@@ -823,5 +823,34 @@ class BenignRedirectTest(DecisionTest):
         self.assertDecision(ASK, 'git status >/dev/null.bak')
 
 
+class OutputLimitingTailTest(DecisionTest):
+    """`head`, `tail`, and `wc` only trim what the gated command already printed, so a pipeline
+    ending in one is judged as the command that feeds it."""
+
+    def test_trailing_filters_allowed(self):
+        self.assertDecision(ALLOW, 'git log --oneline -20 | head -5')
+        self.assertDecision(ALLOW, 'git log --oneline -20 | tail -n 5')
+        self.assertDecision(ALLOW, 'git diff | wc -l')
+        self.assertDecision(ALLOW, 'git log --oneline | head -20 | wc -l')
+        self.assertDecision(ALLOW, 'git grep -n boogie -- . 2>&1 | head -30')
+        self.assertDecision(ALLOW, 'git log --oneline | command head -5')
+
+    def test_filter_that_can_do_more_than_trim_denied(self):
+        self.assertDecision(DENY, 'git log --oneline | head -20 | grep x')
+        self.assertDecision(DENY, 'git log --oneline | grep boogie')
+        self.assertDecision(DENY, 'git log --oneline | tail -f')
+        self.assertDecision(DENY, 'git log --oneline | head -20 > /tmp/x')
+
+    def test_filter_reading_a_named_file_denied(self):
+        self.assertDecision(DENY, 'git log --oneline | head /etc/passwd')
+
+    def test_or_list_is_not_a_pipe(self):
+        self.assertDecision(DENY, 'git log --oneline || head -5')
+
+    def test_trailing_filter_cannot_rescue_a_gated_write(self):
+        """Stripping the tail leaves the write to be judged on its own terms."""
+        self.assertDecision(ASK, 'git -c core.pager=/bin/echo log -1 | head -5')
+
+
 if __name__ == '__main__':
     unittest.main()

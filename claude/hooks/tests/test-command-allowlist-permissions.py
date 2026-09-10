@@ -195,6 +195,38 @@ class DevNullRedirectTest(DecisionTest):
         self.assertAsks('wp db query "SELECT 1 FROM wp_posts" "DROP TABLE x" 2>/dev/null')
 
 
+class OutputLimitingTailTest(DecisionTest):
+    """`head`, `tail`, and `wc` only trim what the covered command already printed, so a pipeline
+    ending in one is judged as the command that feeds it."""
+
+    def test_trailing_filters_allowed(self):
+        self.assertAllows('wp post-type list --format=csv 2>&1 | tail -30')
+        self.assertAllows('wp user list --fields=roles --format=csv 2>/dev/null | head -40')
+        self.assertAllows('wp post list --format=count | wc -l')
+        self.assertAllows('wp post list | head -20 | wc -l')
+        self.assertAllows('wp post list | tail -n 5')
+        self.assertAllows('wp post list | command head -5')
+
+    def test_filter_that_can_do_more_than_trim_denied(self):
+        self.assertDenies('wp post list | head -20 | grep x')
+        self.assertDenies('wp post list | sort')
+        self.assertDenies('wp post list | tail -f')
+        self.assertDenies('wp post list | head -20 > /tmp/x')
+
+    def test_filter_reading_a_named_file_denied(self):
+        """A non-numeric operand means the filter isn't reading the pipeline at all."""
+        self.assertDenies('wp post list | head /etc/passwd')
+
+    def test_or_list_is_not_a_pipe(self):
+        self.assertDenies('wp post list || head -5')
+
+    def test_quoted_pipe_is_not_stripped(self):
+        self.assertAllows("wp option update blogname 'Foo | head -1'")
+
+    def test_trailing_filter_cannot_rescue_a_disallowed_command(self):
+        self.assertAsks('wp db reset | head -1')
+
+
 class BinaryResolutionTest(DecisionTest):
 
     LOCAL_WP = '/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp'
@@ -530,7 +562,7 @@ class NoOpinionTest(DecisionTest):
         self.assertDenies('cd /site && wp site list --fields=blog_id 2>&1 | head -20')
 
     def test_compound_line_that_runs_vip_still_refused(self):
-        self.assertDenies('vip @app.staging wp post list | head -3')
+        self.assertDenies('vip @app.staging wp post list | tee /tmp/x')
 
     def test_name_glued_to_an_expansion_still_asks(self):
         """`wp$X` runs `wp` when `X` is empty, so it must not slip past the mention check just

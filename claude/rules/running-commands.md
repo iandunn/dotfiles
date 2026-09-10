@@ -19,7 +19,9 @@
 
 - Send one plain command per tool call. Chaining with `;`, `&&`, or a pipe leaves the permission parser unable to decompose the line, so the hooks refuse it outright rather than prompting: an approval covers the whole command line, and splitting it is something you can always do yourself. Run linters, test suites, and anything else bare, and read the whole output.
 
-- Run `rm`, `mv`, `cp`, `git add`, `git commit`, and `git worktree remove` bare -- one per tool call, with no `&&`, `;`, pipes, or redirects to a real file. `hooks/file-command-permissions.py` refuses a chained line outright, because an approval covers the whole command line, and it prompts on a redirect to a real file. If you want trimmed output, run the command and read the result.
+- A trailing `| head`, `| tail`, or `| wc` is the exception, because those three can only trim what the command already printed. So is a redirect to `/dev/null` or a file descriptor (`2>&1`, `2>/dev/null`). Everything else in a pipeline -- `grep`, `sed`, `sort`, `jq`, `tee`, `xargs` -- makes the line a chain again. A redirect to a real file still prompts rather than being refused, since there's no split that avoids it.
+
+- Run `rm`, `mv`, `cp`, `git add`, `git commit`, and `git worktree remove` bare -- one per tool call, subject to the same two exceptions. If you want output trimmed beyond what `head`/`tail`/`wc` give you, run the command and read the result.
 
 - Quoted arguments are safe, so a multi-paragraph `git commit -m` message auto-approves inside a worktree; its newlines are part of one quoted string. Write commit messages in single quotes when they contain backticks, which the same hook still refuses inside double quotes because bash expands them there. An apostrophe inside a single-quoted message is spelled `'\''`.
 
