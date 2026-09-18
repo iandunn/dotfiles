@@ -20,6 +20,36 @@ Interactive replies to me aren't covered here. Their rules live in the Response 
 - Include all the important information, but keep it short enough that it's actually practical to read. Don't pad back up to one of the limits above just because there's room.
 
 
+## Dates and Times
+
+- Technical writing takes ISO 8601 dates, `2013-02-27`. That covers commit messages, PR and issue bodies, code review comments, replies in a GitHub/Make/Trac thread, code comments, documentation, and blog posts.
+
+- Everything else takes `m/d/yyyy`, unpadded, `2/27/2013`. That covers email, Slack, chat, support forums, and proposals.
+
+- Times are the same form in both: `3pm` and `3:15am`. Lowercase, no space before the meridiem, and no `:00` on the hour. That doesn't change when a time follows an ISO date, so it's `2013-02-27 3pm`.
+
+- None of this reaches a string some system consumes -- a `date()` or `strftime()` format, an argument to a shell command, a filename, or a log line quoted verbatim. Those keep whatever format they require.
+
+
+## Code and Data Samples
+
+Applies anywhere a person reads the sample: an issue or PR body, a commit message, a ticket comment, a code review, documentation, Slack, email.
+
+- Format a sample the way it would be formatted in a file. One element, key, or statement per line, and every nested level indented. Never collapse a sample onto a single line, even a short one, because the shape is most of what the reader is there to see.
+
+- Indent with tabs, not spaces.
+
+- Tag the fence with its language so it gets syntax highlighting.
+
+```xml
+<order>
+	<status>SHIPPED</status>
+	<placedDate>2013-02-27</placedDate>
+	<itemCount>3</itemCount>
+</order>
+```
+
+
 ## Documentation
 
 Follow these rules when creating documentation files, commit messages, pull requests, ticket descriptions/comments, etc. Don't use them for code comments -- see the `Comments` section of `writing-code.md` instead.

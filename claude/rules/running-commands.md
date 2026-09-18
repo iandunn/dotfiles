@@ -46,6 +46,11 @@ todo this may not be necessary now that using claude fullscreen TUI  -->
 
 - If I ask you to open a PR, use `gh pr create -w` so that I can read and approve it in the browser before it's submitted.
 
-- Include QA steps when drafting tickets and PR descriptions.
+- Include QA steps when drafting tickets and PR descriptions. Give URLs that should be opened where that'd be helpful/relevant.
 
-- Before creating a commit, launch a subagent using Fable to do a security review and wait for it to come back. If everything comes back clean, then commit. If not, then tell me and plan a fix while you're waiting on me. If the session would have produced multiple commits, then tell the subagent to review everything that you plan to commit, rather than doing a review for each individual commit.
+- Before creating a commit:
+	* If Relay is set up in this repo, then run `relay-site pull` and reserve merge conflicts. Then commit only the relay changes.
+	* Launch a subagent using Fable to do a security review and wait for it to come back. If everything comes back clean, then commit. If not, then tell me and plan a fix while you're waiting on me. If the session would have produced multiple commits, then tell the subagent to review everything that you plan to commit, rather than doing a review for each individual commit.
+
+- Before opening a PR:
+	* If Relay is set up in this repo, then make sure the Relay process has been followed. If not then backfill the docs and commit them. Then run `relay-site pull`, resolve conflicts, commit, and run `relay-site publish`.

@@ -2,6 +2,8 @@
 
 - I often put planning notes in a `_notes` folder in a repo, so relevant things there may be there as well.
 
+## WordPress Account
+
 - When a task on a WordPress site needs an admin login, and the `CLAUDE.md` at the site root doesn't already give you one, create your own account with `wp user create claude-agent claude-agent@example.test --role=administrator`. The command prints the password it generated. Record that password and the username in that same file, under a `### Local admin login` heading.
 
 - Write the credentials only to the `CLAUDE.md` at the site root, which sits outside any git repository. Never write them to a `CLAUDE.md` that's committed inside `wp-content`, or inside one of its plugin or theme repos, because everyone on the project reads that file.
