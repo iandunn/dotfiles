@@ -104,9 +104,6 @@ section "Daryll Doc Skills"
 claude plugin marketplace add darylldoyle/docs-skills
 claude plugin install docs-skills@docs-skills-marketplace
 
-section "Superpowers"
-claude plugin install superpowers@claude-plugins-official
-
 # todo need to uninstall before updating?  https://github.com/chromeDevTools/chrome-devtools-mcp/ says
 # [!NOTE] If you already had Chrome DevTools MCP installed previously for Claude Code, make sure to remove it first from your installation and configuration files.
 section "Chrome Dev Tools MCP"
@@ -137,3 +134,64 @@ claude plugin list --json | jq -r '.[] | "\(.id) \(.scope)"' |
 	while read -r plugin_id plugin_scope; do
 		claude plugin update "$plugin_id" --scope "$plugin_scope"
 	done
+
+
+
+# Installed from a clone rather than the plugin, because the plugin ships a SessionStart hook that
+# injects its `using-superpowers` skill into every session, and that skill's "if there's a 1% chance
+# a skill applies you MUST invoke it" rule routed nearly every request through `brainstorming`,
+# whose approval gates cost many rounds of questions before any code was written. A plugin's hook
+# can't be disabled on its own, so only the skills worth keeping are linked, one at a time.
+#
+# Deliberately left out: `brainstorming` and `using-superpowers`, which together are what turned
+# every feature request into a long question-and-approval loop, and `test-driven-development`.
+#
+# The clone sits on the newest release tag rather than `main`, so these only change when upstream
+# cuts a release. At v6.3.0 the tag's contents are identical to what the plugin shipped.
+#
+# The skills are linked as they come, so they still carry `superpowers:` prefixes and references to
+# skills that aren't linked here. The Process weight section of `claude/CLAUDE.md` says how to read
+# those, which beats rewriting them and having the rewrite break on the next release.
+section "Superpowers Skills"
+
+SUPERPOWERS_DIR="$HOME/vhosts/tools/superpowers"
+
+SUPERPOWERS_SKILLS=(
+	dispatching-parallel-agents
+	executing-plans
+	finishing-a-development-branch
+	receiving-code-review
+	requesting-code-review
+	subagent-driven-development
+	systematic-debugging
+	using-git-worktrees
+	verification-before-completion
+	writing-plans
+	writing-skills
+)
+
+if [ -d "$SUPERPOWERS_DIR" ]; then
+	# No `--force`, because git's refusal to move an existing tag is the only warning you'd get
+	# if someone re-pointed a release tag at a different commit.
+	git -C "$SUPERPOWERS_DIR" fetch --tags origin
+else
+	git clone https://github.com/obra/superpowers.git "$SUPERPOWERS_DIR"
+fi
+
+# Restricted to `v[0-9]*` so an ordinary tag like `wip` or `zz-test` can't sort above the releases.
+SUPERPOWERS_TAG=$( git -C "$SUPERPOWERS_DIR" tag --list 'v[0-9]*' --sort=-v:refname | head -1 )
+
+if [ -z "$SUPERPOWERS_TAG" ]; then
+	printf "\n⚠️ %s has no release tags, so its skills were left on whatever they were already checked out at.\n" "$SUPERPOWERS_DIR"
+elif ! git -C "$SUPERPOWERS_DIR" checkout --quiet "refs/tags/$SUPERPOWERS_TAG"; then
+	printf "\n⚠️ Couldn't check out %s in %s, so its skills were left on whatever they were already checked out at.\n" "$SUPERPOWERS_TAG" "$SUPERPOWERS_DIR"
+else
+	printf "\nsuperpowers is on %s\n" "$SUPERPOWERS_TAG"
+
+	mkdir -p "$HOME/.claude/skills"
+
+	for skill in "${SUPERPOWERS_SKILLS[@]}"; do
+		ln -sfn "$SUPERPOWERS_DIR/skills/$skill" "$HOME/.claude/skills/$skill"
+		printf "linked %s\n" "$skill"
+	done
+fi

@@ -32,8 +32,6 @@
       "Bash(composer show *)",
       "Bash(composer update *)",
       "Bash(command rm -f .claude/tmp/*)",
-      "Bash(cp * .claude/tmp/)",
-      "Bash(cp * .claude/tmp/*)",
       "Bash(curl -s https://api.wordpress.org/*)",
       "Bash(curl -s http://*.localhost:3000)",
       "Bash(curl -s http://*.localhost:3000/*)",
@@ -140,7 +138,6 @@
       "Read(~/.claude/**)",
       "Read(/tmp/claude/**)",
       "Skill(10up-update-plugins)",
-      "Skill(superpowers:systematic-debugging)",
       "WebFetch(domain:*.test)",
       "WebFetch(domain:api.github.com)",
       "WebFetch(domain:api.wordpress.org)",
@@ -705,7 +702,6 @@
   },
   "enabledPlugins": {
     "docs-skills@docs-skills-marketplace": false,
-    "superpowers@claude-plugins-official": true,
     "chrome-devtools-mcp@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": false,
     "modern-web-guidance@googlechrome": false,
@@ -765,7 +761,7 @@
       "Working"
     ]
   },
-  "effortLevel": "high",
+  "effortLevel": "medium",
   "ultracode": false,
   "advisorModel": "fable",
   "tui": "fullscreen",

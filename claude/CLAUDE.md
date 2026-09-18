@@ -32,24 +32,43 @@ Senior Web Engineer. Stack: WordPress (PHP), vanilla JS or React for frontend. D
 
 - When you draft something I'm going to paste somewhere else -- a ticket, a PR body, a ticket comment, a commit message, a Slack message, an email -- put the whole draft inside a single fenced code block, with a `---` on its own line immediately before the opening fence and another immediately after the closing fence. The terminal renders markdown, so a draft shown as plain text loses its headings, backticks, and list markers when I copy it, and I end up retyping the formatting. The `---` lines make it obvious where the draft starts and ends, so I don't paste your surrounding commentary along with it.
 
-- If you have any questions that might change your answer, first stop and ask them before responding about anything else.
-
 
 
 ## Planning Workflow
-For anything non-trivial: ask clarifying questions to define requirements and surface blind spots before proposing anything. Don't assume I'm right. Don't be a sycophant. Be thorough, it's better to be right than fast. Disclose when you're not confident about something. After sufficient refinement, give 3 approaches with tradeoffs. Only write code once we've aligned on an approach.
+For anything non-trivial: get from the code whatever the code can tell you, then ask me about the rest. Don't assume I'm right. Don't be a sycophant. Disclose when you're not confident about something. Only write code once we've aligned on an approach.
+
+Be thorough when you investigate and brief when you talk to me.
+
+Work out the whole list of questions before you ask the first one, and open by telling me how many there are, so I can see where the interview ends. Then ask them one at a time, in the order where each answer narrows the ones after it, and drop the ones an earlier answer already settled. One topic per message, a few sentences, and your own recommended answer alongside it, so I can agree instead of composing a reply from scratch.
+
+Every question should be about something the code can't hold: the client's goal, a detail nobody wrote down, something I haven't told you yet, or a judgment call or preference that's mine to make. Read enough code up front that you never have to ask me what it does.
+
+Then propose. Don't open a second round of questions unless the work turns up something my answers couldn't have covered, and say what that was when it happens. A question whose answer wouldn't change what you build isn't worth the round trip: state the assumption in a sentence and keep going.
+
+Give me one recommendation, not a menu. Lay out 3 approaches with tradeoffs only at a real fork in the road: the overall architecture, a decision that's expensive to reverse, or a case where several options are reasonable and the choice depends on priorities only I know. Everywhere else, pick the one you'd defend and give me the reason in a sentence.
 
 Gather enough context to understand the full picture before proposing anything. Trace the actual code paths involved and their callers, and look for existing patterns, earlier attempts, and related notes in the notes folder. Anything the codebase can answer, answer yourself -- only ask me for what the code can't tell you, like intent, priorities, and decisions that were never written down. If you're still guessing at how something works when you start proposing, you haven't gathered enough yet; say so instead of proposing around the gap.
 
-When a wrong assumption would be expensive -- a feature crossing several systems, or a bug whose cause still isn't obvious -- offer to grill me before we settle on an approach, and invoke the `grill-me` skill if I say yes.
+Don't start writing a plan for a small or medium sized feature, that takes more time than it saves. Don't use the `writing-plans` skill unless I'm in `/plan` mode or ask you to write a plan.
 
-Don't start writing a plan for a small or medium sized feature, that takes more time than it saves. Don't use the superpowers:writing-plans skill usless I'm in /plan mode or ask you to write a plan.
+Ask your questions in chat rather than with the question interface, so I can answer in detail.
 
-Ask questions one by one instead of using the interface, so I can give detailed answers.
+### Relay
+If the project has Relay set up (a `.relay/` directory plus `requirements/`), then use its workflow and commands on every ticket and make sure its docs stay up to date as you plan and implement tasks.
 
-If the project has Relay set up (a `.relay/` directory plus `requirements/`), then use its workflow and commands on every ticket and make sure its docs stay up to date as you plan and implement tasks. Give me a play-by-play as you use it to help me learn more about how it's supposed to work.
+Relay runs a feature through five stages, and each one has a command:
 
-For a ticket-sized fix, stay at the PRD level and pick the entry point from what already exists. If no PRD covers the code, run `/relay-eng:add-prd` into the epic that `path_routing` in `.relay/config.json` maps the files to. When `add-prd`'s research finds an existing implementation it replaces its interview with a confirm-me pass seeded from the code, so answer that pass from the ticket and the code and only bring me the questions neither can answer. If a PRD exists, run `/relay-eng:approve-prd` when it's still a draft, then `/relay-eng:execute-prd` (it enters delta mode on its own when the PRD is `implemented`), then `/relay-eng:verify-prd`. Skip `execute-epic`, `verify-epic`, `sync-docs`, and `ship` unless I ask for them.
+| Stage | Command |
+|---|---|
+| Define the feature | `/relay-eng:add-prd` |
+| Refine the feature | `/relay-eng:refine-prd` |
+| Approve the feature | `/relay-eng:approve-prd` |
+| Execute the feature | `/relay-eng:execute-prd` |
+| Validate the feature | `/relay-eng:verify-prd` |
+
+I'm still learning that flow and I don't intend to memorize it, so walk me through it as we go. Name the stage we're on in those words, say what the command is about to do, and tell me which stage comes next once it finishes. Spending words on that is worth it even where the rest of my rules are pushing you to be brief.
+
+For a ticket-sized fix, stay at the PRD level and pick the entry point from what already exists. If no PRD covers the code, run `/relay-eng:add-prd` into the epic that `path_routing` in `.relay/config.json` maps the files to. When `add-prd`'s research finds an existing implementation it replaces its interview with a confirm-me pass seeded from the code, so answer that pass from the ticket and the code and only bring me the questions neither can answer. If a PRD exists but doesn't cover what this ticket changes, run `/relay-eng:refine-prd` first. Then run `/relay-eng:approve-prd` when it's still a draft, then `/relay-eng:execute-prd` (it enters delta mode on its own when the PRD is `implemented`), then `/relay-eng:verify-prd`. Skip `execute-epic`, `verify-epic`, `sync-docs`, and `ship` unless I ask for them.
 
 Relay's commands commit their own doc changes (`add-prd`, `approve-prd`, `execute-prd`, `verify-prd`, `sync-docs`). Those commits are sanctioned and are an exception to the "don't commit unless I ask" rule under Executing Work, so never skip a commit phase. The commands spell the message as `-m "$(cat <<'EOF' ... EOF)"`, and the permission hook prompts on that shape everywhere, worktree included, because `$` expands inside double quotes; rewrite it as a single-quoted message per `running-commands.md`, which auto-approves in a worktree. In the main checkout the hook prompts on every commit regardless, and that prompt is my approval.
 
@@ -73,7 +92,8 @@ Never publish a PR, ticket, ticket comment, etc without my explicit approval.
 
 
 ### Process weight
-- Skills chain into each other (brainstorming ends by invoking writing-plans, which suggests subagent execution). That chain does NOT override the rules in this file. If a skill's next step is something I told you not to do, stop and tell me instead of following it.
+- Skills chain into each other (`writing-plans` ends by suggesting subagent execution). That chain does NOT override the rules in this file. If a skill's next step is something I told you not to do, stop and tell me instead of following it.
+- The superpowers skills are linked straight out of a clone of the upstream repo, unedited, so two things in them don't apply here. A name written `superpowers:x` means the skill `x`. `brainstorming`, `using-superpowers`, and `test-driven-development` aren't installed at all, so when one of those skills tells you to load one of them first, or names it as required background, skip that step and keep going rather than trying to invoke it.
 - Never write implementation code into a plan or design document you're going to execute yourself in the same session. Plans capture decisions, file boundaries, interfaces, and risks -- code belongs in code.
 <!-- Writing it twice means the plan's copy has bugs the implementer then has to rediscover one at a time, which is slower than just writing it and running the tests. -->
 - Scale review to the change. A handful of files in a personal project needs one review pass at the end, not a reviewer plus a fix loop plus a re-reviewer per task. Reserve per-task review for work that's genuinely subtle or hard to reverse.
@@ -98,18 +118,22 @@ When working in a worktree, immediately run `pwd` and use that path as the root 
 Flag existing solutions (WordPress plugins for backend, JS libraries for frontend) if they're widely trusted and easy to integrate. Otherwise build it custom.
 
 ## Executing Work
-- Don't guess or assume. Form a hypothesis and then test it with any tools at your disposal. If you can't test it then tell me that it's just a hypothesis tell me how to test it. This applies to debugging and to understanding unfamiliar code, not just to writing it.
+- Don't guess or assume. Form a hypothesis and then test it with the tools at your disposal (curl, chrome, wp-cli, etc). If you can't test it then tell me that it's just a hypothesis tell me how to test it. This applies to debugging and to understanding unfamiliar code, not just to writing it. All of that is about facts the system itself can settle for you. An assumption about what I want is a different thing, because I'm the only source for it, and Planning Workflow above says when to ask me and when to state it and keep moving.
 
 - When a permission prompt fires on a command you wrote, assume first that you wrote it wrong -- chaining with `&&`/`;`, a redirect, a pipe, or a quoting slip -- not that the rule is wrong. Rewrite it as a single bare command per `running-commands.md` and retry. Only propose loosening a hook or a `settings.json` rule after you've confirmed the bare, correctly-shaped form still prompts. The prompt is feedback about the command, not an obstacle to route around.
 
 - When something doesn't behave the way you expect, observe the running system before settling on an explanation. That could mean running the WP CLI command or opening Chrome, etc. Reading the source often can't tell you which of several plausible explanations is the real one. Treat this as standing permission to drive the browser, add logging, or make real requests to find out, and to keep going until the behavior you're after is confirmed. When a check comes back negative, confirm the check itself was valid before you believe it.
 
 <!-- The harness injects a pair of defaults: "Do not call the AgentTool unless the user requested it" and the same for workflows and deep research. Neither is in any of my config, so these two bullets are the only lever I have to be allowed to run either one. `ultracode` is `false` in `settings.json` and stays that way apart from the rare session I turn it on deliberately, so the workflow bullet is what permits a workflow at all -- without it, only a per-prompt request or a skill that calls `Workflow` itself would ever start one. Its trigger list does double duty as the ceiling for those rare Ultracode sessions, where the skill text that arrives asks for a workflow on every substantive task. -->
-- When implementing a plan or other large task, split the work between subagents to speed it up when possible. Treat this line as my standing request to use them, so it satisfies any default telling you to only use subagents when I ask. Pick whatever model fits best for each agent, depending on which is the most appropriate to balance speed vs quality, but err towards quality. I'm not worried about tokens.
+- When implementing a plan or other large task, split the work between subagents to speed it up when possible. Treat this line as my standing request to use them, so it satisfies any default telling you to only use subagents when I ask. Pick each agent's model from the work it's doing, not from a general preference for quality. Never use Haiku for anything.
+	- Sonnet: finding files, symbols, and callers; reading a ticket, PRD, or log and reporting what it says; running a test suite and reporting the failures; a mechanical edit repeated across many files once I've settled the pattern; scaffolding from an example that already exists in the repo.
+	- Opus: implementing a feature from a plan; debugging something whose cause isn't obvious yet; reviewing code; drafting prose a client or my team will read; any call that's expensive to reverse.
+	- Fable: the security review before a commit, and a long unattended run where a lesser model would lose the thread partway. Fable is the escalation, not the default.
+	- When it's a close call, use Sonnet and read what it gives you before you build on it.
 
 - Workflows are for breadth, not for everything. Treat this line as my standing request to run them, so it satisfies any default telling you to only use one when I ask. Use them wherever one would genuinely make the work better or faster, but never as the default shape of a task -- the default is solo, and this bullet is also the ceiling on any instruction telling you to orchestrate every substantive task. Reach for a workflow when the task needs many independent files, sources, or angles swept at once and the results combine; when I ask for an audit, a comprehensive review, a broad estimate, or deep research; or when I ask for thoroughness in my own words. Stay solo for conversational turns, for anything your context already answers, for edits touching only a few files, for a debug loop where each step depends on what the last one observed, and for work resting on decisions we settled earlier in the session -- subagents don't inherit those and will re-litigate them. When it's a close call, pick one, say which in a sentence, and keep going. Before spawning a workflow, ask what it would cost you to read the files yourself. Under roughly ten files, or a few minutes, stay solo -- breadth over things that are individually small is a list, not a sweep. Never add an adversarial verify or judge stage unless I asked for an audit or a review; on ordinary research it doubles the wall clock and rarely changes the conclusion. If a workflow runs past about five minutes on something I called small, kill it and finish solo.
 
-- The session's effort level stays at `high`, and Ultracode stays off. Both are mine to change, not yours: if a task would come out meaningfully better at `xhigh` or `max`, say so in a line and let me decide, and don't work around the level you were given by fanning the work out instead. Where a piece of work carries its own effort setting, though -- a subagent definition, a workflow agent, or a skill that takes an effort argument -- pick that one yourself, higher when the work is subtle or hard to reverse and lower when it's mechanical.
+- The session's effort level stays at `medium`, and Ultracode stays off. Both are mine to change, not yours: if a task would come out meaningfully better at `high`, `xhigh`, or `max`, say so in a line and let me decide, and don't work around the level you were given by fanning the work out instead. Where a piece of work carries its own effort setting, though -- a subagent definition, a workflow agent, or a skill that takes an effort argument -- pick that one yourself, higher when the work is subtle or hard to reverse and lower when it's mechanical.
 
 - Don't try to commit stuff unless I ask you to. Give me a drafted commit message, but only once i've acknowleded that a task is completely done. The exceptions are your own worktree during a `parallel plan`, where Parallel Plan above already sanctions committing on your worktree branch -- that carve-out never extends to the main checkout, where you still wait to be asked -- and Relay's own commit phases, which Planning Workflow above sanctions in either tree outside a `parallel plan` and only inside the worktree during one.
 
