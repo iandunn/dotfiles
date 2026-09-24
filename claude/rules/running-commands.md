@@ -50,7 +50,13 @@ todo this may not be necessary now that using claude fullscreen TUI  -->
 
 - Before creating a commit:
 	* If Relay is set up in this repo, then run `relay-site pull` and reserve merge conflicts. Then commit only the relay changes.
-	* Launch a subagent using Fable to do a security review and wait for it to come back. If everything comes back clean, then commit. If not, then tell me and plan a fix while you're waiting on me. If the session would have produced multiple commits, then tell the subagent to review everything that you plan to commit, rather than doing a review for each individual commit.
+	* Run these two reviews in parallel and wait for both to come back:
+		* A code review, using the `code-review` skill at `medium` effort.
+		* A security review, using a subagent running Fable.
+	* Both reviews follow the same rules:
+		* Only report findings in the files and hunks you plan to commit, because the working tree often holds other sessions' uncommitted changes. If the session would have produced multiple commits, then review everything that you plan to commit in one pass, rather than doing a review for each individual commit.
+		* Ignore nits and any low-severity/intangible/theoretical findings, and focus on ones that would have a real impact on users or on the system's security.
+		* If everything else comes back clean, then commit. If not, then tell me and plan a fix while you're waiting on me.
 
 - Before opening a PR:
 	* If Relay is set up in this repo, then make sure the Relay process has been followed. If not then backfill the docs and commit them. Then run `relay-site pull`, resolve conflicts, commit, and run `relay-site publish`.
