@@ -8,7 +8,7 @@ when_to_use: "Use before the first mcp__chrome-devtools__* call in a session, an
 
 Each session gets its own isolated Chrome, so sessions never block each other -- just open yours.
 
-<!-- The user-scope `chrome-devtools` MCP server runs with `--isolated`, giving each session a throwaway temp `--user-data-dir`. The plugin's shared-profile server is disabled in settings.json via `deniedMcpServers` matching its name `plugin:chrome-devtools-mcp:chrome-devtools`, which is version-independent so plugin updates won't resurrect it. The `--isolated` server definition lives in `~/.claude.json`, which is not tracked in dotfiles. -->
+<!-- The user-scope `chrome-devtools` MCP server runs with `--headless` so no window gets in the user's way, and with `--isolated`, giving each session a throwaway temp `--user-data-dir`. The plugin's shared-profile server is disabled in settings.json via `deniedMcpServers` matching its name `plugin:chrome-devtools-mcp:chrome-devtools`, which is version-independent so plugin updates won't resurrect it. The `--isolated` server definition lives in `~/.claude.json`, which is not tracked in dotfiles. -->
 
 Isolated profiles are fresh on every launch: no persisted wp-admin logins, cookies, or extensions. Log in as part of the flow if a task needs it.
 
