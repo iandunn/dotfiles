@@ -60,3 +60,4 @@ todo this may not be necessary now that using claude fullscreen TUI  -->
 
 - Before opening a PR:
 	* If Relay is set up in this repo, then make sure the Relay process has been followed. If not then backfill the docs and commit them. Then run `relay-site pull`, resolve conflicts, commit, and run `relay-site publish`.
+	* Never cite mocks, fixtures, or stubbed data as evidence in the PR description. Describe only verification against real endpoints or the running local site.
