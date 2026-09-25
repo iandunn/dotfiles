@@ -375,8 +375,13 @@
       "Bash(history -c*)"
     ],
     "ask": [
-      "Bash(git switch *)",
+	 "Bash(/*/git *)",
+	 "Bash(GIT_*)",
+	  "Bash(gh pr create*)",
+	  "Bash(git switch *)",
       "Bash(git checkout *)",
+	  "Bash(env *)",
+	  "Bash(exec *)",
       "Bash(git merge --ff-only *)",
       "Bash(git pull *)",
       "Bash(git push *)",
@@ -591,91 +596,16 @@
             "command": "python3 ~/.claude/hooks/file-command-permissions.py",
             "if": "Bash(command mv *)"
           },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git add*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git commit*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git -C *)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git diff*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git fetch*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git grep*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git log*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git show*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git status*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git ls-tree*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git symbolic-ref*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git remote*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git stash*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git worktree remove*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git branch -D*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git branch -d*)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git branch --delete*)"
-          }
+			{
+				"type": "command",
+				"command": "python3 ~/.claude/hooks/file-command-permissions.py",
+				"if": "Bash(git *)"
+			},
+			{
+				"type": "command",
+				"command": "python3 ~/.claude/hooks/file-command-permissions.py",
+				"if": "Bash(command git *)"
+			}
         ]
       }
     ],
@@ -769,7 +699,7 @@
   "autoMode": {
     "soft_deny": [
       "$defaults",
-      "Staging or committing in git (`git add`, `git commit`, `git commit --amend`) when the user has not asked for it. Clears at [named+specifics] — must name: that a commit or a staging step is wanted. Drafting a commit message for review is always fine; running the command is the blocked step. Exempt inside a `.claude/worktrees/` worktree, where committing on the worktree branch carries standing authorization."
+      "Staging or committing in git (`git add`, `git commit`, `git commit --amend`) when the user has not asked for it. Clears at [named+specifics] — must name: that a commit or a staging step is wanted. Drafting a commit message for review is always fine; running the command is the blocked step. Exempt inside a `.claude/worktrees/` worktree, where committing on the worktree branch carries standing authorization. A commit phase of a Relay command (`add-prd`, `approve-prd`, `execute-prd`, `verify-prd`, `sync-docs`) counts as asked for when it stages named paths."
     ],
     "hard_deny": [
       "$defaults",

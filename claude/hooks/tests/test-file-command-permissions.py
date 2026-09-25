@@ -187,15 +187,146 @@ class LinkedWorktreeTest(unittest.TestCase):
     def test_git_commit_in_worktree_allowed(self):
         self.assertInWorktree(ALLOW, 'git commit -m "wip"')
 
-    def test_git_add_in_main_tree_asks(self):
-        self.assertInMainTree(ASK, 'git add tracked.txt')
+    def test_git_add_of_named_files_in_main_tree_left_to_classifier(self):
+        """The autoMode soft_deny rule decides whether the user asked for it."""
+        self.assertInMainTree(None, 'git add tracked.txt')
 
-    def test_git_commit_in_main_tree_asks(self):
-        self.assertInMainTree(ASK, 'git commit -m "wip"')
+    def test_git_add_all_of_named_files_in_main_tree_left_to_classifier(self):
+        self.assertInMainTree(None, 'git add -A tracked.txt')
 
-    def test_git_add_retargeted_with_dash_c_asks(self):
-        """-C would stage in another tree while cwd still looks like a worktree."""
-        self.assertInWorktree(ASK, f'git -C {self.main_tree} add tracked.txt')
+    def test_git_commit_in_main_tree_left_to_classifier(self):
+        self.assertInMainTree(None, 'git commit -m "wip"')
+
+    def test_git_commit_with_amend_in_main_tree_left_to_classifier(self):
+        """`--amend` starts with `--a` but is not `--all`."""
+        self.assertInMainTree(None, 'git commit --amend -m "wip"')
+
+    def test_git_commit_message_containing_a_left_to_classifier(self):
+        """Letters after `-m` in a cluster are its value, not more flags."""
+        self.assertInMainTree(None, 'git commit -mall')
+
+    def test_git_add_whole_tree_in_main_tree_asks(self):
+        """Staging everything would sweep in other sessions' uncommitted work."""
+        for command in ('git add -A', 'git add --all', 'git add -u', 'git add .',
+                        'git add -- .', 'git add :/'):
+            self.assertInMainTree(ASK, command)
+
+    def test_git_commit_whole_tree_in_main_tree_asks(self):
+        for command in ('git commit -a -m x', 'git commit -am x', 'git commit --all -m x',
+                        'git commit -m x .', 'git commit -m x -- .'):
+            self.assertInMainTree(ASK, command)
+
+    def test_git_add_whole_tree_in_worktree_allowed(self):
+        """A worktree holds only this session's work, so there is nothing to sweep in."""
+        self.assertInWorktree(ALLOW, 'git add -A')
+
+    def test_git_add_retargeted_at_main_tree_left_to_classifier(self):
+        """-C into the main checkout is judged as if typed there, not as the worktree cwd."""
+        self.assertInWorktree(None, f'git -C {self.main_tree} add tracked.txt')
+
+    def test_git_whole_tree_add_retargeted_at_main_tree_asks(self):
+        self.assertInWorktree(ASK, f'git -C {self.main_tree} add -A')
+
+    def test_git_commit_aimed_at_worktree_with_dash_c_allowed(self):
+        self.assertInMainTree(ALLOW, f"git -C {self.worktree} commit -m 'wip'")
+
+    def test_git_add_with_two_dash_c_asks(self):
+        """Each -C resolves relative to the last, so the hook does not try to follow them."""
+        self.assertInMainTree(ASK, f'git -C {self.worktree} -C . add tracked.txt')
+
+    def test_git_push_asks_everywhere(self):
+        self.assertInWorktree(ASK, 'git push')
+        self.assertInMainTree(ASK, 'git push origin main')
+        self.assertInMainTree(ASK, f'git -C {self.worktree} push')
+
+    def test_git_staging_spellings_off_the_safe_list_ask(self):
+        """Clusters, abbreviations, and pathspec files all stage the whole tree."""
+        for command in ('git add -Av', 'git add -vA', 'git add -fu', 'git add --al',
+                        'git add --upd', 'git add --pathspec-from-file=specs.txt',
+                        'git commit -m x --pathspec-from-file=specs.txt',
+                        'git commit -n -m x'):
+            self.assertInMainTree(ASK, command)
+
+    def test_git_staging_pathspecs_covering_the_root_ask(self):
+        for command in ('git add ./*', 'git add **', 'git add "?*"', "git add ':(top)'",
+                        'git add -- ./.', f'git add {self.main_tree}', 'git add sub-fixture/..',
+                        'git add ~/x', 'git commit -m x ./*', f'git commit -m x {self.main_tree}'):
+            self.assertInMainTree(ASK, command)
+
+    def test_git_add_parent_from_subdirectory_asks(self):
+        out, _ = run('git add ..', cwd=os.path.join(self.main_tree, 'sub-fixture'))
+        self.assertEqual(decision(out), ASK)
+
+    def test_git_add_directory_asks(self):
+        """A directory takes every change under it, other sessions' included."""
+        self.assertInMainTree(ASK, 'git add sub-fixture')
+        self.assertInMainTree(ASK, 'git commit -m x sub-fixture/')
+        out, _ = run('git add .', cwd=os.path.join(self.main_tree, 'sub-fixture'))
+        self.assertEqual(decision(out), ASK)
+
+    def test_brace_expansion_asks(self):
+        """Bash expands the braces after the hook reads the line."""
+        for command in ('git {push,origin,main}', 'git {add,-A}', 'git add {sub-fixture,.}',
+                        'git add ./{,}', 'git commit -m x {a..c}', "git add {'x y',.}"):
+            self.assertInMainTree(ASK, command)
+
+    def test_reflog_braces_are_not_expansion(self):
+        for command in ('git show HEAD@{0}', 'git diff @{upstream}...HEAD',
+                        'git log HEAD@{1}..HEAD', 'git log @{u}..'):
+            self.assertInMainTree(ALLOW, command)
+
+    def test_quoted_braces_are_not_expansion(self):
+        self.assertInMainTree(None, "git commit -m 'Hooks: {a,b}'")
+
+    def test_git_add_of_directory_deleted_from_disk_asks(self):
+        """The index still lists its files, so staging it stages every removal under it."""
+        os.makedirs(os.path.join(self.main_tree, 'gone'))
+        Path(self.main_tree, 'gone', 'file.txt').write_text('tracked\n')
+        git(self.main_tree, 'add', 'gone/file.txt')
+        shutil.rmtree(os.path.join(self.main_tree, 'gone'))
+        self.assertInMainTree(ASK, 'git add gone')
+        self.assertInMainTree(ASK, 'git commit -m x gone/')
+
+    def test_dash_c_ahead_of_a_settings_gated_subcommand_asks(self):
+        """A `-C` defeats prefix rules like `Bash(git clean*)`, so the hook asks for them."""
+        for command in ('git -C . clean -fdx', 'git -C . reset --hard',
+                        'git -C . checkout -- .', 'git -C . branch -D main',
+                        f'git -C . worktree remove --force {self.worktree}',
+                        'command git clean -fdx', 'command git reset --hard',
+                        'command git config core.hooksPath /tmp'):
+            self.assertInMainTree(ASK, command)
+
+    def test_publishing_subcommands_ask(self):
+        for command in ('git send-email --to x@example.test HEAD~1', 'git svn dcommit',
+                        'git lfs push origin main', 'git p4 submit', 'git daemon --export-all',
+                        'git imap-send', 'git instaweb'):
+            self.assertInMainTree(ASK, command)
+
+    def test_push_plumbing_asks(self):
+        for command in ('git send-pack --all git@github.com:x/y.git',
+                        'git http-push https://example.test/x.git main',
+                        'git subtree push --prefix=sub origin main'):
+            self.assertInMainTree(ASK, command)
+
+    def test_git_staging_safe_spellings_left_to_classifier(self):
+        for command in ('git add -v tracked.txt', 'git add -A tracked.txt',
+                        'git add -- sub-fixture/fixture.txt',
+                        "git commit -m 'Hooks: fix' tracked.txt",
+                        'git commit --message=x', 'git commit --message x',
+                        "git commit --message '-a fix'", 'git commit -S -m x',
+                        'git commit --gpg-sign=ABC -m x', 'git commit -qm x'):
+            self.assertInMainTree(None, command)
+
+    def test_git_config_alias_asks(self):
+        """`-c alias.p=push` turns any name into push."""
+        self.assertInMainTree(ASK, 'git -c alias.p=push p origin main')
+
+    def test_git_configured_alias_asks(self):
+        git(self.main_tree, 'config', 'alias.pushnv', 'push --no-verify')
+        self.assertInMainTree(ASK, 'git pushnv')
+
+    def test_git_version_not_gated(self):
+        self.assertInMainTree(None, 'git --version')
 
     def test_git_commit_retargeted_with_git_dir_asks(self):
         self.assertInWorktree(ASK, f'git --git-dir={self.main_tree}/.git commit -m x')
@@ -254,8 +385,10 @@ class LinkedWorktreeTest(unittest.TestCase):
         """Linked worktrees outside .claude/worktrees/ are not sanctioned."""
         self.assertInRogueWorktree(ASK, 'rm tracked.txt')
 
-    def test_git_add_in_rogue_worktree_asks(self):
-        self.assertInRogueWorktree(ASK, 'git add tracked.txt')
+    def test_git_add_in_rogue_worktree_left_to_classifier(self):
+        """Linked worktrees outside .claude/worktrees/ get the main checkout's treatment."""
+        self.assertInRogueWorktree(None, 'git add tracked.txt')
+        self.assertInRogueWorktree(ASK, 'git add -A')
 
     def test_cp_in_rogue_worktree_asks(self):
         self.assertInRogueWorktree(ASK, 'cp tracked.txt copy.txt')
@@ -732,8 +865,12 @@ class GitReadOnlySubcommandTest(DecisionTest):
         self.assertDecision(ALLOW, 'git -C /some/repo remote get-url origin')
 
     def test_multi_word_prefix_alone_not_gated(self):
-        """`stash` and `remote` have writing forms, so only the listed pairs are vouched for."""
-        self.assertDecision(None, 'git -C /some/repo stash drop')
+        """`stash` and `remote` have writing forms, so only the listed pairs are vouched for.
+
+        `stash drop` asks rather than falling through, because the `-C` hides it from the
+        settings.json ask rule that would otherwise catch it.
+        """
+        self.assertDecision(ASK, 'git -C /some/repo stash drop')
         self.assertDecision(None, 'git -C /some/repo remote add upstream x')
 
     def test_config_override_after_dash_c_asks(self):
@@ -757,7 +894,7 @@ class GitReadOnlySubcommandTest(DecisionTest):
         self.assertDecision(ASK, 'git -c core.pager=/bin/echo diff HEAD~1 HEAD')
 
     def test_writing_subcommand_not_gated(self):
-        self.assertDecision(None, 'git -C /some/repo push origin main')
+        self.assertDecision(None, 'git -C /some/repo gc')
 
     def test_chained_command_denied(self):
         self.assertDecision(DENY, 'git -C /some/repo status && rm -rf /some/repo')

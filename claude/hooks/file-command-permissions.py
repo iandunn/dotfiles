@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PreToolUse permission gate for `cp`, `git add`, `git commit`, `rm`, `mv`,
+PreToolUse permission gate for `cp`, `git add`, `git commit`, `git push`, `rm`, `mv`,
 `git worktree remove`, and the read-only git subcommands in
 GIT_READ_ONLY_SUBCOMMANDS.
 
@@ -44,27 +44,37 @@ guard here does not relax containment there.
 
 Four independent gates, each keyed on what actually makes the command safe:
 
-`git add` / `git commit` -- auto-approved when the session's working directory
-is a LINKED git worktree under `.claude/worktrees/` (the kind the EnterWorktree
-flow creates), and prompted ("ask") everywhere else: the main working tree, a
-hand-made worktree elsewhere, a non-repo directory, or when git can't be
-queried. The path restriction narrows the promptless surface to throwaway
-trees this workflow created, instead of every linked worktree on the machine.
+`git add` / `git commit` -- auto-approved when git runs in a LINKED git
+worktree under `.claude/worktrees/` (the kind the EnterWorktree flow creates),
+whether that is the session's working directory or a single `-C <path>` aimed
+there. The path restriction narrows the promptless surface to throwaway trees
+this workflow created, instead of every linked worktree on the machine.
 
-Rationale: per CLAUDE.md, file-mutating work belongs in an isolated worktree,
-never the shared main checkout, and committing on a worktree's own branch is
-explicitly sanctioned there while advancing the main checkout is not. This
-removes the permission prompt for these commands inside a worktree while
-keeping the prompt on the main checkout, so the friction nudges work off the
-shared tree.
+Everywhere else the hook stays SILENT for a commit that names its files, so the
+autoMode `soft_deny` rule in settings.json decides it: the classifier lets it
+through only when the user asked for the commit. What the hook still prompts
+on outside a worktree is anything that might stage more than the files it
+names, because the main checkout holds other sessions' uncommitted work. That
+check fails closed: every option has to be on GIT_STAGING_SAFE_OPTIONS and
+every pathspec has to be a literal path to a file strictly below the repository
+root, so `-A`, `-Av`, `--al`, `commit -a`, `--pathspec-from-file`, a glob, a
+`:` magic, a directory, and `.` or `..` all prompt. Naming files is what keeps a commit to this
+session's changes, and CLAUDE.md tells the agent to stage that way, Relay's
+commit phases included.
 
-Unlike `cp`, `git` can be aimed somewhere other than the working directory:
-`-C <path>`, `--git-dir`, and `--work-tree` would let `git add` run from inside
-a worktree while staging in the main checkout, defeating a cwd-based check. So
-ANY global flag between `git` and the subcommand forces a prompt instead of an
-attempt to resolve the real target. That is deliberately broader than the three
-redirect flags: `-c core.hooksPath=...` redirects behavior just as effectively,
-and a bare `git add` / `git commit` is the only shape this gate needs to cover.
+Any global flag other than a single `-C` prompts, whatever the subcommand.
+`--git-dir` and `--work-tree` aim git somewhere else, `-c core.hooksPath=...`
+changes what it runs, and `-c alias.x=push` turns any name into any
+subcommand. More than one `-C` prompts too, since each is resolved relative to
+the last. A subcommand that is a configured alias prompts for the same reason.
+A single `-C` ahead of a subcommand in GIT_SUBCOMMANDS_GATED_BY_SETTINGS
+prompts too, because it hides the line from prefix rules like
+`Bash(git clean*)` that would otherwise deny or ask about it.
+
+`git push` and the other GIT_PUSHING_SUBCOMMANDS prompt in every shape that
+starts with `git` or `command git`, including `git -C <path> push`, which the
+settings.json `Bash(git push *)` ask rule cannot match. A line that reaches git
+some other way, like `env git push` or `/usr/bin/git push`, never gets here.
 
 `rm` -- auto-approved only when the working directory is such a worktree AND
 every operand resolves inside that worktree's root AND every file it names is
@@ -513,6 +523,122 @@ def git_read_only_option_reason(subcommand, arguments):
             if not argument.startswith('-') and not GIT_REMOTE_NAME.fullmatch(argument):
                 return (f'`{argument}` is not a plain remote name, and a URL, path, or '
                         '`ext::` helper can make git fetch run a program')
+    return None
+
+
+# The options a `git add` or `git commit` outside a worktree may carry and still be judged by its
+# pathspecs alone. It's a list of what is known to be safe rather than of what sweeps the tree,
+# because git accepts clusters (`-Av`), abbreviations (`--al`), and `--pathspec-from-file`, and an
+# enumeration of the dangerous spellings missed each of them. Anything off the list asks.
+GIT_STAGING_SAFE_OPTIONS = {
+    'add': {
+        'short': frozenset('vfnNAu'),
+        'short_taking_a_value': frozenset(),
+        'long': frozenset({
+            '--verbose', '--force', '--dry-run', '--intent-to-add', '--all', '--update',
+        }),
+        'long_taking_a_value': frozenset(),
+    },
+    'commit': {
+        # `-n` is `--no-verify` here, so it is left off; skipping the hooks is worth a prompt.
+        'short': frozenset('qvs'),
+        'short_taking_a_value': frozenset('mFS'),
+        'long': frozenset({
+            '--amend', '--no-edit', '--allow-empty', '--allow-empty-message', '--signoff',
+            '--no-signoff', '--quiet', '--verbose', '--gpg-sign', '--no-gpg-sign',
+        }),
+        'long_taking_a_value': frozenset({
+            '--message', '--file', '--author', '--date', '--cleanup', '--trailer',
+        }),
+    },
+}
+
+# Subcommands that send commits or patches off this machine, or serve the repository to others.
+# `send-pack` and `http-push` are the plumbing under `push`, `subtree push` runs `push` itself,
+# and the rest publish to email, Subversion, Perforce, LFS, or anyone who connects to `daemon`.
+GIT_PUSHING_SUBCOMMANDS = frozenset({
+    'push', 'send-pack', 'http-push', 'subtree', 'send-email', 'imap-send', 'svn', 'p4', 'lfs',
+    'daemon', 'instaweb',
+})
+
+# Subcommands that settings.json denies or asks about by prefix, like `Bash(git clean*)`. A `-C`
+# ahead of the subcommand, or a leading `command`, defeats every one of those prefixes, so the hook
+# asks on their behalf.
+GIT_SUBCOMMANDS_GATED_BY_SETTINGS = frozenset({
+    'branch', 'checkout', 'cherry-pick', 'clean', 'config', 'filter-branch', 'filter-repo',
+    'merge', 'pull', 'rebase', 'reset', 'restore', 'stash', 'submodule', 'switch', 'tag',
+    'update-ref', 'worktree',
+})
+
+# `-S` takes its key id attached or not at all, so it never consumes the next token.
+GIT_COMMIT_ATTACHED_ONLY_VALUE = frozenset('S')
+
+# `git add` options that stage the whole tree when no pathspec follows, and only the named paths
+# (deletions included) when one does.
+GIT_ADD_WHOLE_TREE_WITHOUT_PATHSPEC = frozenset({'-A', '-u', '--all', '--update'})
+
+
+def unsafe_staging_reason(subcommand, arguments, git_cwd):
+    """Why this `git add` or `git commit` might take more than the files it names, or None.
+
+    Outside a worktree the main checkout holds other sessions' uncommitted work, so staging the
+    whole tree would sweep it into this commit. The command passes only when every option is on
+    GIT_STAGING_SAFE_OPTIONS and every pathspec is a literal path strictly below the repository
+    root. A glob, a `:` pathspec magic, or a path that resolves to the root or above could each
+    cover the whole tree, and a leading `~` expands after this hook has read it.
+    """
+    safe = GIT_STAGING_SAFE_OPTIONS[subcommand]
+    pathspecs = []
+    whole_tree_flag = None
+    skip_next = False
+    for position, argument in enumerate(arguments):
+        if skip_next:
+            skip_next = False
+            continue
+        if argument == '--':
+            pathspecs.extend(arguments[position + 1:])
+            break
+        if argument.startswith('--'):
+            name = argument.split('=', 1)[0]
+            if name in safe['long_taking_a_value']:
+                skip_next = '=' not in argument
+            elif argument not in safe['long'] and not (
+                    name == '--gpg-sign' and subcommand == 'commit'):
+                return f'`{argument}` is not an option this hook can vouch for'
+            if subcommand == 'add' and argument in GIT_ADD_WHOLE_TREE_WITHOUT_PATHSPEC:
+                whole_tree_flag = argument
+            continue
+        if argument.startswith('-') and len(argument) > 1:
+            for index, letter in enumerate(argument[1:]):
+                if letter in safe['short_taking_a_value']:
+                    at_end = index == len(argument) - 2
+                    skip_next = at_end and letter not in GIT_COMMIT_ATTACHED_ONLY_VALUE
+                    break
+                if letter not in safe['short']:
+                    return f'`-{letter}` in `{argument}` is not an option this hook can vouch for'
+                if subcommand == 'add' and f'-{letter}' in GIT_ADD_WHOLE_TREE_WITHOUT_PATHSPEC:
+                    whole_tree_flag = f'-{letter}'
+            continue
+        pathspecs.append(argument)
+
+    if not pathspecs:
+        if whole_tree_flag:
+            return f'`{whole_tree_flag}` with no pathspec stages every change in the tree'
+        return None
+
+    toplevel = git_toplevel(git_cwd)
+    if not toplevel:
+        return 'Could not find the repository root to check the pathspecs against'
+    for pathspec in pathspecs:
+        if not pathspec or pathspec.startswith((':', '~')) or any(c in pathspec for c in '*?[\\'):
+            return f'`{pathspec}` is not a plain path, so it could cover the whole tree'
+        resolved = os.path.realpath(os.path.join(git_cwd, pathspec))
+        if not resolved.startswith(toplevel + os.sep):
+            return f'`{pathspec}` resolves to the repository root or outside it'
+        # A directory deleted from disk still has entries in the index, and staging it stages the
+        # removal of every tracked file under it, so the index is checked as well as the disk.
+        if os.path.isdir(resolved) or git_output(git_cwd, 'ls-files', '--', pathspec.rstrip('/') + '/'):
+            return f'`{pathspec}` is a directory, so it takes every change under it'
     return None
 
 
@@ -1019,7 +1145,8 @@ def main():
     # hand `git fetch` a phantom operand that reads as a suspicious remote name.
     command_for_tokens = shell_line_shapes.STRIP_REDIRECT.sub(' ', command)
     try:
-        tokens = strip_command_prefix(shlex.split(command_for_tokens))
+        raw_tokens = shlex.split(command_for_tokens)
+        tokens = strip_command_prefix(raw_tokens)
     except ValueError:
         emit('ask', 'Could not parse the arguments of this command; confirm it')
         return
@@ -1051,12 +1178,18 @@ def main():
 
     if tokens[0] == 'git':
         git_globals, subcommand, subcommand_index = git_globals_and_subcommand(tokens)
+        if subcommand is None:
+            return
+        # A global other than one `-C` can aim git at another repository (`--git-dir`), change what
+        # it runs (`-c core.pager=...`), or turn any name into any subcommand (`-c alias.x=push`),
+        # so no verdict below can be trusted once one is present, whatever the subcommand.
+        if git_globals and git_globals != ['-C']:
+            extra = [flag for flag in git_globals if flag != '-C'] or ['-C']
+            emit('ask', f'`{extra[0]}` ahead of the subcommand can aim git elsewhere or change '
+                        f'what git {subcommand} runs; confirm it')
+            return
+        git_cwd = git_effective_cwd(tokens, subcommand_index, cwd)
         if is_read_only_git_subcommand(tokens, subcommand_index):
-            if git_globals and git_globals != ['-C']:
-                extra = [flag for flag in git_globals if flag != '-C'] or ['-C']
-                emit('ask', f'`{extra[0]}` ahead of the subcommand can change what git {subcommand} '
-                            'runs; confirm it')
-                return
             option_reason = git_read_only_option_reason(subcommand, tokens[subcommand_index + 1:])
             if not option_reason and subcommand == 'diff':
                 option_reason = git_diff_no_index_reason(tokens, subcommand_index, cwd)
@@ -1066,15 +1199,31 @@ def main():
                 emit('allow', f'git {subcommand} with no program-running or file-writing option; '
                               'auto-approved')
             return
-        if subcommand not in ('add', 'commit'):
+        if subcommand in GIT_PUSHING_SUBCOMMANDS:
+            emit('ask', f'git {subcommand} can send commits off this machine; confirm it')
             return
-        if git_globals:
-            emit('ask', f'`{git_globals[0]}` can aim git outside this worktree; '
-                        f'confirm this git {subcommand}')
-        elif sanctioned_worktree_root(cwd):
+        hidden_by = '-C' if git_globals else ('command' if raw_tokens[0] == 'command' else None)
+        if hidden_by and subcommand in GIT_SUBCOMMANDS_GATED_BY_SETTINGS:
+            emit('ask', f'`{hidden_by}` hides this git {subcommand} from the settings.json rules '
+                        'that gate it; confirm it')
+            return
+        if subcommand not in ('add', 'commit'):
+            # An alias can expand to anything, `push` or `add -A` included, and nothing on the line
+            # says which. Git ignores an alias that shadows a builtin, so the lookup only matters for
+            # names like these, which are the ones this hook would otherwise stay silent on.
+            if git_output(git_cwd, 'config', '--get', f'alias.{subcommand}'):
+                emit('ask', f'`git {subcommand}` is an alias, so this hook cannot tell what it runs; '
+                            'confirm it')
+            return
+        if sanctioned_worktree_root(git_cwd):
             emit('allow', f'Inside a .claude/worktrees/ worktree; git {subcommand} auto-approved')
-        else:
-            emit('ask', f'Not inside a .claude/worktrees/ worktree; confirm this git {subcommand}')
+            return
+        reason = unsafe_staging_reason(subcommand, tokens[subcommand_index + 1:], git_cwd)
+        if reason:
+            emit('ask', f"{reason}. Outside a worktree that can sweep in other sessions' work; "
+                        f'name the files instead, or confirm this git {subcommand}')
+        # Anywhere else stays silent, so the autoMode `soft_deny` rule in settings.json decides
+        # whether the user actually asked for this staging or commit.
 
 
 if __name__ == '__main__':

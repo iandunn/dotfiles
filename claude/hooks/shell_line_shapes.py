@@ -80,6 +80,45 @@ REDIRECT = 'redirect'
 UNREADABLE = 'unreadable'
 
 
+def is_brace_expansion(command, brace_index):
+    """True if the unquoted `{` at `brace_index` could start a bash brace expansion.
+
+    Bash only expands a brace group holding a `,` or a `..`, so `git {push,origin}` becomes
+    `git push origin` while `stash@{0}` stays literal. This scans the rest of the word rather than
+    matching the closing brace exactly, so it can over-report a word that merely contains a comma
+    after a brace; that only costs a prompt.
+    """
+    # Quoted whitespace doesn't end the word, so `{'x y',.}` still expands.
+    # The scan stops at the matching `}`, so the `..` in `@{u}..HEAD` isn't mistaken for one inside
+    # the braces; a later `{` on the line gets its own check.
+    quote = None
+    escaped = False
+    previous = ''
+    depth = 1
+    for character in command[brace_index + 1:]:
+        if escaped:
+            escaped = False
+        elif character == '\\' and quote != "'":
+            escaped = True
+        elif quote:
+            if character == quote:
+                quote = None
+        elif character in ('"', "'"):
+            quote = character
+        elif character.isspace():
+            return False
+        elif character == '{':
+            depth += 1
+        elif character == '}':
+            depth -= 1
+            if depth == 0:
+                return False
+        elif character == ',' or (character == '.' and previous == '.'):
+            return True
+        previous = character
+    return False
+
+
 def first_operator(command):
     """Return (kind, description) for the first operator bash could act on, or None.
 
@@ -117,6 +156,10 @@ def first_operator(command):
             quote = character
         elif character in EXPANDING_OPERATORS:
             return EXPAND, f'{character!r} outside quotes can expand into another command'
+        elif character == '{' and is_brace_expansion(command, index):
+            return EXPAND, (
+                "'{' outside quotes can brace-expand into words this hook never sees"
+            )
         elif character in REDIRECT_OPERATORS:
             benign = BENIGN_REDIRECT.match(command, index)
             if benign:
