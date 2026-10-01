@@ -704,6 +704,14 @@ class ClaudeTmpExemptionTest(unittest.TestCase):
     def test_cp_into_tmp_silent(self):
         self.assertSilent('cp debug.png .claude/tmp/')
 
+    def test_cp_link_into_tmp_asks(self):
+        """A link in scratch shares the original's inode, so a free write there reaches it."""
+        for command in ('cp -l notes.txt .claude/tmp/', 'cp -Rl notes .claude/tmp/',
+                        'cp --link notes.txt .claude/tmp/', 'cp -s notes.txt .claude/tmp/',
+                        'cp -l notes.txt /tmp/.claude/tmp/'):
+            out, _ = run(command, cwd='/tmp')
+            self.assertEqual(decision(out), ASK, f'wrong decision for: {command}')
+
     def test_rm_tmp_path_escaping_upward_not_exempt(self):
         """Traversal in an operand defeats the textual prefix, so no silence."""
         out, _ = run('rm .claude/tmp/../../important.txt', cwd='/tmp')
@@ -1006,6 +1014,207 @@ class BenignRedirectTest(DecisionTest):
     def test_redirect_to_a_real_file_asks(self):
         self.assertDecision(ASK, 'git diff > /tmp/out.txt')
         self.assertDecision(ASK, 'git status >/dev/null.bak')
+
+
+class ScratchRedirectTest(unittest.TestCase):
+    """A redirect that can only write scratch is cut from the line before the operator guard runs,
+    so the command is judged on its own."""
+
+    @classmethod
+    def setUpClass(cls):
+        # The fixture cannot live under an OS temporary directory: a path there whose first
+        # segment starts with `claude` qualifies on its own, which is the distinction under test.
+        parent = Path(__file__).resolve().parents[3] / '.claude' / 'tmp'
+        parent.mkdir(parents=True, exist_ok=True)
+        cls.temp = tempfile.mkdtemp(prefix='scratch-redirect-test-', dir=parent)
+        cls.project = os.path.realpath(os.path.join(cls.temp, 'project'))
+        cls.scratch = os.path.join(cls.project, '.claude', 'tmp')
+        cls.outside = os.path.join(os.path.realpath(cls.temp), 'documents')
+        cls.other_project_scratch = os.path.join(cls.outside, '.claude', 'tmp')
+        cls.scratchpad = f'/tmp/claude-{os.getuid()}/project/session/scratchpad'
+
+        os.makedirs(cls.scratch)
+        os.makedirs(cls.other_project_scratch)
+        # Its own repository, so `stray.txt` reads as untracked rather than as ignored by the
+        # enclosing checkout's `.claude/tmp/` rule.
+        git(cls.project, 'init', '-b', 'main')
+
+        Path(cls.outside, 'notes.md').write_text('# notes\n')
+        os.symlink(os.path.join(cls.outside, 'notes.md'), os.path.join(cls.scratch, 'escape.md'))
+
+        os.makedirs(os.path.join(cls.outside, 'nested'))
+        Path(cls.outside, 'nested', 'kept.md').write_text('# kept\n')
+        os.symlink(os.path.join(cls.outside, 'nested'), os.path.join(cls.scratch, 'dirlink'))
+        os.link(os.path.join(cls.outside, 'notes.md'), os.path.join(cls.scratch, 'hardlink.md'))
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.temp, ignore_errors=True)
+
+    def assertDecision(self, expected, command):
+        out, code = run(command, cwd=self.project)
+        self.assertEqual(code, 0, f'non-zero exit for: {command}')
+        self.assertEqual(decision(out), expected, f'wrong decision for: {command}')
+
+    def test_redirect_into_this_directorys_scratch_allowed(self):
+        self.assertDecision(ALLOW, f'git diff HEAD~1 HEAD > {self.scratch}/change.patch')
+        self.assertDecision(ALLOW, f'git log --oneline >> {self.scratch}/log.txt')
+        self.assertDecision(ALLOW, f'git show HEAD:README.md 2> {self.scratch}/err.txt')
+
+    def test_relative_redirect_into_scratch_allowed(self):
+        self.assertDecision(ALLOW, 'git diff HEAD~1 HEAD > .claude/tmp/change.patch')
+
+    def test_redirect_into_the_session_scratchpad_allowed(self):
+        """Claude Code's own directory under an OS temp root is the other place scratch lands."""
+        self.assertDecision(ALLOW, f'git diff HEAD~1 HEAD > {self.scratchpad}/x.patch')
+
+    def test_redirect_into_a_lookalike_temp_directory_asks(self):
+        """Only a session's scratchpad counts, not task output or a name that starts the same."""
+        self.assertDecision(ASK, 'git diff > /tmp/claudette/project/session/scratchpad/x.patch')
+        self.assertDecision(
+            ASK, f'git diff > /tmp/claude-{os.getuid() + 1}/project/session/scratchpad/x.patch')
+        self.assertDecision(ASK, f'git diff > /tmp/claude-{os.getuid()}/project/session/tasks/x')
+
+    def test_output_option_through_a_dash_c_symlink_asks(self):
+        """Git's chdir follows `link/..` to the link target's parent, not back into scratch."""
+        self.assertDecision(ASK, f'git -C {self.scratch}/dirlink/.. diff --output=victim.txt')
+
+    def test_output_option_with_a_glob_asks(self):
+        """Bash can expand a glob in a separate `--output` argument into a path out of scratch."""
+        self.assertDecision(ASK, 'git diff --output .claude/tmp/d*/../victim.txt')
+
+    def test_redirect_outside_scratch_asks(self):
+        self.assertDecision(ASK, f'git diff > {self.outside}/notes.md')
+        self.assertDecision(ASK, 'git diff > out.patch')
+
+    def test_redirect_into_another_projects_scratch_asks(self):
+        self.assertDecision(ASK, f'git diff > {self.other_project_scratch}/change.patch')
+
+    def test_redirect_through_a_symlink_out_of_scratch_asks(self):
+        """`> link` truncates what the link points at, so the whole path has to resolve inside."""
+        self.assertDecision(ASK, f'git diff > {self.scratch}/escape.md')
+
+    def test_dot_dot_through_a_directory_symlink_asks(self):
+        """The kernel follows `link/..` to the link target's parent, not back into scratch."""
+        self.assertDecision(ASK, f'git diff > {self.scratch}/dirlink/../victim.txt')
+        self.assertDecision(ASK, f'git diff --output={self.scratch}/dirlink/../victim.txt')
+        self.assertDecision(ASK, f'git diff > {self.scratch}/dirlink/..')
+
+    def test_hard_link_in_scratch_asks(self):
+        """Truncating a hard link empties the original, which realpath can't see."""
+        self.assertDecision(ASK, f'git diff > {self.scratch}/hardlink.md')
+        self.assertDecision(ASK, f'git diff --output={self.scratch}/hardlink.md')
+
+    def test_backslash_newline_in_destination_asks(self):
+        """Bash deletes a backslash-newline before parsing, so the path read isn't the one written."""
+        self.assertDecision(ASK, 'git diff > .claude/tmp/q/\\\n../../../evil.txt')
+        self.assertDecision(ASK, 'git diff > ".claude/tmp/q/\\\n../../../evil.txt"')
+
+    def test_cp_and_mv_through_a_link_in_scratch_ask(self):
+        """`cp` and `mv` write through a symlink or hard link, or into the directory it names."""
+        Path(self.project, 'stray.txt').write_text('stray\n')
+        for command in ('cp', 'mv'):
+            for dest in (f'{self.scratch}/dirlink/../victim.txt', f'{self.scratch}/dirlink',
+                         f'{self.scratch}/dirlink/', '.claude/tmp/dirlink/../victim.txt',
+                         '.claude/tmp/dirlink'):
+                self.assertDecision(ASK, f'{command} stray.txt {dest}')
+        for dest in (f'{self.scratch}/escape.md', f'{self.scratch}/hardlink.md',
+                     '.claude/tmp/escape.md', '.claude/tmp/hardlink.md'):
+            self.assertDecision(ASK, f'cp stray.txt {dest}')
+
+    def test_cp_onto_a_link_at_the_landing_name_asks(self):
+        """cp into a directory writes through whatever already sits at the source's name."""
+        Path(self.outside, 'landing.txt').write_text('landing\n')
+        link = os.path.join(self.scratch, 'landing.txt')
+        os.symlink(os.path.join(self.outside, 'notes.md'), link)
+        try:
+            self.assertDecision(ASK, f'cp {self.outside}/landing.txt {self.scratch}/')
+            self.assertDecision(ASK, f'cp {self.outside}/landing.txt .claude/tmp/')
+        finally:
+            os.remove(link)
+        self.assertDecision(ASK, f'cp -t {self.outside} stray.txt {self.scratch}/')
+
+    def test_mv_of_the_users_files_into_scratch_asks(self):
+        """Ignored files, git's own files, and directories aren't an agent's stray output."""
+        Path(self.project, '.gitignore').write_text('secret.txt\n')
+        Path(self.project, 'secret.txt').write_text('secret\n')
+        os.makedirs(os.path.join(self.project, 'folder'), exist_ok=True)
+        for source in ('secret.txt', '.git', '.git/HEAD', 'folder'):
+            self.assertDecision(ASK, f'mv {source} {self.scratch}/')
+
+    def test_mv_of_a_tracked_file_spelled_in_another_case_asks(self):
+        """The filesystem ignores case, but git's index lookup doesn't."""
+        Path(self.project, 'Tracked.md').write_text('tracked\n')
+        git(self.project, 'add', 'Tracked.md')
+        self.assertDecision(ASK, f'mv TRACKED.md {self.scratch}/')
+
+    def test_mv_to_a_glob_destination_in_scratch_asks(self):
+        """A glob can expand to a directory symlink that carries the move out of scratch."""
+        Path(self.project, 'stray.txt').write_text('stray\n')
+        self.assertDecision(ASK, f'mv stray.txt {self.scratch}/dir*')
+        self.assertDecision(ASK, 'mv stray.txt .claude/tmp/*')
+
+    def test_recursive_cp_of_a_folders_contents_asks(self):
+        """`cp -R dir/` copies the children, whose landings this gate can't see."""
+        os.makedirs(os.path.join(self.project, 'folder'), exist_ok=True)
+        self.assertDecision(ASK, f'cp -R folder/ {self.scratch}/')
+        self.assertDecision(ASK, f'cp -R folder/. {self.scratch}/')
+        self.assertDecision(ASK, 'cp -R folder/ .claude/tmp/')
+
+    def test_mv_over_a_file_link_in_scratch_allowed(self):
+        """`mv` renames over a file symlink or a hard link rather than writing through it."""
+        Path(self.project, 'stray.txt').write_text('stray\n')
+        self.assertDecision(ALLOW, f'mv stray.txt {self.scratch}/escape.md')
+        self.assertDecision(ALLOW, f'mv stray.txt {self.scratch}/hardlink.md')
+
+    def test_cp_and_mv_into_plain_scratch_still_allowed(self):
+        Path(self.project, 'stray.txt').write_text('stray\n')
+        self.assertDecision(ALLOW, f'cp stray.txt {self.scratch}/')
+        self.assertDecision(ALLOW, f'cp stray.txt {self.scratch}/copy.txt')
+        self.assertDecision(ALLOW, f'mv stray.txt {self.scratch}/')
+        self.assertDecision(None, 'cp stray.txt .claude/tmp/copy.txt')
+
+    def test_rm_through_a_directory_symlink_in_scratch_asks(self):
+        """The kernel walks `dirlink/` into the link target, so the file removed lives outside."""
+        self.assertDecision(ASK, 'rm .claude/tmp/dirlink/kept.md')
+        self.assertDecision(ASK, 'rm .claude/tmp/dirlink/../notes.md')
+        self.assertDecision(ASK, 'rm -r .claude/tmp/dirlink/')
+        self.assertDecision(ASK, 'rm .claude/tmp/*/kept.md')
+        self.assertDecision(ASK, f'rm {self.scratch}/dirlink/../notes.md')
+
+    def test_rm_of_a_link_itself_still_allowed(self):
+        """`rm link` removes the link, never what it points at."""
+        self.assertDecision(None, 'rm .claude/tmp/dirlink')
+        self.assertDecision(None, 'rm .claude/tmp/escape.md .claude/tmp/*.png')
+        self.assertDecision(ALLOW, f'rm {self.scratch}/escape.md')
+
+    def test_one_destination_outside_scratch_disqualifies_the_line(self):
+        self.assertDecision(ASK, f'git diff > {self.scratch}/a.patch > {self.outside}/b.patch')
+
+    def test_chain_after_a_scratch_redirect_still_denied(self):
+        """The redirect comes off before the guard runs, so what follows it is still examined."""
+        self.assertDecision(DENY, f'git diff > {self.scratch}/a.patch; git status')
+        self.assertDecision(DENY, f'git diff > {self.scratch}/a.patch | tee /etc/hosts')
+
+    def test_unreadable_destination_asks(self):
+        self.assertDecision(ASK, 'git diff > "$TMPDIR/change.patch"')
+        self.assertDecision(ASK, f'git diff > {self.scratch}/*.patch')
+        self.assertDecision(ASK, 'git diff > ~/change.patch')
+
+    def test_output_option_into_scratch_allowed(self):
+        self.assertDecision(ALLOW, f'git diff HEAD~1 HEAD --output={self.scratch}/change.patch')
+
+    def test_output_option_outside_scratch_asks(self):
+        self.assertDecision(ASK, f'git diff HEAD~1 HEAD --output={self.outside}/notes.md')
+
+    def test_output_option_with_dash_c_into_session_scratch_allowed(self):
+        """Scratch belongs to the session's directory, not to the repository `-C` points git at."""
+        self.assertDecision(ALLOW, f'git -C {self.outside} diff --output={self.scratch}/x.diff')
+
+    def test_relative_output_option_resolves_against_dash_c(self):
+        """Git writes a relative `--output` inside its `-C` directory, which isn't scratch here."""
+        self.assertDecision(ASK, f'git -C {self.outside} diff --output=.claude/tmp/x.diff')
+        self.assertDecision(ALLOW, 'git diff --output=.claude/tmp/x.diff')
 
 
 class OutputLimitingTailTest(DecisionTest):

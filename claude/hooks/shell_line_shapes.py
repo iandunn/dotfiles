@@ -53,6 +53,16 @@ STRIP_REDIRECT = re.compile(
     r'(?<!\S)[0-9]*(?:&?>>?\s*/dev/null|<\s*/dev/null|>&[0-9]+)(?![\w./-])'
 )
 
+# Characters that make a word name something other than the path written. `*`, `?`, and `[` let
+# bash pick a different file, and `$` and a backtick expand to text this module never sees. All
+# five are inert inside single quotes; only the globbing three are inert inside double quotes.
+GLOB_CHARS = ('*', '?', '[')
+
+# The file-descriptor digits bash reads as part of a redirect rather than as an argument, matched
+# at the end of the text preceding the `>`. `(?<!\S)` keeps them their own token, so the `2` in
+# `wp_2>x` stays with the word.
+FD_PREFIX = re.compile(r'(?<!\S)[0-9]+$')
+
 # Commands that read standard input and write standard output and can do nothing else. A pipeline
 # ending in one of these runs no code the command before it didn't already run, which is what
 # makes `git log | head -20` as safe as `git log` -- and keeps a bare rerun from dumping an
@@ -181,6 +191,137 @@ def first_operator(command):
         return UNREADABLE, ('the line ends in a backslash, so it continues where this hook '
                             'cannot see')
     return None
+
+
+def _read_redirect_target(command, position):
+    """Read the word starting at `position`, as (target, end, readable).
+
+    `readable` is False when the word holds a character bash resolves later -- a `$`, a backtick,
+    a glob character, or a backslash-newline -- because the text is then not the path that gets
+    written. Quoting is removed from `target` the way bash removes it, so `'a b'` comes back as one
+    word.
+    """
+    quote = None
+    escaped = False
+    word = []
+    readable = True
+    index = position
+
+    while index < len(command):
+        character = command[index]
+
+        if escaped:
+            # Bash deletes a backslash-newline before it parses the line, so the path it writes
+            # isn't the text read here.
+            if character == '\n':
+                readable = False
+            word.append(character)
+            escaped = False
+        elif character == '\\' and quote != "'":
+            escaped = True
+        elif quote == "'":
+            if character == "'":
+                quote = None
+            else:
+                word.append(character)
+        elif quote == '"':
+            if character == '"':
+                quote = None
+            else:
+                if character in EXPANDING_OPERATORS:
+                    readable = False
+                word.append(character)
+        elif character in ('"', "'"):
+            quote = character
+        elif character.isspace():
+            break
+        elif character in EXPANDING_OPERATORS or character in GLOB_CHARS:
+            readable = False
+            word.append(character)
+        elif (character in CHAINING_OPERATORS or character in GROUPING_OPERATORS
+                or character in ('>', '<')):
+            break
+        else:
+            word.append(character)
+
+        index += 1
+
+    if quote is not None or escaped:
+        return '', index, False
+    return ''.join(word), index, readable
+
+
+def _redirect_span(command, index):
+    """Bound the redirect whose `>` sits at `index`, as (start, end, target), or None.
+
+    `start` reaches back over a file-descriptor digit and `end` runs past the destination, so the
+    span covers everything bash consumes before the command sees its argv. `target` is None when
+    the destination cannot be read as a literal path.
+    """
+    prefix = FD_PREFIX.search(command[:index])
+    start = prefix.start() if prefix else index
+
+    position = index + 1
+    if command[position:position + 1] == '>':
+        position += 1
+    if command[position:position + 1] == '|':
+        position += 1
+    while command[position:position + 1] in (' ', '\t'):
+        position += 1
+
+    target, end, readable = _read_redirect_target(command, position)
+    if not target:
+        return None
+    return start, end, target if readable else None
+
+
+def output_redirects(command):
+    """Every `>`, `>>`, or `>|` redirect bash would act on, as a list of (start, end, target).
+
+    `target` is the destination with its quoting removed, or None when the destination expands or
+    globs. The span covers the operator and the destination together, so a caller that judges a
+    destination harmless can cut the whole redirect out of the line before checking the line for
+    operators.
+
+    This reports shapes and decides nothing. A benign redirect is skipped, because
+    `BENIGN_REDIRECT` has already established that it writes no file. `<` and `&>` are not
+    reported at all, so a line using either keeps whatever verdict the guard gives it. So does a
+    line this function cannot read to the end: it returns None rather than a partial list.
+    """
+    redirects = []
+    quote = None
+    escaped = False
+    index = 0
+
+    while index < len(command):
+        character = command[index]
+
+        if escaped:
+            escaped = False
+        elif character == '\\' and quote != "'":
+            escaped = True
+        elif quote:
+            if character == quote:
+                quote = None
+        elif character in ('"', "'"):
+            quote = character
+        elif character == '>':
+            benign = BENIGN_REDIRECT.match(command, index)
+            if benign:
+                index = benign.end()
+                continue
+            span = _redirect_span(command, index)
+            if span is None:
+                return None
+            redirects.append(span)
+            index = span[1]
+            continue
+
+        index += 1
+
+    if quote is not None or escaped:
+        return None
+    return redirects
 
 
 def is_output_limiting_segment(segment):

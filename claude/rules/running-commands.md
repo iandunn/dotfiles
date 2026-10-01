@@ -21,6 +21,8 @@
 
 - A trailing `| head`, `| tail`, or `| wc` is the exception, because those three can only trim what the command already printed. So is a redirect to `/dev/null` or a file descriptor (`2>&1`, `2>/dev/null`). Everything else in a pipeline -- `grep`, `sed`, `sort`, `jq`, `tee`, `xargs` -- makes the line a chain again. A redirect to a real file still prompts rather than being refused, since there's no split that avoids it.
 
+- `file-command-permissions.py` makes one more exception for the commands it gates: a `>` or `>>` whose destination is inside the working directory's own `.claude/tmp/`, or inside Claude Code's own session directory under an OS temp directory, so `git diff > /Users/me/project/.claude/tmp/x.patch` auto-approves. Write that destination out in full. A `$TMPDIR` or a `~` in the path prompts, because the hook can't see what either expands to, and every redirect on the line has to qualify or none of them do. The allowlist hook (`wp`, `vip`) makes no such exception.
+
 - Run `rm`, `mv`, `cp`, `git add`, `git commit`, and `git worktree remove` bare -- one per tool call, subject to the same two exceptions. If you want output trimmed beyond what `head`/`tail`/`wc` give you, run the command and read the result.
 
 - Quoted arguments are safe, so a multi-paragraph `git commit -m` message auto-approves inside a worktree; its newlines are part of one quoted string. Write commit messages in single quotes when they contain backticks, which the same hook still refuses inside double quotes because bash expands them there. An apostrophe inside a single-quoted message is spelled `'\''`.

@@ -29,12 +29,18 @@ so is more useful than asking a person to approve a line nobody needed to
 write. A redirect to a real file, an expansion, a subshell, an unterminated
 quote, and a trailing backslash all ASK, because no such rewrite exists.
 
-Two shapes don't count as reaching beyond the command at all. A redirect to
+Three shapes don't count as reaching beyond the command at all. A redirect to
 `/dev/null` or a file descriptor throws output away, and it is stripped before
 the arguments are read so it can't be mistaken for an operand. A pipeline
 ending in `head`, `tail`, or `wc` is judged as the command that feeds it, since
 those three read stdin and write stdout and can do nothing else; the tail comes
-off before the guard runs.
+off before the guard runs. A `>` or `>>` whose destination is inside this
+directory's `.claude/tmp/` or Claude Code's own session directory under an OS
+temporary directory writes only scratch, so `strip_scratch_redirects` cuts it
+out before the guard runs too. Every redirect on the line has to qualify, and a
+destination that expands, globs, or resolves through a symlink out of scratch
+disqualifies the line; `git --output` to the same places is cleared the same
+way, in `git_read_only_option_reason`.
 
 Single-quoted `$` and backticks are permitted because the commit convention in
 CLAUDE.md puts backticks around code references, so refusing them would prompt
@@ -399,17 +405,52 @@ def is_relative_claude_tmp_path(operand):
     return normalized == scratch_dir or normalized.startswith(scratch_dir + os.sep)
 
 
-def is_cwd_claude_tmp_path(operand, cwd):
-    """True if the operand resolves inside the working directory's own `.claude/tmp/`.
+def resolve_all_but_final(operand, cwd):
+    """Resolve the operand the way the kernel walks it, leaving only a plain final name unresolved.
 
-    The final component is left unresolved for the same reason containment does
-    it: a symlink operand names the link, not what it points at.
+    A symlink operand names the link rather than what it points at, so `rm link` touches only the
+    link. Everything before it is resolved physically rather than normalized first, because the
+    kernel follows `link/..` to the link target's parent, where `normpath` would collapse it as
+    text. A final `.` or `..`, or a trailing slash, makes the kernel follow the last component
+    too, so those resolve in full.
     """
+    absolute = os.path.join(cwd, operand)
+    if operand.endswith(os.sep) or os.path.basename(absolute) in ('.', '..'):
+        return os.path.realpath(absolute)
+    return os.path.join(os.path.realpath(os.path.dirname(absolute)), os.path.basename(absolute))
+
+
+def is_cwd_claude_tmp_path(operand, cwd):
+    """True if the operand, and every path a glob in it matches, lies in the cwd's `.claude/tmp/`.
+
+    A glob is expanded first, because `*` can match a directory symlink partway along the path and
+    carry the operand out of scratch.
+    """
+    if expands_after_this_hook(operand):
+        return False
     scratch_root = os.path.join(os.path.realpath(cwd), '.claude', 'tmp')
-    absolute = os.path.normpath(os.path.join(cwd, operand))
-    parent = os.path.realpath(os.path.dirname(absolute))
-    resolved = os.path.join(parent, os.path.basename(absolute))
-    return resolved == scratch_root or resolved.startswith(scratch_root + os.sep)
+    # Bash passes a glob that matches nothing through as literal text.
+    for match in expand_globs(operand, cwd) or [operand]:
+        resolved = resolve_all_but_final(match, cwd)
+        if resolved != scratch_root and not resolved.startswith(scratch_root + os.sep):
+            return False
+    return True
+
+
+def is_cwd_scratch_write_destination(operand, cwd):
+    """True if writing into or through this operand can only touch the cwd's own `.claude/tmp/`.
+
+    `cp` and `mv` write through a symlink destination, or into the directory it points at, so
+    unlike `is_cwd_claude_tmp_path` this resolves the final component too, and refuses a file that
+    shares its inode with another name.
+    """
+    return is_scratch_destination(operand, cwd, include_agent_temp=False)
+
+
+SCRATCH_DESTINATION_ESCAPES = (
+    '`{operand}` leads out of .claude/tmp/ through a link, or shares its inode with a file '
+    'outside it, so this {command} could write there; confirm it'
+)
 
 
 def sweeps_into_cwd_scratch(operands, cwd):
@@ -453,9 +494,7 @@ def is_agent_scratch_source(operand, cwd):
     file is excluded: moving one into scratch is a change to the repository, not
     cleanup.
     """
-    absolute = os.path.normpath(os.path.join(cwd, operand))
-    parent = os.path.realpath(os.path.dirname(absolute))
-    resolved = os.path.join(parent, os.path.basename(absolute))
+    resolved = resolve_all_but_final(operand, cwd)
 
     for root in temp_roots():
         if resolved == root or resolved.startswith(root + os.sep):
@@ -463,7 +502,150 @@ def is_agent_scratch_source(operand, cwd):
 
     cwd_root = os.path.realpath(cwd)
     inside_cwd = resolved == cwd_root or resolved.startswith(cwd_root + os.sep)
-    return inside_cwd and not is_tracked(resolved, cwd)
+    return inside_cwd and is_untracked_work_tree_file(resolved)
+
+
+def true_case_path(path):
+    """The absolute path spelled with each component's case as stored on disk, or None if missing."""
+    result = os.sep
+    for component in path.strip(os.sep).split(os.sep):
+        try:
+            entries = os.listdir(result)
+        except OSError:
+            return None
+        if component in entries:
+            result = os.path.join(result, component)
+            continue
+        matches = [entry for entry in entries if entry.lower() == component.lower()]
+        if len(matches) != 1:
+            return None
+        result = os.path.join(result, matches[0])
+    return result
+
+
+def is_untracked_work_tree_file(resolved):
+    """True if this is a plain file that git sees as untracked, rather than as the user's.
+
+    Being absent from the index alone isn't enough. Outside any repository nothing is in an
+    index, a gitignored file is one the user chose to keep out of it, and a directory or a `.git`
+    entry can hold the repository itself. Git is asked from the file's own directory, so a file
+    in a nested repository is judged by that repository. The path's real letter case is restored
+    first, because the filesystem opens `CLAUDE/claude.md` as the tracked `claude/CLAUDE.md`
+    while git's index lookup is case-sensitive.
+    """
+    resolved = true_case_path(resolved)
+    if resolved is None or '.git' in resolved.split(os.sep):
+        return False
+    if os.path.islink(resolved) or not os.path.isfile(resolved):
+        return False
+    directory = os.path.dirname(resolved)
+    if git_toplevel(directory) is None or is_tracked(resolved, directory):
+        return False
+    try:
+        ignored = subprocess.run(
+            ['git', '-C', directory, 'check-ignore', '-q', '--', resolved],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return ignored.returncode == 1
+
+
+# Claude Code names its per-session scratch directory after itself and puts it directly under an
+# OS temporary directory, as `/private/tmp/claude-501/<project>/<session>/scratchpad`, with the
+# user's uid as the suffix. Matching that shape exactly is what separates a session's scratchpad
+# from the temporary files every other program on the machine keeps in the same place, and from
+# Claude Code's own task output, which sits beside the scratchpad.
+AGENT_TEMP_PREFIX = 'claude'
+
+
+def is_agent_temp_path(resolved):
+    """True if this resolved path is inside Claude Code's own directory under an OS temp root."""
+    for root in temp_roots():
+        if not resolved.startswith(root + os.sep):
+            continue
+        segments = resolved[len(root) + 1:].split(os.sep)
+        if (len(segments) > 4 and segments[0] == f'{AGENT_TEMP_PREFIX}-{os.getuid()}'
+                and segments[3] == 'scratchpad'):
+            return True
+    return False
+
+
+def is_scratch_destination(target, cwd, resolve_from=None, include_agent_temp=True):
+    """True if writing to this path can only touch scratch.
+
+    `resolve_from` is the directory a relative target is written relative to, when that isn't
+    `cwd` -- git's `-C` directory, for `--output`. Scratch itself always belongs to `cwd`, the
+    session's working directory, whichever directory the writer runs in. `include_agent_temp`
+    False narrows scratch to the cwd's `.claude/tmp/` alone.
+
+    Two places qualify: the working directory's own `.claude/tmp/`, which `debugging.md` names as
+    where temporary files belong, and Claude Code's own session directory under an OS temporary
+    directory. The rest of `/tmp` and `/var/folders` is deliberately left out, so `> /tmp/out.txt`
+    keeps prompting the way `running-commands.md` says it does; those directories hold other
+    programs' files, and nothing in this workflow writes there.
+
+    Containment here resolves the FULL path, final component included, which is the opposite of
+    what the rm and mv gates do. `rm link` deletes the link, but `> link` truncates whatever the
+    link points at, so a symlink sitting in scratch would otherwise carry the write anywhere on
+    the machine. A `~`, a `$`, a backtick, or a glob character in either path is refused outright,
+    because bash rewrites each of them after this hook has read the command.
+
+    The path is never normalized before it's resolved, because the kernel follows `link/..` to
+    the link target's parent while `normpath` would collapse it as text. A file with more than one
+    hard link is refused too, since truncating it empties every other name for the same inode.
+    """
+    if not target:
+        return False
+    for path in (target, resolve_from or ''):
+        if (path.startswith('~') or os.sep + '~' in path or expands_after_this_hook(path)
+                or any(char in path for char in GLOB_CHARS)):
+            return False
+
+    absolute = os.path.join(resolve_from or cwd, target.rstrip(os.sep) or target)
+    if os.path.basename(absolute) in ('', '.', '..'):
+        return False
+    if os.path.lexists(absolute):
+        resolved = os.path.realpath(absolute)
+        try:
+            if os.path.isfile(resolved) and os.stat(resolved).st_nlink > 1:
+                return False
+        except OSError:
+            return False
+    else:
+        resolved = os.path.join(os.path.realpath(os.path.dirname(absolute)),
+                                os.path.basename(absolute))
+
+    scratch_root = os.path.join(os.path.realpath(cwd), '.claude', 'tmp')
+    if resolved == scratch_root or resolved.startswith(scratch_root + os.sep):
+        return True
+    return include_agent_temp and is_agent_temp_path(resolved)
+
+
+def strip_scratch_redirects(command, cwd):
+    """Remove the output redirects that can only write scratch, leaving the rest of the line.
+
+    Cutting them before the operator guard runs is what lets `git diff > .claude/tmp/x.patch` be
+    judged as the bare `git diff`, the same way a `/dev/null` redirect already is. The line comes
+    back unchanged whenever anything is unclear, so the guard still sees every redirect it would
+    have seen before.
+
+    Stripping is all or nothing: `cmd > a > b` truncates both files, so a single destination
+    outside scratch leaves the whole line for the guard to prompt on. Cutting happens before the
+    guard rather than after a verdict, because `first_operator` stops at what it finds first --
+    forgiving a redirect in place would leave a `;` further along the line unexamined.
+    """
+    redirects = shell_line_shapes.output_redirects(command)
+    if not redirects:
+        return command
+
+    for _start, _end, target in redirects:
+        if not is_scratch_destination(target, cwd):
+            return command
+
+    for start, end, _target in reversed(redirects):
+        command = command[:start] + ' ' + command[end:]
+    return command
 
 
 def strip_command_prefix(tokens):
@@ -507,10 +689,23 @@ def is_long_option(argument, option):
     return len(name) > 2 and name.startswith('--') and option.startswith(name)
 
 
-def git_read_only_option_reason(subcommand, arguments):
-    """Why an argument makes a read-only git subcommand run a program or write a file, or None."""
-    for argument in arguments:
+def git_read_only_option_reason(subcommand, arguments, cwd, git_cwd):
+    """Why an argument makes a read-only git subcommand run a program or write a file, or None.
+
+    `--output` is the one option here that names a file rather than a program, so it is the one
+    that can be cleared by where the file lands. A destination inside scratch gets the same grant
+    a `> .claude/tmp/x` redirect gets, since git writing the patch itself and bash writing it are
+    the same act. `cwd` is the session's working directory, which owns scratch; `git_cwd` is
+    git's, which a `-C` ahead of the subcommand moves and which a relative `--output` lands in.
+    """
+    for index, argument in enumerate(arguments):
         if is_long_option(argument, '--output'):
+            if '=' in argument:
+                destination = argument.split('=', 1)[1]
+            else:
+                destination = arguments[index + 1] if index + 1 < len(arguments) else ''
+            if is_scratch_destination(destination, cwd, resolve_from=git_cwd):
+                continue
             return f'`{argument}` makes git {subcommand} write a file'
         if subcommand == 'grep' and (
             is_long_option(argument, '--open-files-in-pager')
@@ -643,10 +838,14 @@ def unsafe_staging_reason(subcommand, arguments, git_cwd):
 
 
 def git_effective_cwd(tokens, subcommand_index, cwd):
-    """The directory git runs in: the hook's cwd, moved by a `-C <path>` ahead of the subcommand."""
+    """The directory git runs in: the hook's cwd, moved by a `-C <path>` ahead of the subcommand.
+
+    The path is resolved rather than normalized, because git's chdir follows `link/..` to the link
+    target's parent, where `normpath` would collapse it as text.
+    """
     for index in range(1, subcommand_index):
         if tokens[index] == '-C' and index + 1 < subcommand_index:
-            return os.path.normpath(os.path.join(cwd, tokens[index + 1]))
+            return os.path.realpath(os.path.join(cwd, tokens[index + 1]))
     return cwd
 
 
@@ -761,9 +960,7 @@ def is_tracked(path, cwd):
 
 def is_inside(operand, root, cwd):
     """True if the operand names a path within root, without resolving its final component."""
-    absolute = os.path.normpath(os.path.join(cwd, operand))
-    parent = os.path.realpath(os.path.dirname(absolute))
-    resolved = os.path.join(parent, os.path.basename(absolute))
+    resolved = resolve_all_but_final(operand, cwd)
     return resolved == root or resolved.startswith(root + os.sep)
 
 
@@ -903,7 +1100,9 @@ def decide_rm(tokens, cwd):
     flags, operands = rm_flags_and_operands(tokens)
 
     if operands and all(is_relative_claude_tmp_path(operand) for operand in operands):
-        return None
+        if all(is_cwd_claude_tmp_path(operand, cwd) for operand in operands):
+            return None
+        return 'ask', 'An operand leaves .claude/tmp/ through a symlink; confirm this rm'
 
     if sweeps_into_cwd_scratch(operands, cwd):
         return 'allow', "Every operand is in this directory's own .claude/tmp/ scratch"
@@ -979,6 +1178,17 @@ def decide_mv(tokens, cwd):
 
     if operands and (is_relative_claude_tmp_path(operands[-1])
                      or sweeps_into_cwd_scratch(operands[-1:], cwd)):
+        if any(char in operands[-1] for char in GLOB_CHARS):
+            return 'ask', f'`{operands[-1]}` is a glob destination; confirm this mv'
+        # `mv` renames over a file symlink or a hard link rather than writing through it, so only
+        # a destination that resolves to a directory needs following to see where it lands.
+        dest_real = os.path.realpath(os.path.join(cwd, operands[-1]))
+        if os.path.isdir(dest_real):
+            lands_in_scratch = is_cwd_scratch_write_destination(dest_real, cwd)
+        else:
+            lands_in_scratch = is_cwd_claude_tmp_path(operands[-1], cwd)
+        if not lands_in_scratch:
+            return 'ask', SCRATCH_DESTINATION_ESCAPES.format(operand=operands[-1], command='mv')
         return decide_mv_into_scratch(flags, operands, cwd)
 
     root = sanctioned_worktree_root(cwd)
@@ -1034,6 +1244,44 @@ def decide_mv(tokens, cwd):
     return 'allow', f'mv contained in the worktree at {root}; nothing unrecoverable overwritten'
 
 
+def cp_into_scratch_reason(flags, operands, cwd):
+    """Why a cp aimed at this directory's `.claude/tmp/` could write outside it, or None.
+
+    cp writes through a symlink or hard link at the name it lands on, so when the destination is
+    a directory, each source's landing is checked as well as the destination itself. The flag
+    whitelist keeps out GNU `-t`, which names the real destination as a flag value.
+    """
+    for flag in flags:
+        if not re.fullmatch(r'-[RrfinvpXcLPH]+', flag):
+            return f'`{flag}` is not a cp flag this gate reasons about; confirm this cp'
+    recursive = any(char in 'Rr' for flag in flags for char in flag[1:])
+
+    dest = operands[-1]
+    if not is_cwd_scratch_write_destination(dest, cwd):
+        return SCRATCH_DESTINATION_ESCAPES.format(operand=dest, command='cp')
+
+    dest_real = os.path.realpath(os.path.join(cwd, dest))
+    if not os.path.isdir(dest_real):
+        return None
+    for source in operands[:-1]:
+        if expands_after_this_hook(source):
+            return f'`{source}` expands to a path this hook cannot see; confirm this cp'
+        for match in expand_globs(source, cwd) or [source]:
+            if recursive and (match.endswith(os.sep) or os.path.basename(match) in ('.', '..')):
+                return (f'`{match}` copies its contents rather than itself, so where each file '
+                        'lands cannot be checked; confirm this cp')
+            name = os.path.basename(os.path.normpath(os.path.join(cwd, match)))
+            landing = os.path.join(dest_real, name)
+            if not os.path.lexists(landing):
+                continue
+            if recursive:
+                return (f'`{landing}` already exists, and a recursive copy writes through any '
+                        'link inside it; confirm this cp')
+            if not is_cwd_scratch_write_destination(landing, cwd):
+                return SCRATCH_DESTINATION_ESCAPES.format(operand=landing, command='cp')
+    return None
+
+
 def decide_cp(tokens, cwd):
     """Allow cp when everything it names stays inside a sanctioned worktree and
     nothing unrecoverable gets overwritten.
@@ -1043,10 +1291,21 @@ def decide_cp(tokens, cwd):
     """
     flags, operands = rm_flags_and_operands(tokens)
 
-    if operands and is_relative_claude_tmp_path(operands[-1]):
-        return None
+    # A link in scratch shares its target's inode, so a later write that scratch grants for free
+    # would land in the original file.
+    for flag in flags:
+        if is_long_option(flag, '--link') or is_long_option(flag, '--symbolic-link') or (
+            not flag.startswith('--') and any(char in 'ls' for char in flag[1:])
+        ):
+            return 'ask', f'`{flag}` makes cp create links rather than copies; confirm it'
 
-    if operands and sweeps_into_cwd_scratch(operands[-1:], cwd):
+    if operands and (is_relative_claude_tmp_path(operands[-1])
+                     or sweeps_into_cwd_scratch(operands[-1:], cwd)):
+        reason = cp_into_scratch_reason(flags, operands, cwd)
+        if reason:
+            return 'ask', reason
+        if is_relative_claude_tmp_path(operands[-1]):
+            return None
         return 'allow', "cp into this directory's own .claude/tmp/ scratch"
 
     root = sanctioned_worktree_root(cwd)
@@ -1122,6 +1381,10 @@ def main():
     command = shell_line_shapes.strip_output_limiting_tail(command)
 
     if is_gated_command(command):
+        # A redirect that can only write scratch comes off here, so the rest of the line is judged
+        # on its own. Removing it first, rather than forgiving it in the verdict, is what keeps a
+        # chaining operator further along the line from going unexamined.
+        command = strip_scratch_redirects(command, cwd)
         decision = shell_operator_decision(command)
         if decision:
             emit(*decision)
@@ -1190,7 +1453,9 @@ def main():
             return
         git_cwd = git_effective_cwd(tokens, subcommand_index, cwd)
         if is_read_only_git_subcommand(tokens, subcommand_index):
-            option_reason = git_read_only_option_reason(subcommand, tokens[subcommand_index + 1:])
+            option_reason = git_read_only_option_reason(
+                subcommand, tokens[subcommand_index + 1:], cwd, git_cwd,
+            )
             if not option_reason and subcommand == 'diff':
                 option_reason = git_diff_no_index_reason(tokens, subcommand_index, cwd)
             if option_reason:
