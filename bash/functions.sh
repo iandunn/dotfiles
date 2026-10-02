@@ -804,6 +804,7 @@ git_archive_stale_branches() {
 	cutoff_date=$(date -d '3 months ago' '+%Y-%m-%d' 2>/dev/null || date -v-3m '+%Y-%m-%d')
 
 	main_branch=$(git_main_branch)
+	# todo for publix this gets master instead of trunk. maybe bug or maybe need to delete master from plugix origin? or both? it should get trunk
 
 	if [[ -z "$main_branch" ]]; then
 		error_message "error: origin/HEAD is not set."

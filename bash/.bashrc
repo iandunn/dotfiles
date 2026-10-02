@@ -19,6 +19,18 @@ export PATH="$PATH:$HOME/.local/bin:$HOME/go/bin:$HOME/.relay/bin"
 export HOMEBREW_PREFIX=$(brew --prefix) # Different on laptop and desktop because intel vs silicon
 eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
 
+# Shells that inherit Local's environment without its entry script, like VS Code terminals,
+# get `PHPRC` but not `LOCALWP_PHP_PATH`.
+if [ -z "$LOCALWP_PHP_PATH" ] && [ -n "$PHPRC" ]; then
+	IFS=':' read -ra path_entries <<< "$PATH"
+	for path_entry in "${path_entries[@]}"; do
+		if [[ $path_entry == *lightning-services/php-* ]]; then
+			LOCALWP_PHP_PATH="$path_entry"
+			break
+		fi
+	done
+fi
+
 # This makes it so that LocalWP sites will use their version of php instead of the global one
 # This has to come after "brew shellenv" above
 if [ -n "$LOCALWP_PHP_PATH" ]; then
