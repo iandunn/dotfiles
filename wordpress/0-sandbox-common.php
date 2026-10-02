@@ -19,6 +19,8 @@ add_filter( 'allow_minor_auto_core_updates', '__return_true' );
 add_filter( 'allow_major_auto_core_updates', '__return_true' );
 add_filter( 'auto_update_plugin', '__return_false' );
 add_filter( 'auto_update_theme', '__return_false' );
+add_filter( 'cron_schedules', __NAMESPACE__ . '\add_five_minute_cron_schedule' );
+add_action( 'init', __NAMESPACE__ . '\reschedule_core_version_check', 11 );
 
 // Jetpack prevents me from logging in w/ "password" as my password.
 // This doesn't make sense in a local env
@@ -34,6 +36,34 @@ add_action( 'wp_head', __NAMESPACE__ . '\admin_bar_flex_css' );
 add_action( 'admin_footer', __NAMESPACE__ . '\admin_bar_sync_margin_js' );
 add_action( 'wp_footer', __NAMESPACE__ . '\admin_bar_sync_margin_js' );
 
+
+/**
+ * Register a cron schedule that runs every 5 minutes.
+ *
+ * @param array $schedules The existing cron schedules.
+ */
+function add_five_minute_cron_schedule( $schedules ) {
+	$schedules['every_five_minutes'] = [
+		'interval' => 5 * MINUTE_IN_SECONDS,
+		'display'  => 'Every 5 Minutes',
+	];
+
+	return $schedules;
+}
+
+/**
+ * Check for core updates every 5 minutes, so new releases get auto-installed quickly.
+ *
+ * Core only runs the check on the main site, so that's the only place the event needs to change.
+ */
+function reschedule_core_version_check() {
+	if ( ! is_main_site() || 'every_five_minutes' === wp_get_schedule( 'wp_version_check' ) ) {
+		return;
+	}
+
+	wp_clear_scheduled_hook( 'wp_version_check' );
+	wp_schedule_event( time(), 'every_five_minutes', 'wp_version_check' );
+}
 
 /**
  * Register set_minimum_number_admin_screen_items to all admin screens.
