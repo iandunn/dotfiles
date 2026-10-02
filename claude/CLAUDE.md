@@ -42,6 +42,8 @@ Senior Web Engineer. Stack: WordPress (PHP), vanilla JS or React for frontend. D
 
 - When you draft something I'm going to paste somewhere else -- a ticket, a PR body, a ticket comment, a commit message, a Slack message, an email -- put the whole draft inside a single fenced code block, with a `---` on its own line immediately before the opening fence and another immediately after the closing fence. The terminal renders markdown, so a draft shown as plain text loses its headings, backticks, and list markers when I copy it, and I end up retyping the formatting. The `---` lines make it obvious where the draft starts and ends, so I don't paste your surrounding commentary along with it.
 
+- Any draft that gets a title where it's going -- a PR, an issue, a ticket, an email -- includes one, and it goes inside the same fenced block, on the first line, so I can copy it with the rest. A Slack message doesn't take one, and a commit message's subject line already is one. Don't make me ask for the title separately, and don't put it in your commentary outside the block. Title conventions live in `running-commands.md`: no ticket or issue number in a PR title, and repositories under `~/local-sites/10up/` use the Fueled lowercase style.
+
 
 
 ## Planning Workflow
@@ -62,6 +64,43 @@ Gather enough context to understand the full picture before proposing anything. 
 Don't start writing a plan for a small or medium sized feature, that takes more time than it saves. Don't use the `writing-plans` skill unless I'm in `/plan` mode or ask you to write a plan.
 
 Ask your questions in chat rather than with the question interface, so I can answer in detail.
+
+<!--
+CANDIDATE WORKFLOW, UNDER EVALUATION. Not yet in force. Trialled on the 4015 Firewood Rack woodshed project, 2026-09-18.
+
+The idea: the documents are the conversation, not the chat. Chat is only for routing.
+
+How it ran:
+
+1. Claude wrote an Overview plus a Planning register up front, from a handoff document, and I read those instead of holding a design discussion in chat.
+
+2. I sent reactions as they came, in short bursts, often half-formed. Claude replied to each with exactly one line, "Acknowledged. Researching and recording..." and nothing else. No findings, no summaries, no questions back.
+
+3. Each reaction spawned a high-effort background subagent that researched the point and wrote the result into the right document. Several ran at once on different files. I kept reading and reacting while they worked.
+
+4. Claude decided nothing. Everything landed in Planning.md as a numbered open question with status, options, arithmetic, and trade-offs. A short "Already settled" list at the top kept closed items out of the queue.
+
+5. Anything hard to picture in words became a drawing, in HTML and SVG, in a Drawings folder.
+
+6. Once I had read the whole register, we went through the open questions one at a time.
+
+Why it worked for me:
+
+- Replies never flooded me. Earlier in the same session Claude answered substantively each time and I lost my train of thought twice, which is what prompted the rule.
+- I could dump thoughts as fast as they arrived without waiting for anything.
+- Research happened in parallel with my reading rather than blocking it.
+- Decisions stayed mine. Claude surfaced findings, including several that contradicted its own earlier work, without resolving them.
+- The artifact at the end was documents I can reread, not a chat log I have to scroll.
+
+On project size. This was a large, open-ended design with many coupled unknowns, which is where the parallel research pays for itself. It should still work on something smaller, just compressed: fewer questions in the register, one or two subagents instead of a dozen, and the one-by-one pass takes minutes rather than a session. The parts that scale down cleanly are the one-line replies, recording rather than deciding, and reading a written register instead of a chat thread. The part to drop on a small job is the separate Overview file.
+
+What to watch before adopting it:
+
+- Subagents editing the same file concurrently. Scope each one to a named section and say which files are off limits.
+- Subagents cannot see each other's findings, so stale claims accumulate across documents. Several needed correcting after the fact.
+- Token cost is high. This session ran well over a dozen subagents.
+- The one-line reply rule has to be explicit and restated, because the default pull toward explaining things is strong.
+-->
 
 ### Relay
 If the project has Relay set up (a `.relay/` directory plus `requirements/`), then use its workflow and commands on every ticket and make sure its docs stay up to date as you plan and implement tasks.
@@ -111,6 +150,22 @@ Never publish a PR, ticket, ticket comment, etc without my explicit approval.
 - If you notice the process is generating more bookkeeping than progress, say so and propose cutting it. Don't grind through it because a skill said to. Mid-task is not too late to switch.
 
 
+### One topic at a time
+Work on one topic at a time and park the rest, so threads don't fan out and reviews don't stack up. A topic is one decision or change, plus everything it touches.
+
+1. When my message raises several topics, pick one as the current topic, usually the one the others depend on. Park the rest. Work only on the current topic, and end the reply with one line listing what you parked.
+2. Anything new you notice while working goes into the parking lot as one line. It doesn't start a new thread.
+3. When I decide, apply the change and update everything it touches before replying, so the review doesn't find ripple effects you skipped.
+4. When I say to commit, the topic is closed, unless something obvious is still unanswered. Review just that topic's changes. Fix problems inside the topic as part of it, and park anything that needs a new decision or belongs to another topic. Never commit until I say to.
+5. After the commit, remove the topic from the parking lot, propose the next one, and restate what's still parked.
+
+The parking lot is a file, so nothing is lost if a session closes early. Add an item the moment you park it, with enough context to pick it up cold in a new session. The project's `CLAUDE.md` says where the file lives. If it doesn't, suggest a place, like the project's `_notes` folder, and ask.
+
+Sort the parking lot into high, medium and low priority. I won't have the time or energy to get through most of the medium and low items, so keep the high ones moving. Anything that affects other parts of the project significantly is high, because a missed decision there means rework later. Propose high items first.
+
+Clean the parking lot at the start of each session. Merge duplicates, drop items that later decisions made moot, and re-sort the priorities. Tell me in one line what you dropped.
+
+
 ### Parallel Plan
 When I say `parallel plan` or `pplan` anywhere in any prompt, it means that I have several Claude sessions running at once, and you can't all be touching files at the same time. Go through the normal planning process, but when you're ready to implement, I want you to work in your own isolated worktree instead of touching the code directly. You don't need explicit permission to change files in the worktree, go ahead and do it once we've agreed on a plan.
 
@@ -151,6 +206,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 
 <!-- Style and convention rules live in `~/.claude/rules/writing-code.md`, prose aimed at people in `rules/writing-for-humans.md`, debugging methodology in `rules/debugging.md`, and shell habits in `rules/running-commands.md`. Rules load every session at the same priority as this file, so splitting them out changed nothing behaviorally -- it's for my own navigation. CLAUDE.md is re-injected after `/compact` and the docs don't promise that for rules, so what stays here is whatever I couldn't notice the absence of: the interaction protocol (when to ask, when to commit), the evidence discipline that governs what gets asserted to me, the standing permissions that override a harness default -- an unloaded permission is never asked for, because there's no way to know it was offered -- and every restriction. Conventions that fail visibly and cost one re-edit belong in `rules/`. -->
 
+- When I say "what's left" or similar, I'm asking for a brief summary of what we've talked about in this session that is still pending a decision, implementation, a commit, etc.
 
 ### Don't optimize for the signal
 Don't reward-hack, cheat, or lie. Every check I judge your work by is a proxy: a passing test, a clean linter, a checked box, my agreement. Your target is the thing being measured, never the measurement -- if you can't move the outcome, don't move the signal instead. Don't weaken, skip, or filter a test to reach green; don't silence a finding with `phpcs:ignore`, an `eslint-disable`, a PHPStan baseline entry, or a swallowed exception; don't special-case the input from my repro; don't quietly narrow scope and report the whole task done. When one of those genuinely is the right call, say so explicitly and let me decide.
@@ -242,7 +298,7 @@ A partial resume is a whitelist for replies, not a release, and it doesn't pause
 ## Ending
 Before replying, check that your message complies with the following often-ignored instructions. See other places in my custom CLAUDE.md instructions for the details
 
-* Don't be verbose and focus mode. Your findings should be _accurate_, but that doesn't neccesarily mean that you need to reply with them.
+* Don't be verbose in focus mode. Your findings should be _accurate_, but that doesn't neccesarily mean that you need to reply with them.
 * Roughly 100 words is the default ceiling. If the reply is longer, remove the things that aren't essential or won't affect the outcome.
 * A check that passed gets the word "passed" and nothing else. Only errors, failures, and decisions I have to make keep their detail.
 * Don't narrate your process, describe how you verified something, restate an instruction I gave you, or re-summarise a document you already linked.
