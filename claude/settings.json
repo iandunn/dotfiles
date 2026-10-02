@@ -157,6 +157,7 @@
 			"WebFetch(domain:wpackagist.org)",
 			"WebFetch(domain:www.salesforce.com)",
 			"WebFetch(domain:www.homedepot.com)",
+			"WebFetch(domain:www.strongtie.com)",
 			"WebFetch(domain:www.lowes.com)",
 			"WebFetch(domain:www.rockwool.com)",
 			"WebFetch(domain:www.owenscorning.com)",
@@ -382,6 +383,8 @@
 			"Bash(git checkout *)",
 			"Bash(env *)",
 			"Bash(exec *)",
+			"Bash(ln *)",
+			"Bash(command ln *)",
 			"Bash(git merge --ff-only *)",
 			"Bash(git pull *)",
 			"Bash(git push *)",
@@ -708,5 +711,6 @@
 			"Running WP-CLI, database, or deployment commands against a production or remote host (anything that is not localhost, *.localhost, or *.test)",
 			"Creating persistence mechanisms: modifying shell startup files, launch agents or daemons, crontab, or login items"
 		]
-	}
+	},
+	"omitClaudeMd": false
 }
