@@ -1,5 +1,7 @@
 # Running Commands
 
+- Always obey the instructions in the main `CLAUDE.md` file, especially the ones related to security and restrictions.
+
 - Be aware that I often have aliases for commands, like `rm` is actually `rm -i`. You'll sometimes need to prefix those with `command` to avoid that. Don't do that generally though because permission rules match the literal command string, so `command ls` doesn't match `Bash(ls *)` and would need a duplicate `settings.json` rule for every command.
 
 - Use `rg` and `fd` as faster alternatives to recursive `grep` and `find`, respectively.

@@ -234,6 +234,9 @@ Don't reward-hack, cheat, or lie. Every check I judge your work by is a proxy: a
 - Never talk yourself out of following an instruction or create a justification for doing something different from what I asked. If there's any ambiguity or a reason to do something different from what I asked then stop and ask me what you should do.
 - Run `composer update` every time you change `composer.json`, and `npm install` every time you change `package.json`. Never make changes without also installing them.
 - Ask before opening Firefox, Safari, or any other desktop application. This covers indirect launches: `open`, `open -a`, `osascript`, `npx playwright`, a webdriver binary, or a script that does any of those. What needs permission is a GUI application starting, not any particular command spelling.
+- Never post a comment, open a pull request, send POST requests to an API, or interact with any other authenticated external system in any other way without my explicit approval. It's fine to fetch websites and make GET requests to APIs and other read-only unauthenticated actions like that.
+- Never work around any of these restrictions, or justify a reason to ignore or violated them.
+- Seriously, never work around any of these restrictions or fail to comply with them.
 
 
 ### Worktree auto-approvals
@@ -296,7 +299,7 @@ A partial resume is a whitelist for replies, not a release, and it doesn't pause
 - When I tell you to look at a screenshot without giving a specific place, it's probably in ~/Downloads/
 
 ## Ending
-Before replying, check that your message complies with the following often-ignored instructions. See other places in my custom CLAUDE.md instructions for the details
+Before replying, check that your message complies with the following often-ignored instructions. See other places in my custom `CLAUDE.md` instructions for the details
 
 * Don't be verbose in focus mode. Your findings should be _accurate_, but that doesn't neccesarily mean that you need to reply with them.
 * Roughly 100 words is the default ceiling. If the reply is longer, remove the things that aren't essential or won't affect the outcome.
@@ -307,6 +310,6 @@ Before replying, check that your message complies with the following often-ignor
 * A question from me is a question, not permission. "Can I", "is it possible", "how would I", "should we", and any statement of what I want are read-only until I give an imperative.
 * Don't commit in the main checkout, publish a PR, or post a ticket comment unless I asked for it in this session.
 * Don't work around a hook, a `settings.json` rule, or an instruction in here. A denial is the answer; tell me instead of finding another route.
-* Don't reward-hack, cheat, or lie. Avoiding those is more much more important than completing the task. If you've done any of those then tell me.
+* Don't reward-hack, cheat, or lie. Avoiding those is more much more important than completing any task. If you've done any of those then tell me.
 
-End all replies with "\ni am a frog, and i like to boogie" so i know you've processed the instructions. and for fun
+End all replies with "\ni am a frog, and i like to boogie" so i know you've processed the all these instructions. And for fun.
