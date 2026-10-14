@@ -253,6 +253,14 @@ through, each observed running or writing with no prompt:
 for `--all`); a refspec with `:` in it prompts too, which is a false positive
 accepted for the simpler rule.
 
+`git [-C <path>] branch` and `git [-C <path>] tag` -- auto-approved when they
+only list refs, under the same rule about global options. Both create a ref
+from any positional argument unless an option has already switched them into
+listing mode, and only some options do: `-v`, `--sort`, and `--format` don't,
+so `git branch -v foo` creates `foo`. GIT_REF_LISTING_OPTIONS records which
+options are safe and which of them force listing. Everything else falls through
+to the `-C` ask below, or to settings.json without one.
+
 This hook is the SOLE authority for these commands: the corresponding entries
 (`rm`, `git add`, `git commit`, `mv` in ask; a blanket `cp *`, the ten
 `git -C * <subcommand> *` rules, and the bare `git diff *`, `git fetch *`,
@@ -354,6 +362,49 @@ GIT_REMOTE_NAME = re.compile(r'[A-Za-z0-9_][A-Za-z0-9._-]*')
 
 # A short-option cluster carrying grep's `-O`, whose optional value names the pager to run.
 GIT_GREP_PAGER_CLUSTER = re.compile(r'-[^-]*O')
+
+# The options that keep `git branch` and `git tag` listing refs rather than creating, deleting, or
+# moving one. Long options must be spelled in full, since an abbreviation like `--cop` is `--copy`.
+# Only the `takes_a_value` options consume the next token; `--color` and friends take theirs
+# attached or not at all, so `git branch --color foo` creates `foo`.
+GIT_REF_LISTING_OPTIONS = {
+    'branch': {
+        'short': frozenset('alrvi'),
+        'long': frozenset({
+            '--list', '--all', '--remotes', '--verbose', '--ignore-case', '--show-current',
+            '--color', '--no-color', '--column', '--no-column', '--abbrev', '--no-abbrev',
+            '--omit-empty',
+        }),
+        'takes_a_value': frozenset({
+            '--contains', '--no-contains', '--merged', '--no-merged', '--points-at', '--sort',
+            '--format',
+        }),
+        # A positional after any of these is a pattern, or git refuses it. Elsewhere it names a
+        # branch to create: `git branch -v foo` and `git branch --sort=refname foo` both do.
+        'forces_listing': frozenset({
+            '-l', '-a', '-r', '--list', '--all', '--remotes', '--contains', '--no-contains',
+            '--merged', '--no-merged', '--points-at',
+        }),
+    },
+    'tag': {
+        'short': frozenset('li'),
+        'long': frozenset({
+            '--list', '--ignore-case', '--color', '--no-color', '--column', '--no-column',
+            '--omit-empty',
+        }),
+        'takes_a_value': frozenset({
+            '--contains', '--no-contains', '--merged', '--no-merged', '--points-at', '--sort',
+            '--format',
+        }),
+        'forces_listing': frozenset({
+            '-l', '-n', '--list', '--contains', '--no-contains', '--merged', '--no-merged',
+            '--points-at',
+        }),
+    },
+}
+
+# `git tag -n<count>` prints that many annotation lines; the count is attached or absent.
+GIT_TAG_ANNOTATION_LINES = re.compile(r'-n\d*')
 
 
 def shell_operator_decision(command):
@@ -719,6 +770,45 @@ def git_read_only_option_reason(subcommand, arguments, cwd, git_cwd):
                 return (f'`{argument}` is not a plain remote name, and a URL, path, or '
                         '`ext::` helper can make git fetch run a program')
     return None
+
+
+def is_git_ref_listing(subcommand, arguments):
+    """True if this `git branch` or `git tag` only lists refs.
+
+    Every option has to be on GIT_REF_LISTING_OPTIONS, and a positional argument passes only when
+    an option has already put git in listing mode, because otherwise it names a ref to create.
+    """
+    allowed = GIT_REF_LISTING_OPTIONS.get(subcommand)
+    if allowed is None:
+        return False
+
+    listing = False
+    has_positional = False
+    skip_next = False
+    for argument in arguments:
+        if skip_next:
+            skip_next = False
+            continue
+        if subcommand == 'tag' and GIT_TAG_ANNOTATION_LINES.fullmatch(argument):
+            listing = True
+            continue
+        if argument.startswith('--'):
+            name, has_value = argument.split('=', 1)[0], '=' in argument
+            if name in allowed['takes_a_value']:
+                skip_next = not has_value
+            elif name not in allowed['long']:
+                return False
+            listing = listing or name in allowed['forces_listing']
+            continue
+        if argument.startswith('-') and len(argument) > 1:
+            letters = argument[1:]
+            if not set(letters) <= allowed['short']:
+                return False
+            listing = listing or any(f'-{letter}' in allowed['forces_listing'] for letter in letters)
+            continue
+        has_positional = True
+
+    return listing or not has_positional
 
 
 # The options a `git add` or `git commit` outside a worktree may carry and still be judged by its
@@ -1463,6 +1553,9 @@ def main():
             else:
                 emit('allow', f'git {subcommand} with no program-running or file-writing option; '
                               'auto-approved')
+            return
+        if is_git_ref_listing(subcommand, tokens[subcommand_index + 1:]):
+            emit('allow', f'git {subcommand} only lists refs; auto-approved')
             return
         if subcommand in GIT_PUSHING_SUBCOMMANDS:
             emit('ask', f'git {subcommand} can send commits off this machine; confirm it')

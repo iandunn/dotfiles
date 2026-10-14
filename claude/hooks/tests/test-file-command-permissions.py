@@ -661,10 +661,8 @@ class BranchDeleteTest(unittest.TestCase):
     def test_force_cluster_gated(self):
         self.assertInRepo(ASK, 'git branch -fD worktree-unlanded')
 
-    def test_branch_listing_not_gated(self):
-        out, code = run('git branch --list', cwd=self.repo)
-        self.assertEqual(code, 0)
-        self.assertIsNone(decision(out))
+    def test_branch_listing_allowed(self):
+        self.assertInRepo(ALLOW, 'git branch --list')
 
     def test_branch_creation_not_gated(self):
         out, code = run('git branch new-thing', cwd=self.repo)
@@ -996,6 +994,52 @@ class GitReadOnlySubcommandTest(DecisionTest):
         self.assertDecision(ALLOW, 'git status --short')
         self.assertDecision(ALLOW, 'git ls-tree --name-only HEAD')
         self.assertDecision(ALLOW, 'git symbolic-ref --short HEAD')
+
+
+class GitRefListingTest(DecisionTest):
+    """`git branch` and `git tag` are safe only while they list refs rather than create them."""
+
+    def test_listing_with_dash_c_allowed(self):
+        self.assertDecision(ALLOW, 'git -C /some/repo branch --show-current')
+        self.assertDecision(ALLOW, 'git -C /some/repo branch -a')
+        self.assertDecision(ALLOW, "git -C /some/repo branch -a --list '*packages*'")
+        self.assertDecision(ALLOW, 'git -C /some/repo branch -r --contains e7167b5ab')
+        self.assertDecision(ALLOW, 'git -C /some/repo branch -vv')
+        self.assertDecision(ALLOW, 'git -C /some/repo tag --sort=-creatordate')
+        self.assertDecision(ALLOW, 'git -C /some/repo tag --sort -creatordate')
+        self.assertDecision(ALLOW, "git -C /some/repo tag -l 'v1.*'")
+        self.assertDecision(ALLOW, 'git -C /some/repo tag -n3')
+
+    def test_listing_without_dash_c_allowed(self):
+        self.assertDecision(ALLOW, 'git branch')
+        self.assertDecision(ALLOW, 'git tag')
+        self.assertDecision(ALLOW, 'git branch --merged main')
+
+    def test_positional_without_listing_option_asks(self):
+        """These all create a ref, since none of the options switches git into listing mode."""
+        self.assertDecision(ASK, 'git -C /some/repo branch new-branch')
+        self.assertDecision(ASK, 'git -C /some/repo branch -v new-branch')
+        self.assertDecision(ASK, 'git -C /some/repo branch --sort=refname new-branch')
+        self.assertDecision(ASK, 'git -C /some/repo branch --sort -D new-branch')
+        self.assertDecision(ASK, 'git -C /some/repo tag --sort=refname v9')
+        self.assertDecision(ASK, 'git -C /some/repo tag v9')
+
+    def test_writing_option_asks(self):
+        self.assertDecision(ASK, 'git -C /some/repo branch -a -d old')
+        self.assertDecision(ASK, 'git -C /some/repo branch -m new-name')
+        self.assertDecision(ASK, 'git -C /some/repo branch -ad old')
+        self.assertDecision(ASK, 'git -C /some/repo branch --set-upstream-to=origin/main')
+        self.assertDecision(ASK, 'git -C /some/repo branch --cop a b')
+        self.assertDecision(ASK, 'git -C /some/repo branch --list -- -D')
+        self.assertDecision(ASK, 'git -C /some/repo tag -d v1')
+        self.assertDecision(ASK, 'git -C /some/repo tag -a -m msg v9')
+
+    def test_writing_form_without_dash_c_left_to_settings(self):
+        self.assertDecision(None, 'git branch new-branch')
+        self.assertDecision(None, 'git tag v9')
+
+    def test_extra_global_option_asks(self):
+        self.assertDecision(ASK, 'git -C /some/repo -c core.pager=/bin/echo branch -a')
 
 
 class BenignRedirectTest(DecisionTest):
