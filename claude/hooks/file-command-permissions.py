@@ -258,8 +258,18 @@ only list refs, under the same rule about global options. Both create a ref
 from any positional argument unless an option has already switched them into
 listing mode, and only some options do: `-v`, `--sort`, and `--format` don't,
 so `git branch -v foo` creates `foo`. GIT_REF_LISTING_OPTIONS records which
-options are safe and which of them force listing. Everything else falls through
-to the `-C` ask below, or to settings.json without one.
+options are safe and which of them force listing.
+
+`git [-C <path>] checkout|switch|branch|pull|merge` -- left to the autoMode
+`soft_deny` classifier, which passes them only when the user asked, unless the
+arguments could destroy work or run a program. Those ask: any option off
+GIT_BRANCH_SWITCH_OPTIONS, a checkout or merge operand that doesn't resolve to a
+commit (checkout restores it as a path), a `git branch` that deletes or
+overwrites a branch, and a pull from anything but a plain remote name or with a
+refspec that could force-update a local branch. `fetch --refmap` asks for the
+same reason.
+settings.json carries no ask rules for these, since an ask rule would override
+the classifier; the `git checkout .`-style deny rules stay as a second layer.
 
 This hook is the SOLE authority for these commands: the corresponding entries
 (`rm`, `git add`, `git commit`, `mv` in ask; a blanket `cp *`, the ten
@@ -766,6 +776,8 @@ def git_read_only_option_reason(subcommand, arguments, cwd, git_cwd):
         if subcommand == 'fetch':
             if is_long_option(argument, '--upload-pack'):
                 return f'`{argument}` names a program for git fetch to run'
+            if is_long_option(argument, '--refmap'):
+                return f'`{argument}` can force-update local branches'
             if not argument.startswith('-') and not GIT_REMOTE_NAME.fullmatch(argument):
                 return (f'`{argument}` is not a plain remote name, and a URL, path, or '
                         '`ext::` helper can make git fetch run a program')
@@ -811,6 +823,79 @@ def is_git_ref_listing(subcommand, arguments):
     return listing or not has_positional
 
 
+def git_branch_switch_hazard(subcommand, arguments, git_cwd):
+    """Why this checkout, switch, branch, pull, or merge could destroy work or run a program, or None."""
+    if subcommand in GIT_BRANCH_SWITCH_OPTIONS:
+        allowed = GIT_BRANCH_SWITCH_OPTIONS[subcommand]
+        positionals = []
+        skip_next = False
+        for argument in arguments:
+            if skip_next:
+                # A value that looks like an option would be swallowed here unchecked.
+                if argument.startswith('-'):
+                    return f'`{argument}` follows an option that takes a value; confirm it'
+                skip_next = False
+                continue
+            name, value = (argument.split('=', 1) + [None])[:2]
+            if name in allowed['takes_a_value']:
+                skip_next = value is None
+            elif argument.startswith('-') and argument != '-':
+                if name not in allowed['flags']:
+                    return (f'`{argument}` can discard local changes, overwrite a branch, or run a '
+                            'program')
+                if name == '--rebase' and value is not None and value not in GIT_PULL_REBASE_VALUES:
+                    return f'`{argument}` opens the sequence editor'
+            else:
+                positionals.append(argument)
+
+        if subcommand == 'pull':
+            return git_pull_operands_hazard(positionals)
+        if subcommand == 'merge':
+            for operand in positionals:
+                if operand != '-' and not git_resolves_to_commit(git_cwd, operand):
+                    return f'`{operand}` is not a commit here; confirm this merge'
+            return None
+        if len(positionals) > 1:
+            return f'git {subcommand} with more than one operand can restore files over local changes'
+        # Checkout treats an operand that isn't a commit as a path to restore from the index, which
+        # throws away that file's changes. Switch never reads an operand as a path.
+        if subcommand == 'checkout' and positionals and positionals[0] != '-':
+            if not git_resolves_to_commit(git_cwd, positionals[0]):
+                return (f'`{positionals[0]}` is not a commit here, so git checkout would restore '
+                        'it as a path over local changes')
+        return None
+
+    if subcommand == 'branch':
+        for argument in arguments:
+            if argument.startswith('--'):
+                if is_long_option(argument, '--force') or is_long_option(argument, '--delete'):
+                    return f'`{argument}` can delete or overwrite a branch'
+                if is_long_option(argument, '--edit-description'):
+                    return f'`{argument}` runs the editor the repository configures'
+            elif argument.startswith('-'):
+                for letter in argument[1:]:
+                    if letter in GIT_BRANCH_DESTRUCTIVE_SHORT:
+                        return f'`{argument}` can delete or overwrite a branch'
+                    if letter in GIT_BRANCH_SHORT_TAKING_A_VALUE:
+                        break
+    return None
+
+
+def git_resolves_to_commit(git_cwd, name):
+    return git_output(git_cwd, 'rev-parse', '--verify', '--quiet', f'{name}^{{commit}}') is not None
+
+
+def git_pull_operands_hazard(operands):
+    """Why a pull's remote or refspecs could run a program or force-update a branch, or None."""
+    if operands and not GIT_REMOTE_NAME.fullmatch(operands[0]):
+        return (f'`{operands[0]}` is not a plain remote name, and a URL, path, or `ext::` helper '
+                'can make git pull run a program')
+    for refspec in operands[1:]:
+        if ':' in refspec or refspec.startswith('+'):
+            return f'`{refspec}` can force-update a local branch'
+    return None
+
+
 # The options a `git add` or `git commit` outside a worktree may carry and still be judged by its
 # pathspecs alone. It's a list of what is known to be safe rather than of what sweeps the tree,
 # because git accepts clusters (`-Av`), abbreviations (`--al`), and `--pathspec-from-file`, and an
@@ -850,10 +935,60 @@ GIT_PUSHING_SUBCOMMANDS = frozenset({
 # ahead of the subcommand, or a leading `command`, defeats every one of those prefixes, so the hook
 # asks on their behalf.
 GIT_SUBCOMMANDS_GATED_BY_SETTINGS = frozenset({
-    'branch', 'checkout', 'cherry-pick', 'clean', 'config', 'filter-branch', 'filter-repo',
-    'merge', 'pull', 'rebase', 'reset', 'restore', 'stash', 'submodule', 'switch', 'tag',
-    'update-ref', 'worktree',
+    'cherry-pick', 'clean', 'config', 'filter-branch', 'filter-repo', 'rebase', 'reset',
+    'restore', 'stash', 'submodule', 'tag', 'update-ref', 'worktree',
 })
+
+# Subcommands that move between branches or bring in commits. Whether one was wanted is the
+# autoMode `soft_deny` classifier's call, so the hook stays silent on them unless the arguments
+# could destroy work or make git run a program, which git_branch_switch_hazard() looks for.
+GIT_CLASSIFIER_DECIDED_SUBCOMMANDS = frozenset({'branch', 'checkout', 'switch', 'pull', 'merge'})
+
+# The options checkout, switch, pull, and merge may carry without discarding local changes,
+# overwriting or force-updating a branch, opening an editor, or naming a program to run. It's a
+# list of what is known to be safe, because the dangerous spellings kept slipping past a list of
+# what isn't: `checkout -B`, `switch --discard-changes`, `pull --refmap=+x:y`, `merge --abort`,
+# `merge -e`, and every option whose separate value shifts the operands. Long options must be
+# spelled in full.
+GIT_BRANCH_SWITCH_OPTIONS = {
+    'checkout': {
+        'flags': frozenset({
+            '-q', '-t', '--quiet', '--detach', '--track', '--no-track', '--guess', '--no-guess',
+            '--progress', '--no-progress',
+        }),
+        'takes_a_value': frozenset({'-b'}),
+    },
+    'switch': {
+        'flags': frozenset({
+            '-q', '-d', '-t', '--quiet', '--detach', '--track', '--no-track', '--guess',
+            '--no-guess', '--progress', '--no-progress',
+        }),
+        'takes_a_value': frozenset({'-c', '--create'}),
+    },
+    'pull': {
+        'flags': frozenset({
+            '-q', '-v', '--quiet', '--verbose', '--ff', '--no-ff', '--ff-only', '--rebase',
+            '--no-rebase', '--prune', '--tags', '--no-tags', '--autostash', '--no-autostash',
+            '--stat', '--no-stat', '--no-edit', '--commit', '--no-commit',
+        }),
+        'takes_a_value': frozenset(),
+    },
+    'merge': {
+        'flags': frozenset({
+            '-q', '-v', '-n', '--quiet', '--verbose', '--ff', '--no-ff', '--ff-only', '--no-edit',
+            '--stat', '--no-stat', '--log', '--no-log', '--commit', '--no-commit', '--squash',
+        }),
+        'takes_a_value': frozenset({'-m', '--message'}),
+    },
+}
+
+# `--rebase=interactive` opens the sequence editor, so only these values pass.
+GIT_PULL_REBASE_VALUES = frozenset({'true', 'false', 'merges', 'm'})
+
+# `git branch` short options that delete a branch or overwrite an existing one, and the one whose
+# value is attached to it, so `-uorigin/feature` isn't read as carrying `-f`.
+GIT_BRANCH_DESTRUCTIVE_SHORT = frozenset('dDfMC')
+GIT_BRANCH_SHORT_TAKING_A_VALUE = frozenset('u')
 
 # `-S` takes its key id attached or not at all, so it never consumes the next token.
 GIT_COMMIT_ATTACHED_ONLY_VALUE = frozenset('S')
@@ -1559,6 +1694,13 @@ def main():
             return
         if subcommand in GIT_PUSHING_SUBCOMMANDS:
             emit('ask', f'git {subcommand} can send commits off this machine; confirm it')
+            return
+        if subcommand in GIT_CLASSIFIER_DECIDED_SUBCOMMANDS:
+            hazard = git_branch_switch_hazard(subcommand, tokens[subcommand_index + 1:], git_cwd)
+            if hazard:
+                emit('ask', f'{hazard}; confirm it')
+            # Staying silent hands the rest to the autoMode `soft_deny` rule in settings.json,
+            # which passes it only when the user asked for it.
             return
         hidden_by = '-C' if git_globals else ('command' if raw_tokens[0] == 'command' else None)
         if hidden_by and subcommand in GIT_SUBCOMMANDS_GATED_BY_SETTINGS:

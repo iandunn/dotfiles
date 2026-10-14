@@ -1015,24 +1015,27 @@ class GitRefListingTest(DecisionTest):
         self.assertDecision(ALLOW, 'git tag')
         self.assertDecision(ALLOW, 'git branch --merged main')
 
-    def test_positional_without_listing_option_asks(self):
-        """These all create a ref, since none of the options switches git into listing mode."""
-        self.assertDecision(ASK, 'git -C /some/repo branch new-branch')
-        self.assertDecision(ASK, 'git -C /some/repo branch -v new-branch')
-        self.assertDecision(ASK, 'git -C /some/repo branch --sort=refname new-branch')
+    def test_positional_without_listing_option_is_not_a_listing(self):
+        """These all create a ref, since none of the options switches git into listing mode.
+
+        Creating a branch is the classifier's call, so those stay silent rather than allow.
+        """
+        self.assertDecision(None, 'git -C /some/repo branch new-branch')
+        self.assertDecision(None, 'git -C /some/repo branch -v new-branch')
+        self.assertDecision(None, 'git -C /some/repo branch --sort=refname new-branch')
         self.assertDecision(ASK, 'git -C /some/repo branch --sort -D new-branch')
         self.assertDecision(ASK, 'git -C /some/repo tag --sort=refname v9')
         self.assertDecision(ASK, 'git -C /some/repo tag v9')
 
-    def test_writing_option_asks(self):
+    def test_writing_option_is_not_a_listing(self):
         self.assertDecision(ASK, 'git -C /some/repo branch -a -d old')
-        self.assertDecision(ASK, 'git -C /some/repo branch -m new-name')
         self.assertDecision(ASK, 'git -C /some/repo branch -ad old')
-        self.assertDecision(ASK, 'git -C /some/repo branch --set-upstream-to=origin/main')
-        self.assertDecision(ASK, 'git -C /some/repo branch --cop a b')
         self.assertDecision(ASK, 'git -C /some/repo branch --list -- -D')
         self.assertDecision(ASK, 'git -C /some/repo tag -d v1')
         self.assertDecision(ASK, 'git -C /some/repo tag -a -m msg v9')
+        self.assertDecision(None, 'git -C /some/repo branch -m new-name')
+        self.assertDecision(None, 'git -C /some/repo branch --set-upstream-to=origin/main')
+        self.assertDecision(None, 'git -C /some/repo branch --cop a b')
 
     def test_writing_form_without_dash_c_left_to_settings(self):
         self.assertDecision(None, 'git branch new-branch')
@@ -1040,6 +1043,108 @@ class GitRefListingTest(DecisionTest):
 
     def test_extra_global_option_asks(self):
         self.assertDecision(ASK, 'git -C /some/repo -c core.pager=/bin/echo branch -a')
+
+
+class GitBranchSwitchTest(DecisionTest):
+    """Switching, creating, and pulling are the classifier's call, but forms that can destroy work
+    or run a program still ask, with or without `-C`."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.temp = tempfile.mkdtemp(prefix='branch-switch-test-')
+        cls.repo = os.path.join(cls.temp, 'repo')
+        os.makedirs(cls.repo)
+        git(cls.repo, 'init', '-b', 'main')
+        git(cls.repo, 'config', 'user.email', 'test@example.com')
+        git(cls.repo, 'config', 'user.name', 'Test')
+        Path(cls.repo, 'notes.txt').write_text('notes\n')
+        git(cls.repo, 'add', 'notes.txt')
+        git(cls.repo, 'commit', '-m', 'initial')
+        git(cls.repo, 'branch', 'feature')
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.temp, ignore_errors=True)
+
+    def test_switching_to_a_branch_left_to_classifier(self):
+        self.assertDecision(None, f'git -C {self.repo} checkout feature')
+        self.assertDecision(None, f'git -C {self.repo} checkout -b new-branch main')
+        self.assertDecision(None, f'git -C {self.repo} checkout -')
+        self.assertDecision(None, f'git -C {self.repo} switch feature')
+        self.assertDecision(None, f'git -C {self.repo} switch -c new-branch main')
+
+    def test_checkout_of_a_path_asks(self):
+        """An operand that isn't a commit is restored from the index, discarding its changes."""
+        self.assertDecision(ASK, f'git -C {self.repo} checkout notes.txt')
+        self.assertDecision(ASK, f'git -C {self.repo} checkout .')
+        self.assertDecision(ASK, f'git -C {self.repo} checkout -- notes.txt')
+        self.assertDecision(ASK, f'git -C {self.repo} checkout main notes.txt')
+
+    def test_discarding_options_ask(self):
+        self.assertDecision(ASK, f'git -C {self.repo} checkout -f feature')
+        self.assertDecision(ASK, f'git -C {self.repo} checkout -B main feature')
+        self.assertDecision(ASK, f'git -C {self.repo} checkout --forc feature')
+        self.assertDecision(ASK, f'git -C {self.repo} switch --discard-changes feature')
+        self.assertDecision(ASK, f'git -C {self.repo} switch -C main feature')
+        self.assertDecision(ASK, 'git checkout -f feature')
+
+    def test_branch_create_and_rename_left_to_classifier(self):
+        self.assertDecision(None, 'git -C /some/repo branch -m old-name new-name')
+        self.assertDecision(None, 'git -C /some/repo branch new-branch main')
+
+    def test_branch_overwrite_asks(self):
+        self.assertDecision(ASK, 'git -C /some/repo branch -f main HEAD~1')
+        self.assertDecision(ASK, 'git -C /some/repo branch -M old-name main')
+        self.assertDecision(ASK, 'git -C /some/repo branch -v -f main HEAD~1')
+        self.assertDecision(ASK, 'git -C /some/repo branch --force main HEAD~1')
+        self.assertDecision(ASK, 'git branch -f main HEAD~1')
+        self.assertDecision(ASK, 'git -C /some/repo branch --edit-description')
+
+    def test_pull_from_a_remote_left_to_classifier(self):
+        self.assertDecision(None, 'git -C /some/repo pull')
+        self.assertDecision(None, 'git -C /some/repo pull origin main')
+        self.assertDecision(None, 'git pull --rebase origin main')
+
+    def test_pull_that_runs_a_program_or_forces_a_ref_asks(self):
+        self.assertDecision(ASK, "git pull 'ext::sh -c echo%20INJECTED'")
+        self.assertDecision(ASK, 'git -C /some/repo pull /some/other/repo')
+        self.assertDecision(ASK, 'git pull --upload-pack=/bin/echo origin')
+        self.assertDecision(ASK, 'git pull origin +main:main')
+
+    def test_pull_option_value_cannot_shift_the_remote_check(self):
+        """An option off the list asks, so its value can't stand in for the remote name."""
+        self.assertDecision(ASK, 'git pull -s ours /some/other/repo')
+        self.assertDecision(ASK, 'git pull --depth 1 ../repo main')
+        self.assertDecision(ASK, 'git pull --refmap=+refs/heads/main:refs/heads/feature origin main')
+        self.assertDecision(ASK, 'git pull --rebase=interactive origin main')
+        self.assertDecision(None, 'git pull --rebase=merges origin main')
+        self.assertDecision(None, 'git pull --ff-only --prune origin main')
+
+    def test_merge_of_a_commit_left_to_classifier(self):
+        self.assertDecision(None, f'git -C {self.repo} merge --ff-only feature')
+        self.assertDecision(None, f'git -C {self.repo} merge --no-ff -m "Merge feature" feature')
+
+    def test_merge_that_discards_or_runs_a_program_asks(self):
+        self.assertDecision(ASK, f'git -C {self.repo} merge --abort')
+        self.assertDecision(ASK, f'git -C {self.repo} merge -e feature')
+        self.assertDecision(ASK, f'git -C {self.repo} merge -S feature')
+        self.assertDecision(ASK, f'git -C {self.repo} merge -s ours feature')
+        self.assertDecision(ASK, f'git -C {self.repo} merge no-such-ref')
+
+    def test_option_value_that_looks_like_an_option_asks(self):
+        self.assertDecision(ASK, f'git -C {self.repo} checkout -b -f feature')
+        self.assertDecision(ASK, f'git -C {self.repo} switch -c --discard-changes feature')
+
+    def test_attached_upstream_is_not_read_as_flags(self):
+        self.assertDecision(None, 'git -C /some/repo branch -uorigin/feature')
+
+
+class FetchRefmapTest(DecisionTest):
+
+    def test_refmap_asks(self):
+        """A forcing refmap updates local branches, which a read-only fetch must not do."""
+        self.assertDecision(ASK, 'git fetch --refmap=+refs/heads/main:refs/heads/feature origin')
+        self.assertDecision(ASK, 'git -C /some/repo fetch --refmap +x:y origin')
 
 
 class BenignRedirectTest(DecisionTest):

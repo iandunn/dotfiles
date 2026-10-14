@@ -367,14 +367,10 @@
 			"Bash(/*/git *)",
 			"Bash(GIT_*)",
 			"Bash(gh pr create*)",
-			"Bash(git switch *)",
-			"Bash(git checkout *)",
 			"Bash(env *)",
 			"Bash(exec *)",
 			"Bash(ln *)",
 			"Bash(command ln *)",
-			"Bash(git merge --ff-only *)",
-			"Bash(git pull *)",
 			"Bash(git push *)",
 			"Bash(git rebase*)",
 			"Bash(git stash)",
@@ -690,7 +686,7 @@
 	"autoMode": {
 		"soft_deny": [
 			"$defaults",
-			"Staging or committing in git (`git add`, `git commit`, `git commit --amend`) when the user has not asked for it. Clears at [named+specifics] — must name: that a commit or a staging step is wanted. Drafting a commit message for review is always fine; running the command is the blocked step. Exempt inside a `.claude/worktrees/` worktree, where committing on the worktree branch carries standing authorization. A commit phase of a Relay command (`add-prd`, `approve-prd`, `execute-prd`, `verify-prd`, `sync-docs`) counts as asked for when it stages named paths."
+			"Changing git history or branches (`git add`, `git commit`, `git commit --amend`, `git checkout`, `git switch`, `git branch <name>`, `git branch -m`, `git pull`, `git merge`) when the user has not asked for it. Clears at [named+specifics] — must name: that the commit, staging step, branch change, pull, or merge is wanted, either in chat or as a step of a skill or command the user invoked, such as the plugin-update workflow switching to the trunk, pulling, and creating a feature branch. Drafting a commit message for review is always fine; running the command is the blocked step. Staging and committing (only) are exempt inside a .claude/worktrees/ worktree, where committing on the worktree branch carries standing authorization. A commit phase of a Relay command (`add-prd`, `approve-prd`, `execute-prd`, `verify-prd`, `sync-docs`) counts as asked for when it stages named paths."
 		],
 		"hard_deny": [
 			"$defaults",
