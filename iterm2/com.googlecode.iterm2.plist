@@ -50,6 +50,8 @@
 	<true/>
 	<key>DimOnlyText</key>
 	<false/>
+	<key>EnableAPIServer</key>
+	<false/>
 	<key>EscapeShellCharsWithBackslash</key>
 	<false/>
 	<key>GlobalKeyMap</key>
