@@ -1,0 +1,455 @@
+{
+	/* might need to change this after getting ohmyposh working
+	 TODO yeah this doesn't work right yet,
+	 when i first open a termainal after restarting vscode i get these essors after erery command
+
+	 bash: set_prompt: command not found
+	bash: autojump_add_to_database: command not found
+
+	typing "bash" to start a new shell fixes it.
+
+	this whole thing is greyed out so maybe it's the defaultProfile.osx thing below that needs the full path to homebrew bash?
+	 */
+	"terminal.integrated.profiles": {
+		"bash": {
+			"path": "/opt/homebrew/bin/bash",
+			"args": ["-l"]
+		}
+	},
+	"terminal.integrated.defaultProfile.osx": "bash",
+	"terminal.integrated.fontFamily": "CaskaydiaCove Nerd Font Mono",
+
+	// The default `${process}` shows the Claude binary's filename, which is its version number,
+	// because it's installed at `~/.local/share/claude/versions/<version>`. `${sequence}` shows the
+	// title the running program set instead, which is Claude's summary of the conversation.
+	// `console_title_template` in `bash/iandunn.omp.yml` keeps this populated outside of Claude.
+	"terminal.integrated.tabs.title": "${sequence}",
+
+	// Sticky scroll pins the entire multi-line `bash/iandunn.omp.yml` prompt to the top of the pane
+	// while output scrolls beneath it, costing up to 4 rows in an already short split. It slices from
+	// the prompt's first row downward, so lowering `maxLineCount` keeps the path and drops the
+	// command, which is backwards. Not worth it when each split's command is already known.
+	"terminal.integrated.stickyScroll.enabled": false,
+	"editor.fontFamily": "CaskaydiaCove Nerd Font",
+	// change ^ to something better, but below isn't working
+	// it needs to be font nerd so it has the ligatures for dotfiles/iandunn.omp.yml
+	// test a few to see what you like. make sure install via brew first
+	// https://chatgpt.com/c/68c309aa-8588-8322-ad47-272a54dfa0cd
+	// "editor.fontFamily": "FiraCode Nerd Font Mono",
+	"editor.fontLigatures": true,
+
+
+	"workbench.colorTheme": "Gruvbox Dark Medium",
+	"workbench.startupEditor": "none",
+	"workbench.tree.indent": 16,
+	"workbench.tree.renderIndentGuides": "none",
+	"workbench.colorCustomizations": {
+		"peekView.background": "#3c3836",
+		"peekViewEditor.background": "#504945",
+		"peekViewEditorGutter.background": "#3c3836",
+		"peekView.border": "#b57614",
+		"peekViewTitle.background": "#282828",
+		"peekViewTitleLabel.foreground": "#fabd2f", // filename
+		"peekViewTitleDescription.foreground": "#a89984", // file path
+		"editorGroup.border": "#7c6f64"
+	},
+	"workbench.editor.tabSizing": "shrink",
+	"workbench.editor.enablePreview": false,
+
+	"extensions.ignoreRecommendations": true,
+
+	"explorer.confirmDelete": false,
+
+	"editor.accessibilitySupport": "off",
+	"editor.minimap.enabled": false,
+	"editor.mouseWheelScrollSensitivity": 0.5,
+	"editor.inlineSuggest.enabled": true,
+	"editor.tabSize": 4,
+	"editor.formatOnSave": false, // don't do for everything, only languages i have rules for. otherwise it fucks up json by removing blank spaces etc. prettier and phpcs will override this for php and js
+	/*
+	trying to hide the annoying false positive warnings from prettier
+	they're distracting
+	"editorError.foreground": "#00000000",
+    "editorWarning.foreground": "#00000000",
+    "editorInfo.foreground": "#00000000",
+	*/
+	"editor.codeActionsOnSave": {
+		"source.fixAll": "explicit"
+		// ^ is really slow, but it used to work fine :shrug:
+	},
+	"editor.insertSpaces": false,
+	"editor.detectIndentation": false,
+	"editor.codeLens": false,
+
+	"eslint.format.enable": true,
+	"eslint.run": "onSave",
+	"eslint.enable": true,
+	"eslint.validate": [
+		"javascript",
+		"javascriptreact",
+		"html"
+	],
+
+	"prettier.enable": true,
+	"prettier.useEditorConfig": false,
+	"prettier.useTabs": true,
+	"prettier.tabWidth": 4,
+	"prettier.documentSelectors": ["!**/*.md"],
+
+	"[markdown]": {
+		"editor.defaultFormatter": false,
+		"editor.formatOnSave": false,
+		"editor.formatOnPaste": false,
+	},
+	"[css]": {
+		"editor.defaultFormatter": "vscode.css-language-features"
+	},
+	"[javascript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "vscode.json-language-features"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "vscode.json-language-features"
+	},
+	"[html]": {
+		"editor.defaultFormatter": "vscode.html-language-features"
+	},
+	// see below for php
+
+	"files.trimTrailingWhitespace": true,
+
+	"debug.openDebug": "openOnSessionStart",
+	"editor.cursorBlinking": "solid",
+	"editor.cursorSurroundingLines": 10,
+
+	// Auto-inserted closing chars guess wrong more often than they help
+	"editor.autoClosingBrackets": "never",
+	"editor.autoClosingQuotes": "never",
+	"html.autoClosingTags": false,
+	"javascript.autoClosingTags": false,
+	"typescript.autoClosingTags": false,
+
+
+	"scm.countBadge": "off",
+	"html.format.indentInnerHtml": true,
+	"search.useIgnoreFiles": false,
+	"window.openFoldersInNewWindow": "on",
+
+	"outline.showEnumMembers": false,
+	"outline.showObjects": false,
+	"outline.showProperties": false,
+	"outline.showArrays": false,
+	"outline.showBooleans": false,
+	"outline.showEnums": false,
+	"outline.showEvents": false,
+	"outline.showFields": false,
+	"outline.showFiles": false,
+	"outline.showKeys": false,
+	"outline.showNull": false,
+	"outline.showNumbers": false,
+	"outline.showOperators": false,
+	"outline.showStrings": false,
+	"outline.showStructs": false,
+	"outline.showTypeParameters": false,
+	"outline.showNamespaces": false,
+	"outline.showPackages": false,
+	"outline.showModules": false,
+	"outline.showInterfaces": false,
+	"outline.showVariables": false,
+
+	"launch": {
+		"configurations": [],
+		"compounds": []
+	},
+
+	"explorer.confirmDragAndDrop": false,
+	"problems.decorations.enabled": false,
+
+	"github.copilot.enable": {
+		"*": true,
+		"plaintext": false,
+		"markdown": false,
+		"scminput": false,
+		"log": false,
+	},
+
+	"git.openRepositoryInParentFolders": "never",
+
+	"files.watcherExclude": {
+		"**/tests/coverage/**": true
+	},
+
+	"files.exclude": {
+		"**/.phpunit": true,
+		"**/.phpunit.result.cache": true,
+		"**/node_modules/**": true,
+		"**/two-factor-provider-webauthn/stubs/**": true,
+		"**/two-factor/dist/**": true,
+		"**/two-factor/tests/logs/**": true,
+		"**/two-factor/wordpress/**": true,
+		"**/vendor/johnpbloch/wordpress-core/**": true,
+		"**/wordpress-stubs/**": true,
+		"/Users/iandunn/vhosts/localhost/wpms.test/public_html/content/plugins/two-factor-provider-webauthn/vendor/php-stubs/wordpress-stubs/wordpress-stubs.php": true
+	},
+
+	"search.exclude": {
+		"**/build/**": true,
+		"**/dist/**": true,
+		"**/vendor/**": true,
+		"**/wp-admin/includes/noop.php": true,
+		"**/.claude/tmp/**": true,
+		"**/.claude/worktrees/**": true,
+		"/Users/iandunn/vhosts/localhost/wpms.test/public_html/content/plugins/two-factor-provider-webauthn/vendor/php-stubs/wordpress-stubs/wordpress-stubs.php": true
+	},
+
+	"workbench.settings.useSplitJSON": true,
+
+	"terminal.external.osxExec": "iTerm.app",
+	"window.newWindowDimensions": "maximized",
+	"update.showReleaseNotes": false,
+	"cSpell.userWords": [
+		"ABSPATH",
+		"buddycamp",
+		"CAMPTIX",
+		"DIEONDBERROR",
+		"GENDERIZE",
+		"JETPACK",
+		"Multisite",
+		"muplugins",
+		"NOBLOGREDIRECT",
+		"phpcs",
+		"postname",
+		"Pressdotorg",
+		"quickbooks",
+		"SAVEQUERIES",
+		"shortcode",
+		"shortcodes",
+		"sitemeta",
+		"SUBMITDISABLED",
+		"unnotifiable",
+		"usermeta",
+		"wcorg",
+		"WORDCAMP",
+		"wordcamporg",
+		"wordcamps",
+		"WPCACHEHOME",
+		"WPCS",
+		"wpdb",
+		"WPINC",
+		"WPLANG",
+		"WPMU",
+		"wporg",
+		"xprofile",
+		"yearless"
+	],
+
+	"accessibility.signals.chatResponseReceived": {
+		"sound": "off"
+	},
+	"accessibility.signals.noInlayHints": {
+		"sound": "off"
+	},
+	"accessibility.signals.onDebugBreak": {
+		"sound": "off"
+	},
+
+	// this doesn't seem to work with claude
+	// use the claude.md.instructions file instead
+	/*
+	"github.copilot.chat.codeGeneration.instructions": {
+		"text": "for context prioritize the files i have open in the editor. dont summarize the conversation. be brief and focus on the most important information, and then tell me which topics might be important to get more info on. if im asking more than a simple question, give me 3 different ideas. also tell me if there is any 3rd party code that achieves what i want, but only include that if it's easy to integrate into wordpress, like a wordpress plugin for backend code, or vanilla js/react for front end. i only want to reuse code if it's a widely trusted author/project. If you have any questions, ask them one at a time before answering. Don't make any assumptions beyond the information I've provided to you without confirming them with me. Don't hallucinate and don't include anything you're not confident about. don't assume i'm right. When inserting or changing code, always match the existing coding standards and style of the file, as well as the practices and conventions in the codebase as a whole. never change lines that aren't related to the insertions/modifications. ignore any linting errors. dont refactor or make large changes, only make the minimal change necessary. if you think large changes are warranted, just tell me but dont make them. dont make changes beyond what i ask for, just recommend anything you think should be added. don't remove existing comments. only add comments when something isn't obvious from reading the code. comments should describe why something is done, not what it's doing. make variable names etc descriptive enough that comments aren't usually needed. dont give me buttons to run commands, just tell me if you think i need to run it manually. follow the '10up engineering best practices' and wordpress code style. make sure its secure, performant at scale, maintainable, and accessible."
+	},
+	*/
+
+	"chat.agent.enabled": true,
+	"github.copilot.nextEditSuggestions.enabled": true,
+	"github.copilot.nextEditSuggestions.fixes": true,
+	"github.copilot.chat.agent.thinkingTool": true,
+
+	// PHP
+	"[php]": {
+		"editor.defaultFormatter": "valeryanm.vscode-phpsab",
+		"editor.formatOnSave": true
+	},
+	"php.validate.executablePath": "/Users/iandunn/Library/Application Support/Local/lightning-services/php-8.2.29+0/bin/darwin-arm64/bin/php",
+	"php.debug.ideKey": "iandunn",
+	"phpTools.language": "en",
+
+	// Intelephense
+	"intelephense.environment.phpVersion": "8.3", // auto detect?
+	"intelephense.completion.triggerParameterHints": true,
+	"intelephense.environment.shortOpenTag": false,
+	"intelephense.format.enable": false,
+	"intelephense.environment.phpVersion": "8.1", // adjust as needed
+	"intelephense.diagnostics.enable": true,
+	"intelephense.environment.includePaths": [
+		// Run ~/dotfiles/bin/install-composer-packages.sh to make stubs etc available to VS Code
+		"/Users/iandunn/.composer/vendor",
+		"/Users/ian-work/.composer/vendor",
+		"/Users/iandunn/local-sites/wordpress-tests-lib"
+	],
+
+	"intelephense.files.exclude": [
+		"**/.git/**",
+		"**/.svn/**",
+		"**/.hg/**",
+		"**/CVS/**",
+		"**/.DS_Store/**",
+		"**/node_modules/**",
+		"**/bower_components/**",
+		"**/vendor/**/{Tests,tests}/**",
+		"**/.history/**",
+		"**/vendor/**/vendor/**",
+		"**/dist/**"
+	],
+
+	// PHP Code Sniffer and Beautifier extension
+	// this should only affect git modified lines, but if not check the extension docs
+	"phpsab.snifferEnable": true,
+	"phpsab.fixerEnable": true,
+	"phpsab.snifferMode": "onSave",
+	"phpsab.standard": "10up-Default", // Default if no project-specific ruleset is found
+	"phpsab.autoRulesetSearch": true, // Auto-detect project-specific rulesets
+	"phpsab.snifferShowSources": true, // Show sniff names
+	"phpsab.snifferArguments": [
+		"--ignore=tests/*,vendor/*,node_modules/*"
+	],
+	"phpsab.fixerArguments": [
+		"--ignore=tests/*,vendor/*,node_modules/*"
+	],
+	"chat.agent.maxRequests": 50,
+	"files.associations": {
+		".gitconfig.*": "ini",
+		".ssh/config*": "ini",
+		"*.xml.dist": "xml",
+		"*.feature": "feature",
+		".bashrc-private": "shellscript",
+		".plist": "xml",
+		"*.toml": "ini",
+		".dev.vars": "ini",
+		".deployignore": "ini",
+		"rsync-excludes.txt": "ini",
+		".ssh/config-10up": "ini"
+	},
+	"diffEditor.maxComputationTime": 0,
+	"chat.viewSessions.enabled": false,
+	"chat.useAgentSkills": true,
+
+	"chat.viewSessions.orientation": "stacked",
+	"claudeCode.preferredLocation": "sidebar",
+	"claudeCode.initialPermissionMode": "acceptEdits",
+	"claudeCode.useCtrlEnterToSend": true,
+
+	"accessibility.signals.chat": {
+		"sound": "off",
+	},
+	"accessibility.signals.noInlayHints": {
+		"sound": "off"
+	},
+	"accessibility.signals.onDebugBreak": {
+		"sound": "off",
+	},
+	"accessibility.signals.chatRequestSent": {
+		"sound": "off"
+	},
+	"accessibility.signals.clear": {
+		"sound": "off"
+	},
+	"accessibility.signals.codeActionApplied": {
+		"sound": "off"
+	},
+	"accessibility.signals.chatEditModifiedFile": {
+		"sound": "off"
+	},
+	"accessibility.signals.chatResponseReceived": {
+		"sound": "off"
+	},
+	"accessibility.signals.chatUserActionRequired": {
+		"sound": "off"
+	},
+	"accessibility.signals.codeActionTriggered": {
+		"sound": "off"
+	},
+	"accessibility.signals.diffLineDeleted": {
+		"sound": "off"
+	},
+	"accessibility.signals.diffLineInserted": {
+		"sound": "off"
+	},
+	"accessibility.signals.diffLineModified": {
+		"sound": "off"
+	},
+	"accessibility.signals.editsKept": {
+		"sound": "off"
+	},
+	"accessibility.signals.editsUndone": {
+		"sound": "off"
+	},
+	"accessibility.signals.lineHasBreakpoint": {
+		"sound": "off"
+	},
+	"accessibility.signals.lineHasError": {
+		"sound": "off"
+	},
+	"accessibility.signals.lineHasFoldedArea": {
+		"sound": "off"
+	},
+	"accessibility.signals.lineHasInlineSuggestion": {
+		"sound": "off"
+	},
+	"accessibility.signals.lineHasWarning": {
+		"sound": "off"
+	},
+	"accessibility.signals.nextEditSuggestion": {
+		"sound": "off"
+	},
+	"accessibility.signals.notebookCellCompleted": {
+		"sound": "off"
+	},
+	"accessibility.signals.notebookCellFailed": {
+		"sound": "off"
+	},
+	"accessibility.signals.positionHasError": {
+		"sound": "off"
+	},
+	"accessibility.signals.positionHasWarning": {
+		"sound": "off"
+	},
+	"accessibility.signals.progress": {
+		"sound": "off"
+	},
+	"accessibility.signals.taskCompleted": {
+		"sound": "off"
+	},
+	"accessibility.signals.taskFailed": {
+		"sound": "off"
+	},
+	"accessibility.signals.terminalBell": {
+		"sound": "off"
+	},
+	"accessibility.signals.terminalCommandFailed": {
+		"sound": "off"
+	},
+	"accessibility.signals.terminalCommandSucceeded": {
+		"sound": "off"
+	},
+	"accessibility.signals.terminalQuickFix": {
+		"sound": "off"
+	},
+	"accessibility.signals.voiceRecordingStarted": {
+		"sound": "off"
+	},
+	"accessibility.signals.voiceRecordingStopped": {
+		"sound": "off"
+	},
+	"accessibility.signals.lineHasInlineSuggestion": {
+		"sound": "off"
+	},
+	"workbench.editor.useModal": "off",
+	"terminal.integrated.gpuAcceleration": "off",
+	"js/ts.updateImportsOnFileMove.enabled": "always",
+	"editor.fontSize": 13,
+	"window.confirmBeforeClose": "keyboardOnly"
+}
