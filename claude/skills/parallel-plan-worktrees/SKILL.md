@@ -14,9 +14,13 @@ Use the `EnterWorktree` tool, not `git worktree add`. It places the worktree und
 
 When the work has to start from some other ref, run `git worktree add <path> <ref>` and then enter it by passing that `path` to `EnterWorktree`.
 
+When the session root isn't a git repo -- a site root like `~/local-sites/10up/dmv`, with the repo being changed in a subdirectory -- run `cd <repo>` as its own Bash call, then call `EnterWorktree` with `name`. That creates the worktree under the repo's own `.claude/worktrees/` with no prompt. Don't use `path` or `git worktree add` in that layout: `EnterWorktree` always prompts for a `path` when the launch directory isn't a repo, and the sandbox refuses the writes `git worktree add` makes under `.git/`.
+
 ## Working in it
 
 Run all verification (`tsc`, `lint`, `test`) from inside the worktree, and confirm the files under test actually contain the change -- `grep` for a distinctive string. A green run against the wrong tree is worse than no run.
+
+When you commit to the work tree, make sure the same code review and security review passes run, and then iterate based on them. That catches issues early so that they don't delay attaching to the main tree.
 
 ## Patching back on `go`
 
@@ -45,3 +49,5 @@ Do it after the patch has been committed in the main checkout, not at `go` time.
 - Created by `EnterWorktree`, already exited with `action: "keep"` -- which is every worktree that has been patched back on `go`: `ExitWorktree` is a no-op now, so remove it with `git worktree remove <path>` followed by `git branch -D <branch>`. The branch needs `-D` rather than `-d` because its commits are unmerged even once the patch has landed in the main tree. `hooks/file-command-permissions.py` auto-approves that `-D` for a `worktree-*` branch after verifying every file it touched is identical on `HEAD`, so no prompt appears once the work is really in. If it does prompt, the work is not all there yet -- read the reason and tell the user rather than forcing it.
 
 - Created by `git worktree add`: `ExitWorktree` won't touch it. Use `git worktree remove`, without `--force`.
+
+- Created after a `cd` into a repo below the session root: `ExitWorktree` returns to that repo, not the session root, so `cd` back to the session root as the last step.

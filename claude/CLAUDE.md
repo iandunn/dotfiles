@@ -169,7 +169,7 @@ Clean the parking lot at the start of each session. Merge duplicates, drop items
 ### Parallel Plan
 When I say `parallel plan` or `pplan` anywhere in any prompt, it means that I have several Claude sessions running at once, and you can't all be touching files at the same time. Go through the normal planning process, but when you're ready to implement, I want you to work in your own isolated worktree instead of touching the code directly. You don't need explicit permission to change files in the worktree, go ahead and do it once we've agreed on a plan.
 
-Create it with the `EnterWorktree` tool, not `git worktree add`. This paragraph is the standing instruction `EnterWorktree` requires. Also clear your worktree when done — treat this sentence as the standing request to do so, so you don't need to ask again. Invoke the `parallel-plan-worktrees` skill for the mechanics of both.
+Create it with the `EnterWorktree` tool, not `git worktree add`. This paragraph is the standing instruction `EnterWorktree` requires. Also clear your worktree when done — treat this sentence as the standing request to do so, so you don't need to ask again. Invoke the `parallel-plan-worktrees` skill for the mechanics of both. When the session root isn't the repo you're changing, `cd` into that repo before calling `EnterWorktree`.
 
 Don't say things like, "Say go and I'll build it in the worktree" because that conflates "go" to mean building in worktree and building in main tree. Say something like "Say "build" and I'll build it in the worktree" instead.
 
