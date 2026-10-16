@@ -28,6 +28,7 @@ The `mcp__local-wp__wp_cli` path is kept even while Local's Agent Tools add-on i
 re-enabling the add-on doesn't expose its WP-CLI tool without this allowlist in front of it. Keep
 it, and its `settings.json` matcher, unless the add-on is removed for good.
 """
+import fnmatch
 import json
 import os
 import re
@@ -101,7 +102,6 @@ WP_SKIPPABLE_GLOBAL_FLAGS = frozenset({
     '--color',
     '--debug',
     '--no-color',
-    '--path',
     '--quiet',
     '--skip-packages',
     '--skip-plugins',
@@ -111,9 +111,17 @@ WP_SKIPPABLE_GLOBAL_FLAGS = frozenset({
 })
 
 # WP-CLI globals that load or run arbitrary code, or retarget the command at another machine
-# (`--ssh` and `--http` are both remote transports). No subcommand is safe enough to outweigh
-# one of these.
-WP_DISQUALIFYING_GLOBAL_FLAGS = frozenset({'--context', '--exec', '--http', '--require', '--ssh'})
+# (`--ssh` and `--http` are both remote transports). `--path` belongs here too, because WP-CLI
+# runs the `wp-config.php` it finds there, and that can be a file anyone with write access to the
+# project planted. No subcommand is safe enough to outweigh one of these.
+WP_DISQUALIFYING_GLOBAL_FLAGS = frozenset({
+    '--context',
+    '--exec',
+    '--http',
+    '--path',
+    '--require',
+    '--ssh',
+})
 
 # Flags the allowlist itself covers, so the global-flag walk must hand them over instead of
 # stepping past them.
@@ -263,8 +271,14 @@ VIP_NATIVE_ALLOWED = [
     'whoami',
 ]
 
-# Where Local's "Install Local CLI" preference puts its launcher.
+# Where Local's "Install Local CLI" preference puts its launcher. It resolves here only so that
+# `LOCALWP_CANONICAL_SPELLING` can deny it with a reason that names the fix.
 LOCALWP_BINARY = os.path.expanduser('~/Library/Application Support/Local/bin/localwp')
+
+# `localwp` only works when it's spelled exactly this way, because `sandbox.excludedCommands`
+# matches the literal `localwp *`. Any other spelling runs sandboxed and can't reach Local's
+# socket, so it's denied with a pointer to this one instead of failing with `connect EPERM`.
+LOCALWP_CANONICAL_SPELLING = re.compile(r'localwp( |$)')
 
 # The exact binary spellings this hook will vouch for. Resolving by basename alone would treat
 # any executable named `wp` at any path as WP-CLI, so an unlisted path is denied instead --
@@ -309,13 +323,72 @@ COVERED_COMMAND_MENTION = re.compile(
 )
 
 
+# Characters bash removes, or can expand to nothing, while it builds a word, so `w\p`, `"w"p`,
+# `w$''p`, `w$()p`, and `` w``p `` all run `wp`.
+WORD_NOISE = re.compile(r'[\'"\\$`()]')
+
+LINE_CONTINUATION = re.compile(r'\\\n')
+
+GLOB_CHARACTERS = re.compile(r'[?*\[]')
+
+EXPANSION = re.compile(r'[$`]')
+
+# What separates words once `WORD_NOISE` is gone. Brace expansion's `{`, `,`, and `}` count too,
+# because `{wp,}` runs `wp`.
+WORD_BOUNDARY = re.compile(r'[\s;&|<>{},]+')
+
+# What separates words on the raw line, for the expansion check.
+RAW_WORD_BOUNDARY = re.compile(r'[\s;&|<>]+')
+
+
+def contains_in_order(letters, word):
+    """Return whether every character of `letters` appears in `word`, in order."""
+    remaining = iter(word)
+    return all(letter in remaining for letter in letters)
+
+
+def is_glob_for_covered_command(word):
+    """Return whether `word` is a glob, like `/usr/bin/w?`, that could expand to a covered name."""
+    if not GLOB_CHARACTERS.search(word):
+        return False
+    name = word.rsplit('/', 1)[-1]
+    return any(fnmatch.fnmatchcase(command, name) for command in COMMANDS)
+
+
+def mentions_covered_command(raw):
+    """Return whether the line might run a covered command, in any spelling bash accepts.
+
+    This only decides whether the hook looks at the line, so it errs toward a match. Quotes,
+    backslashes, line continuations, and braces inside a name hide it from the regex while bash
+    still runs it, so the regex is tried again with them removed.
+    """
+    if COVERED_COMMAND_MENTION.search(raw):
+        return True
+
+    collapsed = WORD_NOISE.sub('', LINE_CONTINUATION.sub('', raw))
+    if COVERED_COMMAND_MENTION.search(collapsed):
+        return True
+
+    for word in WORD_BOUNDARY.split(collapsed):
+        if word.rsplit('/', 1)[-1] in COMMANDS or is_glob_for_covered_command(word):
+            return True
+
+    # An expansion can supply or remove any part of a name (`w${X}p`, `${X:-w}p`, `w$(true)p`),
+    # so a word with one counts when a covered name's letters appear in it in order. That costs a
+    # prompt on some unrelated lines, like `ls "$HOME/wp-content"`, because the guard asks on `$`.
+    return any(
+        EXPANSION.search(word) and any(contains_in_order(name, word) for name in COMMANDS)
+        for word in RAW_WORD_BOUNDARY.split(raw)
+    )
+
+
 def no_opinion():
     """Exit without printing a decision, so `settings.json` rules apply normally.
 
-    The `if` filters that scope this hook to `wp`/`vip` lines fail open on shell lines Claude
-    Code can't decompose -- redirects, `$` expansion, `for` loops -- so the hook also runs on
-    `jq`, `curl` loops, and anything else compound. Answering `ask` for those turned every such
-    line into a prompt; staying silent hands them back to the permission system untouched.
+    The hook runs on every Bash line rather than behind `if` filters, because a filter can only
+    match the spellings it lists, and `command wp`, a single-quoted path, or a backslash-escaped
+    one would skip it. Answering `ask` for lines that never mention a covered command would turn
+    every one of them into a prompt; staying silent hands them back to the permission system.
     """
     sys.exit(0)
 
@@ -418,9 +491,10 @@ def match_wp_allowlist(subcommand_tokens, allowed, raw):
 
     prefix = matched_prefix(subcommand_tokens, allowed)
     if prefix:
-        # WP-CLI honors `--exec`, `--require`, `--ssh`, and `--http` wherever they sit, not just
-        # ahead of the subcommand, so a prefix match has to rule them out across the whole line
-        # rather than trusting `normalize_wp` to have caught them among the leading flags.
+        # WP-CLI honors `--exec`, `--require`, `--path`, `--ssh`, and `--http` wherever they sit,
+        # not just ahead of the subcommand, so a prefix match has to rule them out across the
+        # whole line rather than trusting `normalize_wp` to have caught them among the leading
+        # flags.
         for token in subcommand_tokens:
             flag = token.partition('=')[0]
             if flag in WP_DISQUALIFYING_GLOBAL_FLAGS:
@@ -631,7 +705,7 @@ def resolve_base_command(tokens):
     if base_command:
         return base_command, tokens[1:], None
 
-    if Path(spelling).name in COMMANDS:
+    if Path(spelling).name in COMMANDS or is_glob_for_covered_command(spelling):
         return None, tokens[1:], (
             f'"{spelling}" is not in BINARY_ALLOWED_PATHS in command-allowlist-permissions.py, '
             'so this hook cannot vouch for the binary behind it'
@@ -658,7 +732,7 @@ def main():
     # This must run before the metacharacter guard: a compound line that never mentions a covered
     # command isn't this hook's to judge, but one that does mention `wp`/`vip` must still hit the
     # guard, or a rider like `wp option get x && wp db reset` slips past on the safe prefix.
-    if not raw_arguments and not COVERED_COMMAND_MENTION.search(raw):
+    if not raw_arguments and not mentions_covered_command(raw):
         no_opinion()
 
     if not shell_free:
@@ -690,9 +764,18 @@ def main():
         # A covered command sitting behind a launcher (`env wp db reset`, `VAR=1 vip ...`) is
         # still an execution this hook can't vouch for, so it gets a prompt. A covered name
         # inside a larger token (`grep 'wp option' notes.txt`) is just data.
-        if any(token in BINARY_ALLOWED_PATHS for token in tokens):
+        if any(
+            token in BINARY_ALLOWED_PATHS or is_glob_for_covered_command(token) for token in tokens
+        ):
             respond(ASK, 'a covered command sits behind a launcher this hook cannot vouch for')
         no_opinion()
+
+    if base_command == 'localwp' and not LOCALWP_CANONICAL_SPELLING.match(raw):
+        respond(DENY, (
+            'localwp only reaches Local when it is spelled as a bare, unquoted `localwp` at the '
+            'start of the line, because that is what `sandbox.excludedCommands` matches. Rewrite '
+            'the command that way rather than finding another spelling.'
+        ))
 
     respond(*decide(base_command, tokens, raw))
 

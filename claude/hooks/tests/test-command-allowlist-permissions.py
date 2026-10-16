@@ -120,6 +120,14 @@ class WpGlobalFlagTest(DecisionTest):
         self.assertAsks('wp --ssh=user@host post list')
         self.assertAsks('wp --http=user@host option update home evil')
 
+    def test_path_global_asks(self):
+        """WP-CLI runs the `wp-config.php` under `--path`, so it can point at planted code."""
+        self.assertAsks('wp --path=./evil option get siteurl')
+        self.assertAsks('wp option get siteurl --path=./evil')
+        self.assertAsks('wp db query "SELECT 1 FROM wp_posts" --path=./evil')
+        self.assertAsks('vip @app.staging wp --path=./evil option get siteurl')
+        self.assertAsks('localwp cli publix -- option get siteurl --path=./evil')
+
     def test_unknown_leading_global_asks(self):
         self.assertAsks('wp --not-a-real-global post list')
 
@@ -368,8 +376,6 @@ class LocalWpCliTest(DecisionTest):
         self.assertAllows('localwp cli "comics kingdom" -- plugin list')
         self.assertAllows('localwp cli publix -- --url=publix.test/jobs post list')
 
-    def test_absolute_path_resolves(self):
-        self.assertAllows(f'"{self.LOCALWP}" cli publix -- option get siteurl')
 
     def test_unlisted_wp_commands_ask(self):
         self.assertAsks('localwp cli publix -- db reset --yes')
@@ -410,6 +416,21 @@ class LocalWpCliTest(DecisionTest):
 
     def test_unlisted_path_denied(self):
         self.assertDenies('/tmp/evil/localwp cli publix -- option get siteurl')
+
+    def test_other_spellings_of_the_binary_denied(self):
+        """Only bare `localwp` matches `sandbox.excludedCommands`, so nothing else can reach Local."""
+        escaped = self.LOCALWP.replace(' ', '\\ ')
+        self.assertDenies('command localwp cli publix -- option get siteurl')
+        self.assertDenies(f'"{self.LOCALWP}" cli publix -- option get siteurl')
+        self.assertDenies(f"'{self.LOCALWP}' cli publix -- option get siteurl")
+        self.assertDenies(f'{escaped} cli publix -- option get siteurl')
+        self.assertDenies('~/Library/"Application Support"/Local/bin/localwp cli x -- list')
+        self.assertDenies('"lo"calwp list')
+
+    def test_whitespace_variants_denied(self):
+        """`localwp *` is a literal match, so leading space or a tab may not reach Local."""
+        self.assertDenies('  localwp list')
+        self.assertDenies('localwp\tlist')
 
 
 class McpInputTest(DecisionTest):
@@ -618,6 +639,49 @@ class NoOpinionTest(DecisionTest):
 
     def test_compound_line_that_runs_vip_still_refused(self):
         self.assertDenies('vip @app.staging wp post list | tee /tmp/x')
+
+    def test_quotes_or_escapes_inside_the_name_are_still_judged(self):
+        """bash runs `w\\p` and `"w"p` as `wp`, so they can't be treated as a line without one."""
+        self.assertAsks('w\\p db reset --yes')
+        self.assertAsks('"w"p db reset --yes')
+        self.assertAsks("w''p db reset --yes")
+        self.assertDenies('lo\\calwp cli x -- db reset --yes')
+        self.assertDenies('"lo"calwp cli x -- db reset --yes')
+        self.assertDenies('ls;w\\p db reset --yes')
+
+    def test_empty_expansions_inside_the_name_are_still_judged(self):
+        self.assertAsks("w$''p db reset --yes")
+        self.assertAsks('w$()p db reset --yes')
+        self.assertAsks('w``p db reset --yes')
+
+    def test_expansions_that_build_the_name_are_still_judged(self):
+        self.assertAsks('w${X}p db reset --yes')
+        self.assertAsks('w"$X"p db reset --yes')
+        self.assertAsks('${X:-w}p db reset --yes')
+        self.assertAsks('w$(true)p db reset --yes')
+
+    def test_line_continuation_inside_the_name_is_still_judged(self):
+        self.assertAsks('w\\\np db reset --yes')
+
+    def test_brace_expansion_is_still_judged(self):
+        self.assertAsks('{w\\p,db} reset --yes')
+        self.assertAsks('{wp,} db reset --yes')
+
+    def test_unparseable_line_with_a_hidden_name_is_still_judged(self):
+        """bash reads `$'a\\'b'` as balanced even though shlex doesn't."""
+        self.assertAsks("w\\p db reset --yes $'a\\'b'")
+
+    def test_mid_word_hash_does_not_hide_the_rest_of_the_line(self):
+        self.assertDenies('true x#y; w\\p db reset --yes')
+
+    def test_glob_that_expands_to_a_covered_name_denied(self):
+        self.assertDenies('/opt/homebrew/bin/w? db reset --yes')
+        self.assertDenies('/opt/homebrew/bin/w[p] db reset --yes')
+        self.assertAsks('env w? db reset --yes')
+
+    def test_directory_named_like_a_covered_command_is_left_alone(self):
+        self.assertSilent('ls localwp/ ; echo hi')
+        self.assertSilent('cat wp/ && echo hi')
 
     def test_name_glued_to_an_expansion_still_asks(self):
         """`wp$X` runs `wp` when `X` is empty, so it must not slip past the mention check just

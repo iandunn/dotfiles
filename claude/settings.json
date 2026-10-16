@@ -559,33 +559,7 @@
 					},
 					{
 						"type": "command",
-						"command": "python3 ~/.claude/hooks/command-allowlist-permissions.py",
-						"if": "Bash(wp *)"
-					},
-					{
-						"type": "command",
-						"command": "python3 ~/.claude/hooks/command-allowlist-permissions.py",
-						"if": "Bash(vip *)"
-					},
-					{
-						"type": "command",
-						"command": "python3 ~/.claude/hooks/command-allowlist-permissions.py",
-						"if": "Bash(/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp *)"
-					},
-					{
-						"type": "command",
-						"command": "python3 ~/.claude/hooks/command-allowlist-permissions.py",
-						"if": "Bash(\"/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp\" *)"
-					},
-					{
-						"type": "command",
-						"command": "python3 ~/.claude/hooks/command-allowlist-permissions.py",
-						"if": "Bash(localwp *)"
-					},
-					{
-						"type": "command",
-						"command": "python3 ~/.claude/hooks/command-allowlist-permissions.py",
-						"if": "Bash(\"/Users/iandunn/Library/Application Support/Local/bin/localwp\" *)"
+						"command": "python3 ~/.claude/hooks/command-allowlist-permissions.py"
 					},
 					{
 						"type": "command",
@@ -687,6 +661,9 @@
 	"outputStyle": "Concise",
 	"sandbox": {
 		"enabled": true,
+		"excludedCommands": [
+			"localwp *"
+		],
 		"network": {
 			"allowedDomains": [
 				"*.github.com",
@@ -702,10 +679,7 @@
 				"wordpress.org",
 				"wpackagist.org"
 			],
-			"allowLocalBinding": true,
-			"allowUnixSockets": [
-				"/private/var/folders/nw/x3mk7jcn46n9qbv5p7pzwkq40000gn/T/local-cli.sock"
-			]
+			"allowLocalBinding": true
 		}
 	},
 	"feedbackSurveyRate": 0,
