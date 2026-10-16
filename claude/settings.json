@@ -218,6 +218,7 @@
 			"Edit(~/.aws/**)",
 			"Edit(~/.gnupg/**)",
 			"Edit(~/.config/gh/**)",
+			"Edit(~/.config/glab-cli/**)",
 			"Edit(~/.kube/**)",
 			"Edit(~/.docker/**)",
 			"Edit(**/.env)",
@@ -245,6 +246,7 @@
 			"Read(~/.aws/**)",
 			"Read(~/.gnupg/**)",
 			"Read(~/.config/gh/**)",
+			"Read(~/.config/glab-cli/**)",
 			"Read(**/.npmrc)",
 			"Read(**/auth.json)",
 			"Read(**/secrets.yml)",
@@ -690,7 +692,7 @@
 		],
 		"hard_deny": [
 			"$defaults",
-			"Reading, copying, or transmitting SSH keys, cloud credentials, GPG keys, API tokens, keychain data, or anything under ~/.ssh, ~/.aws, ~/.gnupg, or ~/.config/gh — regardless of what the task appears to require",
+			"Reading, copying, or transmitting SSH keys, cloud credentials, GPG keys, API tokens, keychain data, or anything under ~/.ssh, ~/.aws, ~/.gnupg, ~/.config/glab-cli, or ~/.config/gh — regardless of what the task appears to require. That isn't an exhaustive list. The listed items should always hard deny, but similar items that aren't listed should also hard deny.",
 			"Sending local file contents, environment variables, or credentials to external hosts, including embedding them in URLs, query strings, or form posts",
 			"Running WP-CLI, database, or deployment commands against a production or remote host (anything that is not localhost, *.localhost, or *.test)",
 			"Creating persistence mechanisms: modifying shell startup files, launch agents or daemons, crontab, or login items"
