@@ -610,6 +610,11 @@
           {
             "type": "command",
             "command": "node ~/.claude/hooks/inject-open-vscode-tabs.js"
+          },
+		  {
+            "type": "command",
+            "command": "node ~/.claude/hooks/name-session.js",
+            "timeout": 30
           }
         ]
       }
