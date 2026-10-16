@@ -16,6 +16,10 @@ export PATH="$PATH:$HOME/bin:$DOTFILES_DIR/bin"
 export PATH="$PATH:/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.composer/vendor/bin"
 export PATH="$PATH:$HOME/.local/bin:$HOME/go/bin:$HOME/.relay/bin"
 
+# Local's CLI installer adds this to `.bash_profile`, but Local site shells `exec $SHELL` as a
+# non-login shell, which only reads this file.
+export PATH="$PATH:/Users/iandunn/Library/Application Support/Local/bin"
+
 export HOMEBREW_PREFIX=$(brew --prefix) # Different on laptop and desktop because intel vs silicon
 eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
 

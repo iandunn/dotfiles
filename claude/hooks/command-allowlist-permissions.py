@@ -23,6 +23,10 @@ This hook is the SOLE permission authority for the commands it covers, because a
 hook is ever dropped.
 
 Won't work for WP-CLI if `mcp__local-wp__wp_cli` is in `permissions.allow`. Keep it out of there.
+
+The `mcp__local-wp__wp_cli` path is kept even while Local's Agent Tools add-on is disabled, so
+re-enabling the add-on doesn't expose its WP-CLI tool without this allowlist in front of it. Keep
+it, and its `settings.json` matcher, unless the add-on is removed for good.
 """
 import json
 import os
@@ -259,13 +263,18 @@ VIP_NATIVE_ALLOWED = [
     'whoami',
 ]
 
+# Where Local's "Install Local CLI" preference puts its launcher.
+LOCALWP_BINARY = os.path.expanduser('~/Library/Application Support/Local/bin/localwp')
+
 # The exact binary spellings this hook will vouch for. Resolving by basename alone would treat
 # any executable named `wp` at any path as WP-CLI, so an unlisted path is denied instead --
 # the deny reason names this constant so the block is visible in the session.
 BINARY_ALLOWED_PATHS = {
     'wp': 'wp',
     'vip': 'vip',
+    'localwp': 'localwp',
     '/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp': 'wp',
+    LOCALWP_BINARY: 'localwp',
 }
 
 COMMANDS = {
@@ -279,6 +288,12 @@ COMMANDS = {
         # After VIP's target and global flags are consumed, a `wp` subcommand is plain WP-CLI, so
         # it reuses that allowlist rather than duplicating it.
         'delegates': {'wp': WP_ALLOWED},
+    },
+    'localwp': {
+        # Local's own reads only -- `start`, `stop`, and `new` change which sites exist or run.
+        'allowed': ['info', 'list'],
+        'normalizer': 'localwp',
+        'delegates': {'cli': WP_ALLOWED},
     },
 }
 
@@ -549,9 +564,40 @@ def decide_vip(tokens, config, raw):
     return ASK, 'VIP command is not allowlisted'
 
 
+def decide_localwp(tokens, config, raw):
+    """Decide a Local CLI invocation, which is only auto-approved as a wrapper around WP-CLI.
+
+    `localwp cli <site> -- <args>` forwards everything after the first `--` to WP-CLI as an argv,
+    with no shell in between, so those arguments get the same allowlist as `wp` itself. Any other
+    `cli` shape asks, including one with options before the `--`.
+    """
+    if not tokens or tokens[0] != 'cli':
+        prefix = matched_prefix(tokens, config['allowed'])
+        if prefix:
+            return ALLOW, f'"localwp {prefix}" is allowlisted'
+        return ASK, 'localwp command is not allowlisted'
+
+    if len(tokens) < 3 or tokens[1].startswith('-') or tokens[2] != '--':
+        return ASK, 'only "localwp cli <site> -- <wp-cli command>" is allowlisted for localwp cli'
+
+    site = tokens[1]
+    proxied_tokens, disqualifying_flag = normalize_wp(tokens[3:])
+    if disqualifying_flag:
+        return ASK, f'"{disqualifying_flag}" can run arbitrary code or retarget the command'
+
+    outcome = match_wp_allowlist(proxied_tokens, config['delegates']['cli'], raw)
+    if outcome:
+        decision, reason = outcome
+        if decision == ALLOW:
+            reason = f'{reason}, through localwp on site "{site}"'
+        return decision, reason
+    return ASK, 'proxied WP-CLI command is not allowlisted'
+
+
 NORMALIZERS = {
     'wp': decide_wp,
     'vip': decide_vip,
+    'localwp': decide_localwp,
 }
 
 

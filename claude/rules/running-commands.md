@@ -9,6 +9,13 @@
 
 - Use `jq` for handling json instead of calling python just to parse JSON.
 
+- Use `localwp cli [sitename] -- [WP-CLI command]` to run WP-CLI commands. e.g., `localwp cli foo -- option get siteurl`. The site name generally matches the folder name, like `foo/app/public/wp-content`. The `--` is required, and the WP-CLI command is separate arguments rather than one quoted string, because `localwp` forwards everything after `--` to WP-CLI as an argv without a shell. It works from any shell, so you don't need to be inside a Local site shell for database access. `localwp list` gives the site names, and `localwp info [sitename]` gives the site's path.
+
+- For Local site details that WP-CLI doesn't cover:
+	* PHP errors: read `wp-content/debug.log` and `[site path]/logs/php/error.log`.
+	* Web server logs: read `[site path]/logs/nginx/`.
+	* Restarting a site: `localwp stop [sitename]`, then `localwp start [sitename]`. Both prompt.
+
 - Paths in commands you hand me to run -- or mention in prose -- must be absolute; your cwd isn't mine, and `EnterWorktree` moves yours without moving mine. When a path-based command fails, show me `pwd` rather than guessing a different prefix.
 
 - Don't run things like `npx jest` when you can run `npm run test` instead.

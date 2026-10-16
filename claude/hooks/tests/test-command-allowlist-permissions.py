@@ -357,6 +357,61 @@ class VipNativeTest(DecisionTest):
         self.assertAsks('vip')
 
 
+class LocalWpCliTest(DecisionTest):
+    """`localwp cli <site> -- <args>` reuses the WP-CLI allowlist; nothing else in `localwp` does."""
+
+    LOCALWP = str(Path.home() / 'Library/Application Support/Local/bin/localwp')
+
+    def test_allowlisted_wp_commands_allowed(self):
+        self.assertAllows('localwp cli publix -- option get siteurl')
+        self.assertAllows('localwp cli publix -- post list --post_type=page --fields=ID')
+        self.assertAllows('localwp cli "comics kingdom" -- plugin list')
+        self.assertAllows('localwp cli publix -- --url=publix.test/jobs post list')
+
+    def test_absolute_path_resolves(self):
+        self.assertAllows(f'"{self.LOCALWP}" cli publix -- option get siteurl')
+
+    def test_unlisted_wp_commands_ask(self):
+        self.assertAsks('localwp cli publix -- db reset --yes')
+        self.assertAsks('localwp cli publix -- user create x x@example.test')
+        self.assertAsks('localwp cli publix --')
+
+    def test_db_query_is_validated(self):
+        self.assertAllows('localwp cli publix -- db query "SELECT COUNT(*) FROM wp_options"')
+        self.assertAsks('localwp cli publix -- db query "DELETE FROM wp_posts"')
+
+    def test_code_loading_globals_ask(self):
+        self.assertAsks('localwp cli publix -- --require=evil.php post list')
+        self.assertAsks('localwp cli publix -- option get siteurl --exec="phpinfo();"')
+
+    def test_missing_separator_asks(self):
+        """Without `--`, Local refuses the command anyway, so there's nothing to vouch for."""
+        self.assertAsks('localwp cli publix "option get siteurl"')
+        self.assertAsks('localwp cli publix option get siteurl')
+
+    def test_options_before_the_separator_ask(self):
+        self.assertAsks('localwp cli --progress publix -- option get siteurl')
+        self.assertAsks('localwp cli publix --no-progress -- option get siteurl')
+
+    def test_native_reads_allowed(self):
+        self.assertAllows('localwp list')
+        self.assertAllows('localwp list --json --full')
+        self.assertAllows('localwp info publix')
+
+    def test_native_writes_ask(self):
+        self.assertAsks('localwp start publix')
+        self.assertAsks('localwp stop --all')
+        self.assertAsks('localwp new foo')
+        self.assertAsks('localwp')
+
+    def test_shell_guard_still_applies(self):
+        self.assertDenies('localwp cli publix -- option get siteurl && localwp stop --all')
+        self.assertAsks('localwp cli publix -- option get "$(id)"')
+
+    def test_unlisted_path_denied(self):
+        self.assertDenies('/tmp/evil/localwp cli publix -- option get siteurl')
+
+
 class McpInputTest(DecisionTest):
     """The Local WP MCP server passes bare WP-CLI arguments with no `wp` and a leading `--url=`."""
 
