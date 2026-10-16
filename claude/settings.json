@@ -417,7 +417,7 @@
 		"defaultMode": "auto",
 		"disableBypassPermissionsMode": "disable"
 	},
-	"model": "opus[1m]",
+	"model": "opus",
 	"enabledMcpjsonServers": [
 		"local-wp",
 		"chrome-devtools"
@@ -427,7 +427,8 @@
 		"claude.ai Greenhouse",
 		"claude.ai Supabase",
 		"claude.ai Browserstack",
-		"claude.ai Ahrefs"
+		"claude.ai Ahrefs",
+		"claude.ai Wispr Flow"
 	],
 	"deniedMcpServers": [
 		{
@@ -651,10 +652,10 @@
 		"padding": 0
 	},
 	"enabledPlugins": {
-		"docs-skills@docs-skills-marketplace": false,
+		"docs-skills@docs-skills-marketplace": true,
 		"chrome-devtools-mcp@claude-plugins-official": true,
-		"frontend-design@claude-plugins-official": false,
-		"modern-web-guidance@googlechrome": false,
+		"frontend-design@claude-plugins-official": true,
+		"modern-web-guidance@googlechrome": true,
 		"security-guidance@claude-plugins-official": true,
 		"claude-security@claude-plugins-official": true,
 		"relay-eng@relay-plugins": true,
