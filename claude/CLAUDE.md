@@ -151,17 +151,41 @@ Never publish a PR, ticket, ticket comment, etc without my explicit approval.
 
 
 ### One topic at a time
-Work on one topic at a time and park the rest, so threads don't fan out and reviews don't stack up. A topic is one decision or change, plus everything it touches.
+Work on one topic at a time and park the rest. This is to avoid the tendency for a session to fan out to cover 5-15 different threads at a time before it eventually fans back in until all the threads have been resolved. A topic is one decision or change, plus everything it touches.
 
 1. When my message raises several topics, pick one as the current topic, usually the one the others depend on. Park the rest. Work only on the current topic, and end the reply with one line listing what you parked.
-2. Anything new you notice while working goes into the parking lot as one line. It doesn't start a new thread.
-3. When I decide, apply the change and update everything it touches before replying, so the review doesn't find ripple effects you skipped.
-4. When I say to commit, the topic is closed, unless something obvious is still unanswered. Review just that topic's changes. Fix problems inside the topic as part of it, and park anything that needs a new decision or belongs to another topic. Never commit until I say to.
+2. Anything new you notice while working gets sorted by the tiers below. It doesn't start a new thread.
+3. When I make a decision about the current topic, apply the change and update everything it touches before replying, so the review doesn't find ripple effects you skipped.
+4. When I say to commit, the topic is closed, unless something obvious is still unanswered. Review just that topic's changes. Fix problems inside the topic as part of it, and park anything that needs a new decision or belongs to another topic.
 5. After the commit, remove the topic from the parking lot, propose the next one, and restate what's still parked.
 
-The parking lot is a file, so nothing is lost if a session closes early. Add an item the moment you park it, with enough context to pick it up cold in a new session. The project's `CLAUDE.md` says where the file lives. If it doesn't, suggest a place, like the project's `_notes` folder, and ask.
+I don't want to miss anything that matters, so sort each new finding by what it does to the work, not by whether it's interesting:
 
-Sort the parking lot into high, medium and low priority. I won't have the time or energy to get through most of the medium and low items, so keep the high ones moving. Anything that affects other parts of the project significantly is high, because a missed decision there means rework later. Propose high items first.
+- It changes the current topic or a decision we already made: raise it now, in place of whatever you were going to ask. If it reorders the plan, re-sort the parking lot and say in one line what moved and why. A security problem or breakage in the change you're making is always this tier.
+
+- It's important but independent: park it as high priority, and give it a one-line pointer in the reply, like "Parked (high): `gh` has the same bypass." I see that it exists without having to discuss it yet.
+
+- It's minor: park it as medium or low without mentioning it, or drop it if it's trivial.
+
+Most fan-out starts in your replies, not my prompts. These are the shapes that have caused it, and anything in them that isn't in the first tier belongs in the parking lot instead of the reply:
+
+- An answer with extra sections bolted on: "worth knowing", "also noticed", "unrelated, but", "while I was checking this", "found something that predates this change". Each one becomes a thread I feel obliged to answer.
+
+- A reply that ends on more than one question, or on a menu of options. Ask the one question the current topic needs, with your recommendation.
+
+- A review or audit that comes back with several findings. Fix the in-topic ones that need no decision from me. Bring me the ones that need a decision one at a time, and park pre-existing problems and anything outside the topic. Pre-commit code and security review findings are the exception: every one reaches me before the commit, in full detail, and a parked one blocks the commit until I say to go ahead.
+
+- A correction of something you said earlier. Fold it into the current topic in a sentence, rather than opening a section about it.
+
+- A list of pending items repeated on every turn. Restate the parking lot only after a commit or when I ask what's left.
+
+When you restate it, list only the highest tier that still has items, as bullets, and give the lower tiers as counts: "There are also 3 medium and 4 low priority items." Once every high item is done, list the medium ones the same way and count the low ones.
+
+Watch for these signs that it's already happening: I answer in a numbered or batched list; I say "remind me", "I've forgotten", "what about the 4th one", "tell me more about X", or "too much to go back"; I start pacing you with "don't reply" or "hold"; your reply needs more than one heading or runs past about 200 words; the count of open items goes up between turns; or a review loop's finding count hasn't dropped after two rounds. When you see one, stop adding. Write every open thread to the parking lot, reply with one line per thread, and propose the single one to settle next. For a review loop that isn't converging, stop fixing and tell me, since that usually means the design needs a decision rather than another patch. If I've said hold, sort everything that came up into the tiers and the parking lot without replying, and keep holding. When I say resume, the reply handles those items exactly as if they had come up without a hold.
+
+The parking lot is a file, so nothing is lost if a session closes early. Add an item the moment you park it, with enough context to pick it up cold in a new session. The project's `CLAUDE.md` says where the file lives. If it doesn't, suggest a place, like the project's `_notes` folder. Record the location i decide in `CLAUDE.md`.
+
+Sort the parking lot into high, medium and low priority. I won't have the time or energy to get through most of the medium and low items, so keep the high ones moving. An item is high if it affects other parts of the project significantly, if it affects another high-priority decision, or if it would change the outcome significantly, even when it looks minor on its own. A missed decision there means rework later. Propose high items first.
 
 Clean the parking lot at the start of each session. Merge duplicates, drop items that later decisions made moot, and re-sort the priorities. Tell me in one line what you dropped.
 
