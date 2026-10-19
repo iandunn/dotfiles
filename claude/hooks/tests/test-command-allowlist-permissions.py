@@ -719,6 +719,50 @@ class NoOpinionTest(DecisionTest):
         self.assertSilent('rg -n stair -g \\!docs/\\*\\*')
         self.assertSilent("env 'w?' db reset --yes")
 
+    def test_bracket_expression_fnmatch_misreads_still_asks(self):
+        """bash negates `[^x]` and expands `[:alpha:]`, which `fnmatch` doesn't."""
+        self.assertAsks('env w[[:alpha:]] db reset --yes')
+        self.assertAsks('env w[^x] db reset --yes')
+        self.assertAsks('env w[[=p=]] db reset --yes')
+        self.assertDenies('/opt/homebrew/bin/w[[:alpha:]] db reset --yes')
+        self.assertAsks("/bin/[^x]ash -c 'wp db reset --yes'")
+        self.assertAsks("/bin/ba[[:alpha:]]h -c 'wp db reset --yes'")
+
+    def test_brace_expansion_that_builds_a_name_asks(self):
+        self.assertAsks('env w{p..p} db reset --yes')
+        self.assertAsks('env w{o..q} db reset --yes')
+        self.assertAsks('env w{x,p} db reset --yes')
+        self.assertAsks('env {v..v}ip @app.production wp post delete 1')
+
+        self.assertAsks("env {X=' ',w}p db reset --yes")
+        self.assertAsks('env W{P,} db reset --yes')
+        self.assertAsks('env {{w,x},y}p db reset --yes')
+        self.assertAsks('env /opt/homebrew/bin/{v..v}ip @app.production wp post delete 1')
+        self.assertAsks('env w{a..z}{a..z}{a..z} db reset --yes')
+        self.assertAsks('env w{_..A} db reset --yes')
+        self.assertDenies('true;w{x,p} db reset --yes')
+        self.assertAsks('x{;w{x,p} db reset --yes')
+        self.assertAsks('env w{"|",p} db reset --yes')
+        self.assertAsks('env w{\\;,p} db reset --yes')
+        self.assertAsks('env w{!..\U0010ffff} db reset --yes')
+
+    def test_brace_expansion_without_a_name_is_left_alone(self):
+        self.assertSilent('git log @{u}..HEAD')
+        self.assertSilent('mkdir -p src/{lib,test}')
+        self.assertSilent("printf '%s' {a..z}")
+        self.assertSilent('cp wp-config.php{,.bak} /tmp/x')
+        self.assertSilent('mkdir -p wp-content/{plugins,themes}')
+        self.assertSilent('echo {win,warp}')
+        self.assertSilent('echo w{1..999999999}p')
+
+    def test_quoted_braces_are_left_alone(self):
+        """A quoted `{` never expands, so JSON keys that happen to spell a name are data."""
+        self.assertSilent('''jq '{workspace: .x}' f.json | sort''')
+        self.assertSilent('''echo '{"wrap": 1}' | jq .''')
+
+    def test_single_bracket_expression_matches_one_character(self):
+        self.assertSilent("rg -n 'wp db' notes/[0-9]")
+
     def test_directory_named_like_a_covered_command_is_left_alone(self):
         self.assertSilent('ls localwp/ ; echo hi')
         self.assertSilent('cat wp/ && echo hi')
