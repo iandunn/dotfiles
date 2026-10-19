@@ -156,8 +156,17 @@ Work on one topic at a time and park the rest. This is to avoid the tendency for
 1. When my message raises several topics, pick one as the current topic, usually the one the others depend on. Park the rest. Work only on the current topic, and end the reply with one line listing what you parked.
 2. Anything new you notice while working gets sorted by the tiers below. It doesn't start a new thread.
 3. When I make a decision about the current topic, apply the change and update everything it touches before replying, so the review doesn't find ripple effects you skipped.
-4. When I say to commit, the topic is closed, unless something obvious is still unanswered. Review just that topic's changes. Fix problems inside the topic as part of it, and park anything that needs a new decision or belongs to another topic.
+
+4. When I say to commit, the topic is closed, unless something obvious is still unanswered. Use the review from the topic's last decision, and rerun it only if the changes moved after it. Fix problems inside the topic as part of it, and park anything that needs a new decision or belongs to another topic.
 5. After the commit, remove the topic from the parking lot, propose the next one, and restate what's still parked.
+
+- Ask one decision per closing question. When a topic has two open decisions, ask the one the current topic needs and raise the other separately, so each answer closes exactly one thing.
+
+- Make your own proposals freely. One related to the current topic goes on its own line or as its own question, never bundled into a decision I'm already making. One unrelated to the current topic gets parked.
+
+- When a question goes unanswered, make sure it's parked so it gets resolved eventually. It's fine to repeat it, since I may have missed it.
+
+- When I make the last decision on a major topic, run the pre-commit review right away and tell me what it found, while I still have the context. Then wait for me to say commit.
 
 I don't want to miss anything that matters, so sort each new finding by what it does to the work, not by whether it's interesting:
 
@@ -224,7 +233,7 @@ Flag existing solutions (WordPress plugins for backend, JS libraries for fronten
 
 - The session's effort level stays at `medium`, and Ultracode stays off. Both are mine to change, not yours: if a task would come out meaningfully better at `high`, `xhigh`, or `max`, say so in a line and let me decide, and don't work around the level you were given by fanning the work out instead. Where a piece of work carries its own effort setting, though -- a subagent definition, a workflow agent, or a skill that takes an effort argument -- pick that one yourself, higher when the work is subtle or hard to reverse and lower when it's mechanical.
 
-- Don't try to commit stuff unless I ask you to. Give me a drafted commit message, but only once i've acknowleded that a task is completely done. The exceptions are your own worktree during a `parallel plan`, where Parallel Plan above already sanctions committing on your worktree branch -- that carve-out never extends to the main checkout, where you still wait to be asked -- and Relay's own commit phases, which Planning Workflow above sanctions in either tree outside a `parallel plan` and only inside the worktree during one.
+- Don't commit unless I ask you to. When a major topic settles, run the pre-commit review right away and tell me what it found, per One topic at a time, then wait for me to say commit. The exceptions are your own worktree during a `parallel plan`, where Parallel Plan above already sanctions committing on your worktree branch -- that carve-out never extends to the main checkout, where you still wait to be asked -- and Relay's own commit phases, which Planning Workflow above sanctions in either tree outside a `parallel plan` and only inside the worktree during one.
 
 - When I ask you to make a commit, make sure you only stage the lines you actually modified, not entire files. Only stage the changes that you've made in this session. There's likely other Claude sessions that have made changes that haven't been committed yet.
 
@@ -316,6 +325,8 @@ The only thing you should say is "Holding...", and then continue holding your re
 This doesn't override the instructions about verbosity, though. The verbosity and content of your reply should be the same as if it would be in a session where I didn't use "hold", but supplied the same information as a single large prompt covering multiple topics.
 
 A partial resume is a whitelist for replies, not a release, and it doesn't pause work on anything. If I say "resume for X but hold on everything else", answer X and nothing else, and stay in the hold afterward. A topic I raise for the first time during a hold defaults to held, even when I phrase it as a direct question, and even when it's about your own work, your tooling, or a mistake you made -- especially then, because wanting to correct my understanding of something you did is the most persuasive reason you will invent for breaking a hold. Before replying to anything mid-hold, point to the words in my message that release that specific topic. If you can't, the answer is "Holding...".
+
+When I say "resume", answer every direct question I asked during the hold, even if it's only a line, or say explicitly that it's parked. Compressing the resume is fine, but never drop a question I asked.
 
 ## Miscellaneous
 - I'm often using speech-to-text dictation, so be aware that some things may be mistranslated. One common thing is that the dictation software will not put a period at the end of a sentence, and then it will put a capitalized letter at the start of the next sentence. So something like "... and eat ice cream The Clash record..." should be interpreted as "... and eat ice cream. The Clash record...".  Just ask for clarification if something seems wrong.
