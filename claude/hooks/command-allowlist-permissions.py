@@ -355,6 +355,50 @@ def is_glob_for_covered_command(word):
     return any(fnmatch.fnmatchcase(command, name) for command in COMMANDS)
 
 
+def unquoted_glob_words(command):
+    """Return each word on the line that holds a glob character bash would expand, unquoted.
+
+    A word whose glob characters are all quoted or backslash-escaped isn't returned, which keeps
+    `rg -g '!docs/**'` from reading as a glob that could expand into a covered name. The quoted
+    characters of a word that is returned are kept as glob characters rather than escaped, because
+    escaping them can't reproduce bash's bracket rules (`w["?"p]` matches `wp`), and treating them
+    as wildcards can only make a mixed word prompt more often.
+    """
+    words = []
+    pattern = []
+    has_glob = False
+    quote = None
+    escaped = False
+
+    for character in command:
+        if escaped:
+            pattern.append(character)
+            escaped = False
+        elif character == '\\' and quote != "'":
+            escaped = True
+        elif quote:
+            if character == quote:
+                quote = None
+            else:
+                pattern.append(character)
+        elif character in '\'"':
+            quote = character
+        # Only what bash splits words on, since `str.isspace()` would also cut a bracket
+        # expression at a vertical tab or a no-break space that bash keeps inside the word.
+        elif character in ' \t\n':
+            if has_glob:
+                words.append(''.join(pattern))
+            pattern = []
+            has_glob = False
+        else:
+            pattern.append(character)
+            has_glob = has_glob or bool(GLOB_CHARACTERS.match(character))
+
+    if has_glob:
+        words.append(''.join(pattern))
+    return words
+
+
 def mentions_covered_command(raw):
     """Return whether the line might run a covered command, in any spelling bash accepts.
 
@@ -763,9 +807,10 @@ def main():
     if base_command is None:
         # A covered command sitting behind a launcher (`env wp db reset`, `VAR=1 vip ...`) is
         # still an execution this hook can't vouch for, so it gets a prompt. A covered name
-        # inside a larger token (`grep 'wp option' notes.txt`) is just data.
-        if any(
-            token in BINARY_ALLOWED_PATHS or is_glob_for_covered_command(token) for token in tokens
+        # inside a larger token (`grep 'wp option' notes.txt`) is just data, and so is a quoted
+        # glob, because bash never expands it.
+        if any(token in BINARY_ALLOWED_PATHS for token in tokens) or any(
+            is_glob_for_covered_command(word) for word in unquoted_glob_words(command_for_tokens)
         ):
             respond(ASK, 'a covered command sits behind a launcher this hook cannot vouch for')
         no_opinion()

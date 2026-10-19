@@ -678,6 +678,26 @@ class NoOpinionTest(DecisionTest):
         self.assertDenies('/opt/homebrew/bin/w? db reset --yes')
         self.assertDenies('/opt/homebrew/bin/w[p] db reset --yes')
         self.assertAsks('env w? db reset --yes')
+        self.assertAsks("env 'w'? db reset --yes")
+        self.assertAsks('env /opt/homebrew/bin/w["?"p] db reset --yes')
+        self.assertAsks('env w[\\*p] db reset --yes')
+        self.assertAsks('env w[\x0bp] db reset --yes --url=wp')
+        self.assertAsks('env w[\xa0p] db reset --yes --url=wp')
+        self.assertAsks('rg -g !docs/** wp-config')
+
+    def test_quoted_glob_argument_is_left_alone(self):
+        """bash never expands a quoted glob, so `**` there can't become a covered name."""
+        self.assertSilent(
+            'command rg -c -i "south office|>SOUTH</text>" "/Users/x/Basement Rehab" '
+            "-g '!compliance/**' -g '!bid sets/**' -g '!*.pdf' -g '!**/pdf/**'"
+        )
+        self.assertSilent(
+            'command rg -n -i "2 layers|34\\"|1 1/4\\" total" "/Users/x/Basement Rehab" '
+            "--glob '!compliance/**' --glob '!drawings/archive/**'"
+        )
+        self.assertSilent('command rg -n -i "stair post" /Users/x -g "!compliance/**" -g "!**/pdf/**"')
+        self.assertSilent('rg -n stair -g \\!docs/\\*\\*')
+        self.assertSilent("env 'w?' db reset --yes")
 
     def test_directory_named_like_a_covered_command_is_left_alone(self):
         self.assertSilent('ls localwp/ ; echo hi')
