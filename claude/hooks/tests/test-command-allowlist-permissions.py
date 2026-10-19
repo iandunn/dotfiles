@@ -685,6 +685,26 @@ class NoOpinionTest(DecisionTest):
         self.assertAsks('env w[\xa0p] db reset --yes --url=wp')
         self.assertAsks('rg -g !docs/** wp-config')
 
+    def test_covered_command_behind_a_reparsing_launcher_asks(self):
+        """These parse their arguments as shell again, so quoting doesn't make a mention data."""
+        self.assertAsks("eval 'wp db reset --yes'")
+        self.assertAsks("eval '/opt/homebrew/bin/w?' db reset --yes")
+        self.assertAsks("bash -c 'wp db reset --yes'")
+        self.assertAsks("/bin/sh -c '/opt/homebrew/bin/w? db reset --yes'")
+        self.assertAsks("sudo zsh -c 'vip @app.production wp post delete 1'")
+        self.assertAsks("ssh host 'wp db reset --yes'")
+        self.assertAsks("source ./wp")
+        self.assertAsks('. ./wp db reset')
+        self.assertAsks(". '/opt/homebrew/bin/w?'")
+        self.assertAsks("/bin/b?sh -c 'wp db reset --yes'")
+        self.assertAsks("/bin/[b]ash -c 'wp db reset --yes'")
+        self.assertAsks("BASH -c 'wp db reset --yes'")
+        self.assertAsks("/bin/SH -c 'wp db reset --yes'")
+        self.assertAsks("/bin/[B]ash -c 'wp db reset --yes'")
+
+    def test_covered_name_as_data_beside_a_non_launcher_is_left_alone(self):
+        self.assertSilent("rg -n 'wp db reset' notes.md -g '!archive/**'")
+
     def test_quoted_glob_argument_is_left_alone(self):
         """bash never expands a quoted glob, so `**` there can't become a covered name."""
         self.assertSilent(

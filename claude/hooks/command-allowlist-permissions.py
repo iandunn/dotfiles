@@ -291,6 +291,13 @@ BINARY_ALLOWED_PATHS = {
     LOCALWP_BINARY: 'localwp',
 }
 
+# Programs that hand their arguments to a shell to parse again, locally or on another host, so a
+# quoted `'wp db reset'` or `'/opt/homebrew/bin/w?'` runs as a command rather than staying data.
+REPARSING_LAUNCHERS = frozenset({
+    '.', 'bash', 'csh', 'dash', 'eval', 'fish', 'ksh', 'script', 'sh', 'source', 'ssh', 'su',
+    'tcsh', 'watch', 'zsh',
+})
+
 COMMANDS = {
     'wp': {
         'allowed': WP_ALLOWED,
@@ -796,6 +803,7 @@ def main():
         tokens = shlex.split(command_for_tokens)
     except ValueError:
         respond(ASK, 'command could not be parsed into arguments')
+    line_tokens = tokens
 
     if raw_arguments:
         base_command = 'wp'
@@ -805,6 +813,22 @@ def main():
             respond(DENY, denial_reason)
 
     if base_command is None:
+        # Reaching here means the line mentions a covered command. A launcher that parses its
+        # arguments as shell again unquotes and expands them on that second pass, so nothing
+        # this hook reads from the first pass can show that the mention is only data.
+        # macOS resolves `BASH` to `/bin/bash`, because its filesystem ignores case.
+        glob_names = [
+            word.rsplit('/', 1)[-1].lower() for word in unquoted_glob_words(command_for_tokens)
+        ]
+        if any(
+            token in REPARSING_LAUNCHERS or Path(token).name.lower() in REPARSING_LAUNCHERS
+            for token in line_tokens
+        ) or any(
+            fnmatch.fnmatchcase(launcher, name)
+            for launcher in REPARSING_LAUNCHERS for name in glob_names
+        ):
+            respond(ASK, 'a covered command sits behind a launcher that parses it as shell again')
+
         # A covered command sitting behind a launcher (`env wp db reset`, `VAR=1 vip ...`) is
         # still an execution this hook can't vouch for, so it gets a prompt. A covered name
         # inside a larger token (`grep 'wp option' notes.txt`) is just data, and so is a quoted
