@@ -90,6 +90,16 @@ REDIRECT = 'redirect'
 UNREADABLE = 'unreadable'
 
 
+# Each `{` scans the rest of its word, so a line with more than this many is assumed to expand
+# rather than scanned, which keeps a line of thousands of braces from running past the hook's
+# timeout.
+MAX_BRACES_TO_SCAN = 64
+
+# Shapes whose quoting `has_brace_expansion` doesn't track. `$` covers every expansion that can
+# nest its own quotes, and a newline covers heredoc bodies and anything else that spans lines.
+UNTRACKED_QUOTING = ('$', '`', '#', '<<', '\n')
+
+
 def is_brace_expansion(command, brace_index):
     """True if the unquoted `{` at `brace_index` could start a bash brace expansion.
 
@@ -115,7 +125,9 @@ def is_brace_expansion(command, brace_index):
                 quote = None
         elif character in ('"', "'"):
             quote = character
-        elif character.isspace():
+        # Only what bash splits words on, since `str.isspace()` also matches a no-break space or a
+        # vertical tab that bash keeps inside the word.
+        elif character in ' \t\n':
             return False
         elif character == '{':
             depth += 1
@@ -126,6 +138,37 @@ def is_brace_expansion(command, brace_index):
         elif character == ',' or (character == '.' and previous == '.'):
             return True
         previous = character
+    return False
+
+
+def has_brace_expansion(command):
+    """True if any unquoted `{` on the line could start a bash brace expansion.
+
+    This scan doesn't follow `$'...'` escapes, quotes nested in a `$(...)`, `${...}`, or
+    backtick expansion, a `#` comment that hides a quote from bash, or a heredoc body, so a line
+    holding any of those counts whenever it holds a `{`. So does one with more than `MAX_BRACES_TO_SCAN` of them.
+    """
+    if '{' not in command:
+        return False
+    if any(marker in command for marker in UNTRACKED_QUOTING) or (
+        command.count('{') > MAX_BRACES_TO_SCAN
+    ):
+        return True
+
+    quote = None
+    escaped = False
+    for index, character in enumerate(command):
+        if escaped:
+            escaped = False
+        elif character == '\\' and quote != "'":
+            escaped = True
+        elif quote:
+            if character == quote:
+                quote = None
+        elif character in ('"', "'"):
+            quote = character
+        elif character == '{' and is_brace_expansion(command, index):
+            return True
     return False
 
 
@@ -144,6 +187,7 @@ def first_operator(command):
     quote = None
     escaped = False
     index = 0
+    too_many_braces = command.count('{') > MAX_BRACES_TO_SCAN
 
     while index < len(command):
         character = command[index]
@@ -166,7 +210,7 @@ def first_operator(command):
             quote = character
         elif character in EXPANDING_OPERATORS:
             return EXPAND, f'{character!r} outside quotes can expand into another command'
-        elif character == '{' and is_brace_expansion(command, index):
+        elif character == '{' and (too_many_braces or is_brace_expansion(command, index)):
             return EXPAND, (
                 "'{' outside quotes can brace-expand into words this hook never sees"
             )

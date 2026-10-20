@@ -746,14 +746,37 @@ class NoOpinionTest(DecisionTest):
         self.assertAsks('env w{\\;,p} db reset --yes')
         self.assertAsks('env w{!..\U0010ffff} db reset --yes')
 
-    def test_brace_expansion_without_a_name_is_left_alone(self):
+        self.assertAsks('env -u w{\xa0x,}p db reset --yes')
+        self.assertAsks('env -u w{\x0bx,}p db reset --yes')
+
+    def test_ansi_c_quoting_cannot_hide_a_brace(self):
+        """`$'a\\'b'` stays open past the `\\'`, which a plain quote scan would misread."""
+        self.assertAsks("env $'a\\'b' w{x,p} db reset --yes")
+
+    def test_untracked_quoting_cannot_hide_a_brace(self):
+        self.assertAsks('env "$(echo ")" w{x,p} db reset --yes')
+        self.assertAsks('env "`echo "`" w{x,p} db reset --yes')
+        self.assertAsks("echo #'\nenv w{x,p} db reset --yes")
+        self.assertAsks("cat <<EOF\n'\nEOF\nenv w{x,p} db reset --yes")
+        self.assertAsks("cat <<< \"'\" ; env w{x,p} db reset --yes")
+        self.assertAsks('''echo "${x:-"'"}" ; env w{x,p} db reset --yes''')
+
+    def test_any_unquoted_brace_expansion_asks(self):
+        """The accepted cost of not predicting what an expansion builds."""
+        self.assertAsks('mkdir -p src/{lib,test}')
+        self.assertAsks('echo {win,warp}')
+        self.assertAsks('echo w{1..999999999}p')
+
+    def test_line_of_many_braces_asks_quickly(self):
+        self.assertAsks('echo ' + '{' * 100000)
+        self.assertAsks("printf '%s' {a..z}")
+        self.assertAsks('cp wp-config.php{,.bak} /tmp/x')
+        self.assertAsks('mkdir -p wp-content/{plugins,themes}')
+
+    def test_brace_that_does_not_expand_is_left_alone(self):
         self.assertSilent('git log @{u}..HEAD')
-        self.assertSilent('mkdir -p src/{lib,test}')
-        self.assertSilent("printf '%s' {a..z}")
-        self.assertSilent('cp wp-config.php{,.bak} /tmp/x')
-        self.assertSilent('mkdir -p wp-content/{plugins,themes}')
-        self.assertSilent('echo {win,warp}')
-        self.assertSilent('echo w{1..999999999}p')
+        self.assertSilent('git stash show stash@{0}')
+        self.assertSilent("rg -n '{a,b}' notes.md")
 
     def test_quoted_braces_are_left_alone(self):
         """A quoted `{` never expands, so JSON keys that happen to spell a name are data."""

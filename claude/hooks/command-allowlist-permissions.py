@@ -2,7 +2,9 @@
 """
 Auto-approves CLI subcommands that appear on a per-command allowlist, and forces a prompt for
 every other invocation of a covered command. Lines that never mention a covered command exit
-silently, so `settings.json` rules apply to them normally. A few shapes are denied outright
+silently, so `settings.json` rules apply to them normally. A line with an unquoted brace
+expansion counts as a mention, because an expansion can build a covered name from pieces, so it
+prompts even when it has nothing to do with a covered command. A few shapes are denied outright
 rather than prompted: a VIP target named any way other than a single leading `@org.env` token,
 a covered binary at a path outside `BINARY_ALLOWED_PATHS`, and a line that chains a second
 command with `;`, `&`, `|`, or a newline, where splitting it into one call per command is a fix
@@ -338,18 +340,7 @@ LINE_CONTINUATION = re.compile(r'\\\n')
 
 GLOB_CHARACTERS = re.compile(r'[?*\[]')
 
-# The inside of a bash brace sequence, like `a..z`, `o..q..1`, or `1..10`.
-BRACE_SEQUENCE = re.compile(r'([^.{},]+)\.\.([^.{},]+)(?:\.\.-?\d+)?')
-
-# How many words a brace expansion may produce before the hook stops expanding and assumes one
-# of them could be a covered command.
-BRACE_EXPANSION_LIMIT = 1000
-
 EXPANSION = re.compile(r'[$`]')
-
-BRACE = re.compile(r'\{')
-
-SHELL_OPERATORS = re.compile(r'[;&|<>()]+')
 
 # What separates words once `WORD_NOISE` is gone. Brace expansion's `{`, `,`, and `}` count too,
 # because `{wp,}` runs `wp`.
@@ -411,79 +402,6 @@ def widen_bracket_expressions(pattern):
     return ''.join(widened)
 
 
-def brace_alternatives(body):
-    """Return what a brace group's `body` expands to, or None if bash leaves it literal."""
-    sequence = BRACE_SEQUENCE.fullmatch(body)
-    if sequence:
-        first, last = sequence.group(1), sequence.group(2)
-        # Digits can't spell a covered name, so one stands in for a numeric range of any size.
-        if first.lstrip('-').isdigit() and last.lstrip('-').isdigit():
-            return ['0']
-        if len(first) == 1 and len(last) == 1:
-            low, high = sorted((ord(first), ord(last)))
-            if high - low >= BRACE_EXPANSION_LIMIT:
-                return ['*']
-            return [chr(code) for code in range(low, high + 1)]
-        return None
-
-    alternatives = []
-    depth = 0
-    current = []
-    for character in body:
-        if character == ',' and depth == 0:
-            alternatives.append(''.join(current))
-            current = []
-            continue
-        depth += {'{': 1, '}': -1}.get(character, 0)
-        current.append(character)
-    alternatives.append(''.join(current))
-    return alternatives if len(alternatives) > 1 else None
-
-
-def expand_braces(word, limit=BRACE_EXPANSION_LIMIT):
-    """Return the words bash's brace expansion makes from `word`, or None past `limit` of them."""
-    for start, character in enumerate(word):
-        if character != '{':
-            continue
-        depth = 0
-        for end in range(start, len(word)):
-            depth += {'{': 1, '}': -1}.get(word[end], 0)
-            if depth == 0:
-                break
-        else:
-            # bash leaves an unmatched `{` literal and still expands the groups after it.
-            continue
-        alternatives = brace_alternatives(word[start + 1:end])
-        if alternatives is None:
-            continue
-        words = []
-        for alternative in alternatives:
-            expanded = expand_braces(word[:start] + alternative + word[end + 1:], limit)
-            if expanded is None:
-                return None
-            words.extend(expanded)
-            if len(words) > limit:
-                return None
-        return words
-    return [word]
-
-
-def brace_expansion_names_covered_command(word):
-    """Return whether bash's brace expansion of `word` could produce a covered command.
-
-    `w{x,p}` and `w{o..q}` both expand to `wp`, but `wp-content/{plugins,themes}` never does.
-    A word that expands too far to check counts as a match.
-    """
-    # Ranges are expanded before lowercasing, because `{_..A}` spans `P` while `{_..a}` doesn't.
-    expanded = expand_braces(word)
-    if expanded is None:
-        return True
-    return any(
-        result.rsplit('/', 1)[-1] in COMMANDS or is_glob_for_covered_command(result)
-        for result in (result.lower() for result in expanded)
-    )
-
-
 def is_glob_for_covered_command(word):
     """Return whether `word` is a glob, like `/usr/bin/w?`, that could expand to a covered name."""
     if not GLOB_CHARACTERS.search(word):
@@ -501,21 +419,15 @@ def unquoted_glob_words(command):
     escaping them can't reproduce bash's bracket rules (`w["?"p]` matches `wp`), and treating them
     as wildcards can only make a mixed word prompt more often.
     """
-    return unquoted_words_holding(command, GLOB_CHARACTERS)
-
-
-def unquoted_words_holding(command, characters):
-    """Return each word on the line, with its quotes removed, that holds an unquoted match of
-    the `characters` regex."""
     words = []
-    word = []
-    has_match = False
+    pattern = []
+    has_glob = False
     quote = None
     escaped = False
 
     for character in command:
         if escaped:
-            word.append(character)
+            pattern.append(character)
             escaped = False
         elif character == '\\' and quote != "'":
             escaped = True
@@ -523,22 +435,22 @@ def unquoted_words_holding(command, characters):
             if character == quote:
                 quote = None
             else:
-                word.append(character)
+                pattern.append(character)
         elif character in '\'"':
             quote = character
         # Only what bash splits words on, since `str.isspace()` would also cut a bracket
         # expression at a vertical tab or a no-break space that bash keeps inside the word.
         elif character in ' \t\n':
-            if has_match:
-                words.append(''.join(word))
-            word = []
-            has_match = False
+            if has_glob:
+                words.append(''.join(pattern))
+            pattern = []
+            has_glob = False
         else:
-            word.append(character)
-            has_match = has_match or bool(characters.match(character))
+            pattern.append(character)
+            has_glob = has_glob or bool(GLOB_CHARACTERS.match(character))
 
-    if has_match:
-        words.append(''.join(word))
+    if has_glob:
+        words.append(''.join(pattern))
     return words
 
 
@@ -546,8 +458,9 @@ def mentions_covered_command(raw):
     """Return whether the line might run a covered command, in any spelling bash accepts.
 
     This only decides whether the hook looks at the line, so it errs toward a match. Quotes,
-    backslashes, line continuations, and braces inside a name hide it from the regex while bash
-    still runs it, so the regex is tried again with them removed.
+    backslashes, and line continuations inside a name hide it from the regex while bash still runs
+    it, so the regex is tried again with them removed. Any brace expansion counts, because one can
+    build a name from pieces (`w{x,p}`, `w{o..q}`) that no word on the line spells out.
     """
     if COVERED_COMMAND_MENTION.search(raw):
         return True
@@ -560,17 +473,8 @@ def mentions_covered_command(raw):
         if word.rsplit('/', 1)[-1] in COMMANDS or is_glob_for_covered_command(word):
             return True
 
-    # Brace expansion can build a name from pieces, like `w{x,p}` or `w{o..q}`, and only an
-    # unquoted `{` expands.
-    # bash splits commands at an unquoted `;`, `|`, and the like before it expands braces, so each
-    # piece of a word is checked on its own. Quotes are already gone here, so the whole word is
-    # checked too, because `w{"|",p}` keeps its `|` inside the braces.
-    for word in unquoted_words_holding(LINE_CONTINUATION.sub('', raw), BRACE):
-        if any(
-            brace_expansion_names_covered_command(piece)
-            for piece in [word, *SHELL_OPERATORS.split(word)]
-        ):
-            return True
+    if shell_line_shapes.has_brace_expansion(LINE_CONTINUATION.sub('', raw)):
+        return True
 
     # An expansion can supply or remove any part of a name (`w${X}p`, `${X:-w}p`, `w$(true)p`),
     # so a word with one counts when a covered name's letters appear in it in order. That costs a
