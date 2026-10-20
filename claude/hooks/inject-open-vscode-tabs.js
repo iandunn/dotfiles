@@ -86,25 +86,31 @@ function emit(additionalContext) {
   process.exit(0);
 }
 
-let input = '';
-process.stdin.on('data', (chunk) => {
-  input += chunk;
-});
-process.stdin.on('end', () => {
-  let cwd = process.cwd();
-  try {
-    const data = JSON.parse(input);
-    if (data && typeof data.cwd === 'string') {
-      cwd = data.cwd;
-    }
-  } catch (error) {
-    // Fall back to process.cwd().
-  }
+// `name-session.js` reuses the lookup, because hooks on the same event can't see each other's
+// output.
+module.exports = { loadStates, pickState };
 
-  const state = pickState(loadStates(), cwd);
-  if (!state) {
-    emit(null);
-    return;
-  }
-  emit(buildContext(state));
-});
+if (require.main === module) {
+  let input = '';
+  process.stdin.on('data', (chunk) => {
+    input += chunk;
+  });
+  process.stdin.on('end', () => {
+    let cwd = process.cwd();
+    try {
+      const data = JSON.parse(input);
+      if (data && typeof data.cwd === 'string') {
+        cwd = data.cwd;
+      }
+    } catch (error) {
+      // Fall back to process.cwd().
+    }
+
+    const state = pickState(loadStates(), cwd);
+    if (!state) {
+      emit(null);
+      return;
+    }
+    emit(buildContext(state));
+  });
+}
