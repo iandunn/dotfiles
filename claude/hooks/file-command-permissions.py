@@ -249,9 +249,12 @@ through, each observed running or writing with no prompt:
                                  tree: git prints both files from disk, wherever
                                  they are, with no repository involved
 
-`git fetch` therefore auto-approves only against a plain remote name (or none,
-for `--all`); a refspec with `:` in it prompts too, which is a false positive
-accepted for the simpler rule.
+`git fetch` therefore auto-approves only against a configured remote (or none,
+for `--all`), and only with options on GIT_FETCH_OPTIONS. A name that merely
+looks like a remote isn't enough, because git reads one it can't find among the
+remotes as a path, and an unrecognized option could take the remote as its
+value. A refspec with `:` in it prompts too, which is a false positive accepted
+for the simpler rule.
 
 `git [-C <path>] branch` and `git [-C <path>] tag` -- auto-approved when they
 only list refs, under the same rule about global options. Both create a ref
@@ -263,9 +266,9 @@ options are safe and which of them force listing.
 `git [-C <path>] checkout|switch|branch|pull|merge` -- left to the autoMode
 `soft_deny` classifier, which passes them only when the user asked, unless the
 arguments could destroy work or run a program. Those ask: any option off
-GIT_BRANCH_SWITCH_OPTIONS, a checkout or merge operand that doesn't resolve to a
-commit (checkout restores it as a path), a `git branch` that deletes or
-overwrites a branch, and a pull from anything but a plain remote name or with a
+GIT_BRANCH_SWITCH_OPTIONS, a checkout operand that is neither a commit nor a
+remote-tracking branch name (git restores it as a path), a merge operand that
+isn't a commit, and a pull from anything but a configured remote or with a
 refspec that could force-update a local branch. `fetch --refmap` asks for the
 same reason.
 settings.json carries no ask rules for these, since an ask rule would override
@@ -369,6 +372,20 @@ GIT_READ_ONLY_SUBCOMMANDS = frozenset({
 # `<helper>::<address>` like `ext::sh -c ...` -- can make fetch run a program. Git refuses a remote
 # name beginning with `.`, which is what keeps `.` and `..` on the path side of the line.
 GIT_REMOTE_NAME = re.compile(r'[A-Za-z0-9_][A-Za-z0-9._-]*')
+
+# The `git fetch` options this hook vouches for. Anything else asks, because an option it doesn't
+# recognize might take the next argument as its value and shift a path into the remote's slot.
+# `--force` is left off because it lets a refspec overwrite a local branch.
+GIT_FETCH_OPTIONS = {
+    'flags': frozenset({
+        '-q', '-v', '-p', '-P', '-t', '--quiet', '--verbose', '--all', '--prune', '--prune-tags',
+        '--tags', '--no-tags', '--dry-run', '--progress', '--no-progress', '--unshallow',
+        '--write-fetch-head', '--no-write-fetch-head', '--atomic',
+    }),
+    'takes_a_value': frozenset({
+        '-j', '--jobs', '--depth', '--deepen', '--shallow-since', '--shallow-exclude',
+    }),
+}
 
 # A short-option cluster carrying grep's `-O`, whose optional value names the pager to run.
 GIT_GREP_PAGER_CLUSTER = re.compile(r'-[^-]*O')
@@ -778,9 +795,35 @@ def git_read_only_option_reason(subcommand, arguments, cwd, git_cwd):
                 return f'`{argument}` names a program for git fetch to run'
             if is_long_option(argument, '--refmap'):
                 return f'`{argument}` can force-update local branches'
-            if not argument.startswith('-') and not GIT_REMOTE_NAME.fullmatch(argument):
-                return (f'`{argument}` is not a plain remote name, and a URL, path, or '
-                        '`ext::` helper can make git fetch run a program')
+            # Every operand after this is another remote, which the refspec check below can't vet.
+            if is_long_option(argument, '--multiple'):
+                return f'`{argument}` reads every operand as a remote; confirm it'
+    if subcommand == 'fetch':
+        # An option's separate value isn't an operand, and one that isn't recognized could shift the
+        # operands: `--server origin sibling` fetches from the directory `sibling`. So every option
+        # has to be on the allowlist, spelled in full, and anything else asks, `--` included.
+        operands = []
+        skip_next = False
+        for argument in arguments:
+            if skip_next:
+                if argument.startswith('-'):
+                    return f'`{argument}` follows an option that takes a value; confirm it'
+                skip_next = False
+                continue
+            name, value = (argument.split('=', 1) + [None])[:2]
+            if name in GIT_FETCH_OPTIONS['takes_a_value']:
+                skip_next = value is None
+            elif argument.startswith('-'):
+                if name not in GIT_FETCH_OPTIONS['flags']:
+                    return f'`{argument}` is not an option this hook can vouch for on git fetch'
+            else:
+                operands.append(argument)
+        # Every operand has to look like a plain name too, so a path can't sit in a refspec slot.
+        for operand in operands:
+            if not GIT_REMOTE_NAME.fullmatch(operand):
+                return (f'`{operand}` is not a plain name, and a URL, path, or `ext::` helper can '
+                        'make git fetch run a program')
+        return git_remote_operands_hazard(git_cwd, 'fetch', operands)
     return None
 
 
@@ -839,6 +882,9 @@ def git_branch_switch_hazard(subcommand, arguments, git_cwd):
             name, value = (argument.split('=', 1) + [None])[:2]
             if name in allowed['takes_a_value']:
                 skip_next = value is None
+            elif not argument.startswith('--') and argument[:2] in allowed['takes_a_value']:
+                # A short option's value attached to it, like `-uorigin/main` or `-bnew-branch`.
+                continue
             elif argument.startswith('-') and argument != '-':
                 if name not in allowed['flags']:
                     return (f'`{argument}` can discard local changes, overwrite a branch, or run a '
@@ -849,7 +895,9 @@ def git_branch_switch_hazard(subcommand, arguments, git_cwd):
                 positionals.append(argument)
 
         if subcommand == 'pull':
-            return git_pull_operands_hazard(positionals)
+            return git_remote_operands_hazard(git_cwd, 'pull', positionals)
+        if subcommand == 'branch':
+            return None
         if subcommand == 'merge':
             for operand in positionals:
                 if operand != '-' and not git_resolves_to_commit(git_cwd, operand):
@@ -857,27 +905,19 @@ def git_branch_switch_hazard(subcommand, arguments, git_cwd):
             return None
         if len(positionals) > 1:
             return f'git {subcommand} with more than one operand can restore files over local changes'
-        # Checkout treats an operand that isn't a commit as a path to restore from the index, which
-        # throws away that file's changes. Switch never reads an operand as a path.
+        # Checkout treats an operand that isn't a commit as a pathspec to restore from the index,
+        # which throws away those files' changes. The one exception is a name that exists only as a
+        # remote-tracking branch, which git turns into a new local branch instead. Switch never
+        # reads an operand as a path.
         if subcommand == 'checkout' and positionals and positionals[0] != '-':
-            if not git_resolves_to_commit(git_cwd, positionals[0]):
-                return (f'`{positionals[0]}` is not a commit here, so git checkout would restore '
-                        'it as a path over local changes')
-        return None
-
-    if subcommand == 'branch':
-        for argument in arguments:
-            if argument.startswith('--'):
-                if is_long_option(argument, '--force') or is_long_option(argument, '--delete'):
-                    return f'`{argument}` can delete or overwrite a branch'
-                if is_long_option(argument, '--edit-description'):
-                    return f'`{argument}` runs the editor the repository configures'
-            elif argument.startswith('-'):
-                for letter in argument[1:]:
-                    if letter in GIT_BRANCH_DESTRUCTIVE_SHORT:
-                        return f'`{argument}` can delete or overwrite a branch'
-                    if letter in GIT_BRANCH_SHORT_TAKING_A_VALUE:
-                        break
+            operand = positionals[0]
+            # `--no-guess` turns that branch creation off, so the operand is read as a path.
+            may_guess = '--no-guess' not in arguments
+            if not git_resolves_to_commit(git_cwd, operand) and not (
+                may_guess and git_is_remote_branch_name(git_cwd, operand)
+            ):
+                return (f'`{operand}` is not a commit here, so git checkout would restore it as a '
+                        'path over local changes')
     return None
 
 
@@ -885,11 +925,33 @@ def git_resolves_to_commit(git_cwd, name):
     return git_output(git_cwd, 'rev-parse', '--verify', '--quiet', f'{name}^{{commit}}') is not None
 
 
-def git_pull_operands_hazard(operands):
-    """Why a pull's remote or refspecs could run a program or force-update a branch, or None."""
-    if operands and not GIT_REMOTE_NAME.fullmatch(operands[0]):
-        return (f'`{operands[0]}` is not a plain remote name, and a URL, path, or `ext::` helper '
-                'can make git pull run a program')
+def git_is_remote_branch_name(git_cwd, name):
+    """True if git checkout would turn `name` into a new branch tracking a remote one.
+
+    Git does that only when exactly one remote carries the name and `checkout.guess` is on;
+    otherwise it reads the name as a path.
+    """
+    if not GIT_REMOTE_NAME.fullmatch(name.replace('/', '-')):
+        return False
+    if (git_output(git_cwd, 'config', '--bool', '--get', 'checkout.guess') or '').strip() == 'false':
+        return False
+    refs = git_output(git_cwd, 'for-each-ref', '--format=%(refname)', f'refs/remotes/*/{name}')
+    return bool(refs) and len(refs.split()) == 1
+
+
+def git_remote_operands_hazard(git_cwd, subcommand, operands):
+    """Why a fetch or pull's remote or refspecs could run a program or force-update a branch, or None.
+
+    The remote has to be configured, not just look like a name: a bare word git can't find among
+    the remotes is read as a path, so `git pull sibling` fetches from a directory called `sibling`.
+    """
+    if operands:
+        remote = operands[0]
+        if not GIT_REMOTE_NAME.fullmatch(remote) or git_output(
+            git_cwd, 'config', '--get', f'remote.{remote}.url',
+        ) is None:
+            return (f'`{remote}` is not a configured remote, and a URL, path, or `ext::` helper '
+                    f'can make git {subcommand} run a program')
     for refspec in operands[1:]:
         if ':' in refspec or refspec.startswith('+'):
             return f'`{refspec}` can force-update a local branch'
@@ -944,7 +1006,7 @@ GIT_SUBCOMMANDS_GATED_BY_SETTINGS = frozenset({
 # could destroy work or make git run a program, which git_branch_switch_hazard() looks for.
 GIT_CLASSIFIER_DECIDED_SUBCOMMANDS = frozenset({'branch', 'checkout', 'switch', 'pull', 'merge'})
 
-# The options checkout, switch, pull, and merge may carry without discarding local changes,
+# The options checkout, switch, branch, pull, and merge may carry without discarding local changes,
 # overwriting or force-updating a branch, opening an editor, or naming a program to run. It's a
 # list of what is known to be safe, because the dangerous spellings kept slipping past a list of
 # what isn't: `checkout -B`, `switch --discard-changes`, `pull --refmap=+x:y`, `merge --abort`,
@@ -965,6 +1027,15 @@ GIT_BRANCH_SWITCH_OPTIONS = {
         }),
         'takes_a_value': frozenset({'-c', '--create'}),
     },
+    # Creating, renaming, copying, and setting an upstream. Listing forms are judged earlier by
+    # is_git_ref_listing().
+    'branch': {
+        'flags': frozenset({
+            '-q', '-m', '-c', '-t', '--quiet', '--move', '--copy', '--track', '--no-track',
+            '--unset-upstream',
+        }),
+        'takes_a_value': frozenset({'-u', '--set-upstream-to'}),
+    },
     'pull': {
         'flags': frozenset({
             '-q', '-v', '--quiet', '--verbose', '--ff', '--no-ff', '--ff-only', '--rebase',
@@ -984,11 +1055,6 @@ GIT_BRANCH_SWITCH_OPTIONS = {
 
 # `--rebase=interactive` opens the sequence editor, so only these values pass.
 GIT_PULL_REBASE_VALUES = frozenset({'true', 'false', 'merges', 'm'})
-
-# `git branch` short options that delete a branch or overwrite an existing one, and the one whose
-# value is attached to it, so `-uorigin/feature` isn't read as carrying `-f`.
-GIT_BRANCH_DESTRUCTIVE_SHORT = frozenset('dDfMC')
-GIT_BRANCH_SHORT_TAKING_A_VALUE = frozenset('u')
 
 # `-S` takes its key id attached or not at all, so it never consumes the next token.
 GIT_COMMIT_ATTACHED_ONLY_VALUE = frozenset('S')
