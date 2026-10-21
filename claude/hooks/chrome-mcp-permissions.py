@@ -80,7 +80,8 @@ SESSION_GATE_MARKER_DIR = os.path.join(tempfile.gettempdir(), 'claude-chrome-mcp
 # That matrix is the single source of truth for which hosts the project may open
 # without a prompt, so adding a site to it is the only step needed.
 PRE_AUTHORIZED_SITE_MATRICES = {
-    '~/local-sites/misc/app/public/browser-extensions/slash-to-search': 'test/sites.json',
+    '~/local-sites/misc/app/public/browser-extensions/slash-to-search': ('test/sites.json', None),
+    '~/Documents/4015 Basement Rehab': ('.claude/hooks/retail-browser-sites.json', 'mcp__chrome-retail__'),
 }
 
 
@@ -94,20 +95,24 @@ def is_local_host(host):
     )
 
 
-def pre_authorized_hosts(cwd):
+def pre_authorized_hosts(cwd, tool_name):
     """Returns the hosts the current project has pre-authorized for external
     navigation, read fresh from its site matrix on every call. Empty for any cwd
     outside a listed project root, and empty -- so the gate still prompts -- if the
     matrix is missing or unparseable."""
     cwd = os.path.realpath(cwd)
 
-    for project_root, matrix_path in PRE_AUTHORIZED_SITE_MATRICES.items():
+    for project_root, (matrix_path, tool_prefix) in PRE_AUTHORIZED_SITE_MATRICES.items():
         root = os.path.realpath(os.path.expanduser(project_root))
 
         # Comparing against root plus a separator keeps a sibling directory whose
         # name merely starts with the root's from counting as being inside it.
         if cwd != root and not cwd.startswith(root + os.sep):
             continue
+
+        # A matrix tied to one server pre-authorizes nothing for the others.
+        if tool_prefix and not tool_name.startswith(tool_prefix):
+            return set()
 
         try:
             with open(os.path.join(root, matrix_path)) as matrix_file:
@@ -129,7 +134,7 @@ def emit(decision, reason):
     }))
 
 
-def gate_navigation(tool_input, session_id, cwd):
+def gate_navigation(tool_input, session_id, cwd, tool_name):
     url = tool_input.get('url')
 
     # navigate_page with type back/forward/reload has no URL and stays within
@@ -154,7 +159,7 @@ def gate_navigation(tool_input, session_id, cwd):
             emit('allow', f'Local host ({host}) auto-approved')
         return
 
-    if host and host in pre_authorized_hosts(cwd):
+    if host and host in pre_authorized_hosts(cwd, tool_name):
         if not gate_session_usage(session_id):
             emit('allow', f"{host} is in this project's pre-authorized site matrix")
         return
@@ -236,7 +241,7 @@ def main():
     cwd = data.get('cwd') or os.getcwd()
 
     if tool_name.endswith(('navigate_page', 'new_page')):
-        gate_navigation(tool_input, session_id, cwd)
+        gate_navigation(tool_input, session_id, cwd, tool_name)
         return
 
     if is_chrome_devtools_tool(tool_name):

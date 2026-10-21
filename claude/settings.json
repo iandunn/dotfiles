@@ -528,7 +528,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__(chrome-devtools|plugin_chrome-devtools-mcp_chrome-devtools)__.*",
+		"matcher": "mcp__(chrome-devtools|chrome-retail|plugin_chrome-devtools-mcp_chrome-devtools)__.*",
         "hooks": [
           {
             "type": "command",
