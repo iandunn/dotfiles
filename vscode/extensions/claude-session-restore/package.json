@@ -1,0 +1,23 @@
+{
+  "name": "claude-session-restore",
+  "displayName": "Claude Session Restore",
+  "description": "Remembers which Claude Code sessions were running in this window's terminals, and reopens them with `claude --resume` after VS Code restarts.",
+  "version": "0.0.1",
+  "publisher": "iandunn",
+  "private": true,
+  "engines": {
+    "vscode": "^1.68.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "claudeSessionRestore.restore",
+        "title": "Claude: Restore Sessions"
+      }
+    ]
+  }
+}
