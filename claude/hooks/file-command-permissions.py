@@ -4,49 +4,46 @@ PreToolUse permission gate for `cp`, `git add`, `git commit`, `git push`, `rm`, 
 `git worktree remove`, and the read-only git subcommands in
 GIT_READ_ONLY_SUBCOMMANDS.
 
-Before any gate runs, one shared guard: a gated command carrying a shell
-operator that could run something beyond it never gets an allow. An "allow"
-from this hook covers the ENTIRE command line, so without this, `git commit -m
-x && <anything>` would ride a worktree approval out of the worktree.
+Before any gate runs, the line is parsed by `bash_ast`, which runs `shfmt` and
+reports every simple command bash would run, wherever it sits: second in a
+chain, inside `$(...)`, behind a wrapper like `env`, or inside a literal
+`bash -c` string. The hook runs on every Bash line, so it picks out the
+commands it gates by their resolved program name (`"git"`, `\\git`, `Git`, and
+`/usr/bin/git` are all git) and stays silent on a line holding none of them. A
+line the parser cannot read asks, since a gated command could be hiding in it.
 
-The scanning lives in `shell_line_shapes`, shared with
-`command-allowlist-permissions.py` so the two cannot disagree about how bash
-reads a line. It tracks quote state rather than scanning the raw string,
-because bash does. `;`, `&`, `|`, `<`, `>`, and a newline separate commands
-only outside quotes; inside quotes of either kind bash treats each of them
-literally. That distinction is what lets a multi-paragraph `git commit -m`
-message through, whose body is one quoted argument no matter how many newlines
-it holds. `$` and a backtick expand inside double quotes as well, so they are
-refused there and unquoted alike, and permitted only inside single quotes,
-where bash performs no expansion or escaping whatsoever. `$'...'` cannot slip
-past on that permission: its `$` is read while still unquoted, before the quote
-opens.
+An "allow" from this hook covers the ENTIRE command line, so without the checks
+below, `git commit -m x && <anything>` would ride a worktree approval out of the
+worktree. A line holding a gated command that also runs more than one command
+(`;`, `&&`, `||`, `|`, `&`, a newline, or a compound command) is DENIED,
+because splitting it into one tool call per command is a fix the caller can
+always apply. A trailing `| head`, `| tail`, or `| wc` doesn't count, since
+those three can only trim what the command already printed.
 
-What the guard does about a finding depends on whether the caller could have
-avoided it. `;`, `&`, `|`, and a newline are DENIED, because splitting the line
-into one tool call per command is a fix the caller can always apply, and saying
-so is more useful than asking a person to approve a line nobody needed to
-write. A redirect to a real file, an expansion, a subshell, an unterminated
-quote, and a trailing backslash all ASK, because no such rewrite exists.
+Each gated command then ASKS instead of reaching its gate when the hook can't
+read exactly what it runs: a word that expands at run time (`$var`, `$(...)`,
+a backtick inside double quotes) or brace-expands, an environment assignment
+ahead of it, arguments a wrapper like `xargs` appends, a line that ends in a
+backslash, or a redirect to a real file. A redirect to `/dev/null` or a file
+descriptor throws output away and doesn't count. Neither does a `>`, `>>`, or
+`>|` whose destination is inside this directory's `.claude/tmp/` or Claude
+Code's own session directory under an OS temporary directory, since that writes
+only scratch; a destination that expands, globs, or resolves through a symlink
+or hard link out of scratch still asks. `git --output` to the same places is
+cleared the same way, in `git_read_only_option_reason`.
 
-Three shapes don't count as reaching beyond the command at all. A redirect to
-`/dev/null` or a file descriptor throws output away, and it is stripped before
-the arguments are read so it can't be mistaken for an operand. A pipeline
-ending in `head`, `tail`, or `wc` is judged as the command that feeds it, since
-those three read stdin and write stdout and can do nothing else; the tail comes
-off before the guard runs. A `>` or `>>` whose destination is inside this
-directory's `.claude/tmp/` or Claude Code's own session directory under an OS
-temporary directory writes only scratch, so `strip_scratch_redirects` cuts it
-out before the guard runs too. Every redirect on the line has to qualify, and a
-destination that expands, globs, or resolves through a symlink out of scratch
-disqualifies the line; `git --output` to the same places is cleared the same
-way, in `git_read_only_option_reason`.
+Quoting is resolved the way bash resolves it, so a multi-paragraph `git commit
+-m` message, a backtick inside single quotes, and an escaped `\\$` all pass as
+the literal text git receives. The commit convention in CLAUDE.md puts
+backticks around code references, so refusing them would prompt for nearly
+every commit message this gate exists to approve. The rm/mv/cp gates re-check
+their own operands for `$` and backtick regardless.
 
-Single-quoted `$` and backticks are permitted because the commit convention in
-CLAUDE.md puts backticks around code references, so refusing them would prompt
-for nearly every commit message this gate exists to approve. The rm/mv/cp gates
-re-check their own operands for `$` and backtick regardless, so relaxing the
-guard here does not relax containment there.
+A gated command nested inside a substitution, a compound command, or a reparsed
+`bash -c` string, or one sharing the line with any other command, never gets an
+allow. It asks instead, because the allow reasoning below assumes the gated
+command is the only thing the line runs. When a line holds more than one gated
+command, the most restrictive verdict wins.
 
 Four independent gates, each keyed on what actually makes the command safe:
 
@@ -75,12 +72,14 @@ subcommand. More than one `-C` prompts too, since each is resolved relative to
 the last. A subcommand that is a configured alias prompts for the same reason.
 A single `-C` ahead of a subcommand in GIT_SUBCOMMANDS_GATED_BY_SETTINGS
 prompts too, because it hides the line from prefix rules like
-`Bash(git clean*)` that would otherwise deny or ask about it.
+`Bash(git clean*)` that would otherwise deny or ask about it. So does a
+wrapper, a nested position, or any spelling of git other than a plain `git`,
+since those prefix rules only match that spelling at the start of the line.
 
-`git push` and the other GIT_PUSHING_SUBCOMMANDS prompt in every shape that
-starts with `git` or `command git`, including `git -C <path> push`, which the
-settings.json `Bash(git push *)` ask rule cannot match. A line that reaches git
-some other way, like `env git push` or `/usr/bin/git push`, never gets here.
+`git push` and the other GIT_PUSHING_SUBCOMMANDS prompt in every spelling the
+parser resolves to git, including `git -C <path> push`, `env git push`, and
+`/usr/bin/git push`, none of which the settings.json `Bash(git push *)` ask
+rule can match.
 
 `rm` -- auto-approved only when the working directory is such a worktree AND
 every operand resolves inside that worktree's root AND every file it names is
@@ -102,7 +101,6 @@ These force a prompt rather than an attempt to reason further:
                             after this hook reads the command, so the operand
                             it checked is not the path that gets deleted
     no operands             nothing to contain
-    unparseable quoting     shlex cannot tokenize it, so no operand is known
 
 Glob operands (`*`, `?`, `[`) are expanded here with glob.glob against the cwd
 -- the same default rules bash uses (dotfiles excluded, extglob off) -- and
@@ -123,8 +121,9 @@ settings.json's turf -- its `rm .claude/tmp/*` allow rules (with and without
 `-f`, with and without a `command` prefix) -- and those files are untracked by
 design, so this gate's tracked-only rule would re-prompt the exact cleanup the
 allow rules exist to approve. Silence hands the decision back to them. The
-shared operator guard runs first, so a chained or `$`-bearing command never
-reaches this exemption.
+parsing checks run first, so a chained or expanding command never reaches this
+exemption, and a wrapped, nested, or unusually spelled `rm` asks instead,
+because those rules only match the plain spelling.
 
 A second exemption covers symlinks. When every operand is a symlink whose parent
 resolves inside a `.claude/worktrees/` worktree of the working directory's own
@@ -190,8 +189,9 @@ one cp-specific rule: a RECURSIVE copy onto a landing path that already exists
 asks, because a directory merge can silently replace untracked files arbitrarily
 deep, and checking that honestly costs more than a prompt.
 
-`git branch -D worktree-*` -- auto-approved only when the branch holds nothing
-the current branch does not already have. Worktree branches exist to carry work
+`git [-C <path>] branch -D worktree-*` -- auto-approved only when the branch
+holds nothing the current branch does not already have, judged in the
+repository `-C` names when there is one. Worktree branches exist to carry work
 back to the main checkout; once `go` has patched them in and that patch is
 committed, the branch is dead weight. Git cannot see this on its own: the patch
 lands as a new commit with a different SHA, so `git branch --merged` reports the
@@ -220,7 +220,7 @@ several meaningful commits and the patch landed as one, `-D` discards those
 messages and boundaries. For throwaway branches whose commits exist only to
 produce a patch, that is the intended trade.
 
-`git worktree remove` -- auto-approved when no force flag is present, and
+`git [-C <path>] worktree remove` -- auto-approved when no force flag is present, and
 prompted when one is. Without `--force`, git itself refuses to delete anything
 that holds unique work; the observed behavior is:
 
@@ -311,22 +311,15 @@ A linked worktree is detected by comparing `git rev-parse --git-dir` against
 `--git-common-dir`: they resolve to the same path in the main working tree and
 differ in a linked worktree (git-dir is <common-dir>/worktrees/<name>).
 
-The settings.json `if` filters already scope this hook to the commands above,
-but each command is re-checked here as defense in depth: without that guard, a
-hook wired without the filter would gate *every* Bash command.
-
-The filters cannot enumerate every way of writing these commands -- they are
-literal prefixes, so `git --git-dir=/x add .` matches none of them and never
-reaches this hook. Nothing regresses when that happens: such a shape matched no
-permissions.ask entry before this hook existed either, so it falls through to
-the same place it always did.
+The hook runs on every Bash line, with no `if` filter in settings.json, because
+a filter only matches the literal prefixes it lists, and `env git`, `\\git`, or
+a git nested in `$(...)` would never reach the hook.
 """
 import functools
 import glob
 import json
 import os
 import re
-import shlex
 import subprocess
 import sys
 import tempfile
@@ -334,7 +327,7 @@ import tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 try:
-    import shell_line_shapes
+    import bash_ast
 except ImportError as error:
     # Letting the traceback stand would exit non-zero, which Claude Code reads as "no opinion",
     # dropping every command this hook gates to the auto-mode classifier. Failing closed with a
@@ -344,8 +337,7 @@ except ImportError as error:
             'hookEventName': 'PreToolUse',
             'permissionDecision': 'ask',
             'permissionDecisionReason': (
-                f'shell_line_shapes failed to load, so this hook cannot vouch for the '
-                f'command: {error}'
+                f'bash_ast failed to load, so this hook cannot vouch for the command: {error}'
             ),
         }
     }))
@@ -444,44 +436,174 @@ GIT_REF_LISTING_OPTIONS = {
 GIT_TAG_ANNOTATION_LINES = re.compile(r'-n\d*')
 
 
-def shell_operator_decision(command):
-    """Return (decision, reason) when bash might run more than this one gated command, or None.
+# The programs this hook judges, by the lowercased basename `bash_ast` resolves. Deliberately loose
+# on git: only some subcommands get a verdict, but every git command has to be found first, since
+# the checks on what it runs alongside apply whatever the subcommand.
+GATED_PROGRAMS = frozenset({'rm', 'mv', 'cp', 'git'})
 
-    A chaining operator is refused outright rather than prompted, because the agent that wrote it
-    always has a mechanical fix: run each command in its own tool call. Refusing states that fix
-    where the agent can act on it, instead of asking a person to approve something nobody needed
-    to write. Everything else prompts, because there's no equivalent rewrite -- a `$` can expand
-    to anything, a `> file` decomposes only into a different tool, and a line whose quoting can't
-    be read to the end can't be advised about at all.
+# Where the real binaries live, for a gated command spelled as a path. Any other path to a program
+# with the same basename, like `./git` or `/tmp/x/rm`, could be anything, so it never gets an allow.
+TRUSTED_PROGRAM_PATHS = frozenset({
+    '/usr/bin/git', '/usr/local/bin/git', '/opt/homebrew/bin/git',
+    '/library/developer/commandlinetools/usr/bin/git',
+    '/applications/xcode.app/contents/developer/usr/bin/git',
+    '/bin/rm', '/bin/mv', '/bin/cp', '/usr/bin/rm', '/usr/bin/mv', '/usr/bin/cp',
+})
+
+# How restrictive each verdict is, so the strictest wins when a line holds several gated commands.
+# None is silence, which hands the decision to settings.json and the autoMode classifier.
+VERDICT_SEVERITY = {None: 0, 'allow': 1, 'ask': 2, 'deny': 3}
+
+# The redirects whose destination can be cleared as scratch. `&>` and `<>` aren't among them, so a
+# line using either keeps asking.
+SCRATCH_REDIRECT_OPERATORS = frozenset({'>', '>>', '>|'})
+
+
+def chain_denial(chain):
+    """The verdict for a gated command on a line that runs more than one command.
+
+    A chain is refused outright rather than prompted, because the agent that wrote it always has a
+    mechanical fix: run each command in its own tool call. Refusing states that fix where the
+    agent can act on it, instead of asking a person to approve something nobody needed to write.
     """
-    finding = shell_line_shapes.first_operator(command)
-    if finding is None:
+    return 'deny', (
+        f'{chain}, so this may reach beyond one gated command. Run each command in its own tool '
+        'call (running-commands.md). A trailing `| head`, `| tail`, or `| wc` is the only '
+        'pipeline this hook accepts; do not reword the line to get past this.'
+    )
+
+
+def ends_in_a_backslash(word):
+    """True if the word ends in a backslash nothing escapes, which only happens at the end of the
+    line.
+
+    Bash passes that backslash on literally, but a harness that appends to the command before
+    running it would have it splice the next line on instead.
+    """
+    trailing = len(word.raw) - len(word.raw.rstrip('\\'))
+    return trailing % 2 == 1
+
+
+def redirect_reason(redirect, cwd):
+    """Why this redirect could write somewhere other than scratch, or None.
+
+    A redirect to `/dev/null` or a file descriptor writes no file. One whose destination resolves
+    inside scratch gets the same grant a `git diff --output` there does, since bash writing the
+    file and git writing it are the same act.
+    """
+    if redirect.benign:
         return None
-
-    kind, description = finding
-    if kind == shell_line_shapes.CHAIN:
-        return 'deny', (
-            f'{description}, so this may reach beyond one gated command. Run each command in '
-            'its own tool call (running-commands.md). A trailing `| head`, `| tail`, or `| wc` '
-            'is the only pipeline this hook accepts; do not reword the line to get past this.'
-        )
-    return 'ask', f'{description}, so this may reach beyond one gated command; confirm it'
+    target = redirect.target
+    if (redirect.op in SCRATCH_REDIRECT_OPERATORS and target is not None and target.literal
+            and is_scratch_destination(target.value, cwd)):
+        return None
+    shown = f'{redirect.fd or ""}{redirect.op} {target.raw if target else ""}'.strip()
+    return f'`{shown}` redirects to a file outside scratch'
 
 
-def is_gated_command(command):
-    """True for the commands this hook gates, checked on the raw string.
+def unreadable_reason(command, cwd):
+    """Why the hook can't read exactly what this gated command runs, or None.
 
-    Deliberately loose on git: only add, commit, worktree remove, branch
-    deletion, and the read-only subcommands are gated, but this decides which
-    lines the operator guard runs on, and a line carrying an operator is
-    exactly the kind whose subcommand cannot be identified reliably. Answering
-    yes for every git line costs nothing, since a git line with no operator
-    falls through to the real subcommand check below.
+    Each of these leaves the argv the gates below would check different from the one the program
+    receives, so none of their verdicts could be trusted.
     """
-    stripped = command.strip()
-    if stripped.startswith('command '):
-        stripped = stripped[len('command '):].lstrip()
-    return re.match(r'^(rm|mv|cp|git)\b', stripped) is not None
+    if command.opaque:
+        return command.opaque
+    if command.dynamic_args:
+        return f'`{command.wrappers[-1]}` appends arguments at run time that this hook cannot see'
+    if command.assigns:
+        name = command.assigns[0][0]
+        return f'`{name}=` changes the environment {command.name} runs with'
+    for word in command.words:
+        if word.value is None:
+            return f'`{word.raw}` expands at run time, so this hook cannot see what it becomes'
+        if word.brace:
+            return f'`{word.raw}` brace-expands into words this hook never sees'
+    if command.words and ends_in_a_backslash(command.words[-1]):
+        return 'the line ends in a backslash, so it may continue where this hook cannot see'
+    for redirect in command.redirects:
+        reason = redirect_reason(redirect, cwd)
+        if reason:
+            return reason
+    return None
+
+
+def is_gated(command):
+    """True if this command runs one of GATED_PROGRAMS, or might.
+
+    A command whose wrapper takes an argument that expands, like `env $FLAGS git push`, has no
+    name to go on, but a gated program among its literal words could be what runs.
+    """
+    if command.name in GATED_PROGRAMS:
+        return True
+    return bool(command.opaque) and any(
+        word.value is not None and os.path.basename(word.value).lower() in GATED_PROGRAMS
+        for word in command.words
+    )
+
+
+def untrusted_program_reason(command):
+    """Why the program word might not be the real binary, or None.
+
+    A bare name is found on PATH, which is the binary settings.json and the user expect. A path
+    has to be one where the real binary lives, because `./git` or `/tmp/x/rm` can be anything.
+    """
+    head = command.words[0]
+    if bash_ast.GIT_EXEC_PATH_WRAPPER in command.wrappers:
+        # A `git-<name>` program isn't on PATH in a normal install, so one that resolves is
+        # whatever put it there, not git.
+        return f'`{head.raw}` runs a `git-<name>` program rather than git itself'
+    if '/' not in head.raw and '/' not in head.value:
+        return None
+    if head.value.lower() in TRUSTED_PROGRAM_PATHS:
+        return None
+    return f'`{head.raw}` is not a known path to {command.name}'
+
+
+def hidden_from_settings(command, command_line, allowed_wrappers=()):
+    """How this command hides from settings.json's prefix rules, or None if a plain rule matches it.
+
+    Those rules only match the plain program name at the start of the line, so a wrapper, a nested
+    position, a keyword like `time` or `!` ahead of it, or another spelling of the name
+    (`/usr/bin/git`, `"git"`, `\\git`, `Git`) each defeats them. `allowed_wrappers` lists the
+    wrappers that settings.json carries its own rules for.
+    """
+    if command.nested:
+        return f'Running {command.name} nested inside another command'
+    extra = [wrapper for wrapper in command.wrappers if wrapper not in allowed_wrappers]
+    if extra:
+        return f'`{extra[0]}`'
+    if command.words[0].raw != command.name:
+        return f'Spelling {command.name} as `{command.words[0].raw}`'
+    # The statement's own text includes a leading `!`, and `time` sits outside it.
+    leading = command.wrappers[0] if command.wrappers else command.words[0].raw
+    if (not command_line.lstrip().startswith(command.raw)
+            or not command.raw.startswith(leading)):
+        return f'Something ahead of {command.name} on the line'
+    return None
+
+
+def judge(command, parsed, command_line, cwd):
+    """The verdict for one gated command, as (decision, reason), or None to stay silent."""
+    reason = unreadable_reason(command, cwd)
+    if reason:
+        return 'ask', f'{reason}; confirm it'
+
+    tokens = [command.name] + command.argv[1:]
+    verdict = decide_tokens(tokens, command, command_line, cwd)
+    if verdict is None or verdict[0] != 'allow':
+        return verdict
+
+    untrusted = untrusted_program_reason(command)
+    if untrusted:
+        return 'ask', f'{untrusted}; confirm it'
+    if command.nested:
+        return 'ask', (f'{verdict[1]}, but it runs nested inside another command, which this '
+                       'approval would cover too; confirm it')
+    if len(parsed.commands) > 1:
+        return 'ask', (f'{verdict[1]}, but the line runs another command alongside it, which this '
+                       'approval would cover too; confirm it')
+    return verdict
 
 
 def is_relative_claude_tmp_path(operand):
@@ -708,39 +830,6 @@ def is_scratch_destination(target, cwd, resolve_from=None, include_agent_temp=Tr
     if resolved == scratch_root or resolved.startswith(scratch_root + os.sep):
         return True
     return include_agent_temp and is_agent_temp_path(resolved)
-
-
-def strip_scratch_redirects(command, cwd):
-    """Remove the output redirects that can only write scratch, leaving the rest of the line.
-
-    Cutting them before the operator guard runs is what lets `git diff > .claude/tmp/x.patch` be
-    judged as the bare `git diff`, the same way a `/dev/null` redirect already is. The line comes
-    back unchanged whenever anything is unclear, so the guard still sees every redirect it would
-    have seen before.
-
-    Stripping is all or nothing: `cmd > a > b` truncates both files, so a single destination
-    outside scratch leaves the whole line for the guard to prompt on. Cutting happens before the
-    guard rather than after a verdict, because `first_operator` stops at what it finds first --
-    forgiving a redirect in place would leave a `;` further along the line unexamined.
-    """
-    redirects = shell_line_shapes.output_redirects(command)
-    if not redirects:
-        return command
-
-    for _start, _end, target in redirects:
-        if not is_scratch_destination(target, cwd):
-            return command
-
-    for start, end, _target in reversed(redirects):
-        command = command[:start] + ' ' + command[end:]
-    return command
-
-
-def strip_command_prefix(tokens):
-    """Drop a leading `command` builtin, which CLAUDE.md uses to bypass aliases."""
-    if tokens and tokens[0] == 'command':
-        return tokens[1:]
-    return tokens
 
 
 def git_globals_and_subcommand(tokens):
@@ -1207,8 +1296,8 @@ def git_diff_no_index_reason(tokens, subcommand_index, cwd):
     return None
 
 
-def is_worktree_remove(command):
-    return re.match(r'^git\s+worktree\s+remove\b', command.strip()) is not None
+def is_worktree_remove(tokens, subcommand_index):
+    return tokens[subcommand_index:subcommand_index + 2] == ['worktree', 'remove']
 
 
 def rm_flags_and_operands(tokens):
@@ -1265,9 +1354,9 @@ def is_inside(operand, root, cwd):
     return resolved == root or resolved.startswith(root + os.sep)
 
 
-def has_force_flag(command):
+def has_force_flag(arguments):
     """True if any argument is a force flag, including short-flag clusters like `-fv`."""
-    for token in shlex.split(command):
+    for token in arguments:
         if token == '--':
             break
         if token == '--force' or token.startswith('--force='):
@@ -1360,18 +1449,19 @@ def branch_commits_are_on_head(branch, cwd):
     return not any(line.startswith('+') for line in cherry.splitlines())
 
 
-def is_branch_delete(tokens):
-    return (
-        len(tokens) >= 2
-        and tokens[0] == 'git'
-        and tokens[1] == 'branch'
-        and any(re.fullmatch(r'--delete|-[a-zA-Z]*[dD]', token) for token in tokens[2:])
+def is_branch_delete(tokens, subcommand_index):
+    return tokens[subcommand_index] == 'branch' and any(
+        re.fullmatch(r'--delete|-[a-zA-Z]*[dD]', token) for token in tokens[subcommand_index + 1:]
     )
 
 
-def decide_branch_delete(tokens, cwd):
-    """Allow deleting a worktree branch whose content is already on HEAD."""
-    operands = [token for token in tokens[2:] if not token.startswith('-')]
+def decide_branch_delete(arguments, cwd):
+    """Allow deleting a worktree branch whose content is already on HEAD.
+
+    `arguments` are the ones after `branch`, and `cwd` is the directory git runs in, so a `-C`
+    ahead of the subcommand checks the repository it names.
+    """
+    operands = [token for token in arguments if not token.startswith('-')]
 
     if len(operands) != 1:
         return 'ask', 'Delete one branch at a time so each can be checked; confirm this'
@@ -1741,140 +1831,126 @@ def decide_cp(tokens, cwd):
     return 'allow', f'cp contained in the worktree at {root}; nothing unrecoverable overwritten'
 
 
+def decide_tokens(tokens, command, command_line, cwd):
+    """Apply the gate for one gated command's argv, as (decision, reason), or None to stay silent.
+
+    `tokens[0]` is the program's resolved name, so `/usr/bin/git` arrives as `git`; `command` is
+    the parsed command, for how it was spelled and wrapped.
+    """
+    if tokens[0] in ('rm', 'mv', 'cp'):
+        decide = {'rm': decide_rm, 'mv': decide_mv, 'cp': decide_cp}[tokens[0]]
+        decision = decide(tokens, cwd)
+        if decision is None:
+            # Silence hands the decision to settings.json's `.claude/tmp/` rules, which only match
+            # the plain spelling, alone or behind `command`.
+            hidden_by = hidden_from_settings(command, command_line, allowed_wrappers=('command',))
+            if hidden_by:
+                return 'ask', (f"{hidden_by} hides this {tokens[0]} from the settings.json rules "
+                               'that would decide it; confirm it')
+        return decision
+
+    git_globals, subcommand, subcommand_index = git_globals_and_subcommand(tokens)
+    if subcommand is None:
+        return None
+    # A global other than one `-C` can aim git at another repository (`--git-dir`), change what
+    # it runs (`-c core.pager=...`), or turn any name into any subcommand (`-c alias.x=push`),
+    # so no verdict below can be trusted once one is present, whatever the subcommand.
+    if git_globals and git_globals != ['-C']:
+        extra = [flag for flag in git_globals if flag != '-C'] or ['-C']
+        return 'ask', (f'`{extra[0]}` ahead of the subcommand can aim git elsewhere or change '
+                       f'what git {subcommand} runs; confirm it')
+    git_cwd = git_effective_cwd(tokens, subcommand_index, cwd)
+
+    if is_worktree_remove(tokens, subcommand_index):
+        if has_force_flag(tokens[subcommand_index + 2:]):
+            return 'ask', 'git worktree remove --force deletes uncommitted work; confirm it'
+        return (
+            'allow',
+            'git worktree remove without --force cannot delete a dirty or non-worktree path',
+        )
+
+    if is_branch_delete(tokens, subcommand_index):
+        return decide_branch_delete(tokens[subcommand_index + 1:], git_cwd)
+
+    if is_read_only_git_subcommand(tokens, subcommand_index):
+        option_reason = git_read_only_option_reason(
+            subcommand, tokens[subcommand_index + 1:], cwd, git_cwd,
+        )
+        if not option_reason and subcommand == 'diff':
+            option_reason = git_diff_no_index_reason(tokens, subcommand_index, cwd)
+        if option_reason:
+            return 'ask', f'{option_reason}; confirm it'
+        return 'allow', (f'git {subcommand} with no program-running or file-writing option; '
+                         'auto-approved')
+    if is_git_ref_listing(subcommand, tokens[subcommand_index + 1:]):
+        return 'allow', f'git {subcommand} only lists refs; auto-approved'
+    if subcommand in GIT_PUSHING_SUBCOMMANDS:
+        return 'ask', f'git {subcommand} can send commits off this machine; confirm it'
+    if subcommand in GIT_CLASSIFIER_DECIDED_SUBCOMMANDS:
+        hazard = git_branch_switch_hazard(subcommand, tokens[subcommand_index + 1:], git_cwd)
+        if hazard:
+            return 'ask', f'{hazard}; confirm it'
+        # Staying silent hands the rest to the autoMode `soft_deny` rule in settings.json,
+        # which passes it only when the user asked for it.
+        return None
+    hidden_by = '`-C`' if git_globals else hidden_from_settings(command, command_line)
+    if hidden_by and subcommand in GIT_SUBCOMMANDS_GATED_BY_SETTINGS:
+        return 'ask', (f'{hidden_by} hides this git {subcommand} from the settings.json rules '
+                       'that gate it; confirm it')
+    if subcommand not in ('add', 'commit'):
+        # An alias can expand to anything, `push` or `add -A` included, and nothing on the line
+        # says which. Git ignores an alias that shadows a builtin, so the lookup only matters for
+        # names like these, which are the ones this hook would otherwise stay silent on.
+        if git_output(git_cwd, 'config', '--get', f'alias.{subcommand}'):
+            return 'ask', (f'`git {subcommand}` is an alias, so this hook cannot tell what it '
+                           'runs; confirm it')
+        return None
+    if sanctioned_worktree_root(git_cwd):
+        return 'allow', f'Inside a .claude/worktrees/ worktree; git {subcommand} auto-approved'
+    reason = unsafe_staging_reason(subcommand, tokens[subcommand_index + 1:], git_cwd)
+    if reason:
+        return 'ask', (f"{reason}. Outside a worktree that can sweep in other sessions' work; "
+                       f'name the files instead, or confirm this git {subcommand}')
+    # Anywhere else stays silent, so the autoMode `soft_deny` rule in settings.json decides
+    # whether the user actually asked for this staging or commit.
+    return None
+
+
 def main():
     try:
         data = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
         sys.exit(0)
 
-    command = data.get('tool_input', {}).get('command', '')
+    command_line = data.get('tool_input', {}).get('command', '')
     cwd = data.get('cwd') or os.getcwd()
 
-    # `head`, `tail`, and `wc` can only trim what the gated command already printed, so a
-    # pipeline ending in one is judged as the command that feeds it. Stripping the tail before
-    # anything else keeps that pipe from reading as a chain, and keeps it out of the token list.
-    command = shell_line_shapes.strip_output_limiting_tail(command)
-
-    if is_gated_command(command):
-        # A redirect that can only write scratch comes off here, so the rest of the line is judged
-        # on its own. Removing it first, rather than forgiving it in the verdict, is what keeps a
-        # chaining operator further along the line from going unexamined.
-        command = strip_scratch_redirects(command, cwd)
-        decision = shell_operator_decision(command)
-        if decision:
-            emit(*decision)
-            return
-
-    if is_worktree_remove(command):
-        try:
-            forced = has_force_flag(command)
-        except ValueError:
-            emit('ask', 'Could not parse the arguments of this git worktree remove; confirm it')
-            return
-        if forced:
-            emit('ask', 'git worktree remove --force deletes uncommitted work; confirm it')
-        else:
-            emit('allow', 'git worktree remove without --force cannot delete a dirty or non-worktree path')
-        return
-
-    # The guard above has confirmed every redirect left in the line targets `/dev/null` or a file
-    # descriptor. Bash consumes a redirection before the command sees its argv, so dropping them
-    # here is what leaves the tokens the command is actually run with; leaving `2>&1` in would
-    # hand `git fetch` a phantom operand that reads as a suspicious remote name.
-    command_for_tokens = shell_line_shapes.STRIP_REDIRECT.sub(' ', command)
     try:
-        raw_tokens = shlex.split(command_for_tokens)
-        tokens = strip_command_prefix(raw_tokens)
-    except ValueError:
-        emit('ask', 'Could not parse the arguments of this command; confirm it')
+        parsed = bash_ast.parse(command_line)
+    except bash_ast.ParseError as error:
+        emit('ask', f'{error}, so a command this hook gates could be hiding in it; confirm it')
         return
 
-    if not tokens:
+    gated = [command for command in parsed.commands if is_gated(command)]
+    if not gated:
         return
 
-    if tokens[0] == 'rm':
-        decision = decide_rm(tokens, cwd)
-        if decision:
-            emit(*decision)
+    if parsed.chain:
+        emit(*chain_denial(parsed.chain))
         return
 
-    if tokens[0] == 'mv':
-        decision = decide_mv(tokens, cwd)
-        if decision:
-            emit(*decision)
-        return
-
-    if tokens[0] == 'cp':
-        decision = decide_cp(tokens, cwd)
-        if decision:
-            emit(*decision)
-        return
-
-    if is_branch_delete(tokens):
-        emit(*decide_branch_delete(tokens, cwd))
-        return
-
-    if tokens[0] == 'git':
-        git_globals, subcommand, subcommand_index = git_globals_and_subcommand(tokens)
-        if subcommand is None:
-            return
-        # A global other than one `-C` can aim git at another repository (`--git-dir`), change what
-        # it runs (`-c core.pager=...`), or turn any name into any subcommand (`-c alias.x=push`),
-        # so no verdict below can be trusted once one is present, whatever the subcommand.
-        if git_globals and git_globals != ['-C']:
-            extra = [flag for flag in git_globals if flag != '-C'] or ['-C']
-            emit('ask', f'`{extra[0]}` ahead of the subcommand can aim git elsewhere or change '
-                        f'what git {subcommand} runs; confirm it')
-            return
-        git_cwd = git_effective_cwd(tokens, subcommand_index, cwd)
-        if is_read_only_git_subcommand(tokens, subcommand_index):
-            option_reason = git_read_only_option_reason(
-                subcommand, tokens[subcommand_index + 1:], cwd, git_cwd,
-            )
-            if not option_reason and subcommand == 'diff':
-                option_reason = git_diff_no_index_reason(tokens, subcommand_index, cwd)
-            if option_reason:
-                emit('ask', f'{option_reason}; confirm it')
-            else:
-                emit('allow', f'git {subcommand} with no program-running or file-writing option; '
-                              'auto-approved')
-            return
-        if is_git_ref_listing(subcommand, tokens[subcommand_index + 1:]):
-            emit('allow', f'git {subcommand} only lists refs; auto-approved')
-            return
-        if subcommand in GIT_PUSHING_SUBCOMMANDS:
-            emit('ask', f'git {subcommand} can send commits off this machine; confirm it')
-            return
-        if subcommand in GIT_CLASSIFIER_DECIDED_SUBCOMMANDS:
-            hazard = git_branch_switch_hazard(subcommand, tokens[subcommand_index + 1:], git_cwd)
-            if hazard:
-                emit('ask', f'{hazard}; confirm it')
-            # Staying silent hands the rest to the autoMode `soft_deny` rule in settings.json,
-            # which passes it only when the user asked for it.
-            return
-        hidden_by = '-C' if git_globals else ('command' if raw_tokens[0] == 'command' else None)
-        if hidden_by and subcommand in GIT_SUBCOMMANDS_GATED_BY_SETTINGS:
-            emit('ask', f'`{hidden_by}` hides this git {subcommand} from the settings.json rules '
-                        'that gate it; confirm it')
-            return
-        if subcommand not in ('add', 'commit'):
-            # An alias can expand to anything, `push` or `add -A` included, and nothing on the line
-            # says which. Git ignores an alias that shadows a builtin, so the lookup only matters for
-            # names like these, which are the ones this hook would otherwise stay silent on.
-            if git_output(git_cwd, 'config', '--get', f'alias.{subcommand}'):
-                emit('ask', f'`git {subcommand}` is an alias, so this hook cannot tell what it runs; '
-                            'confirm it')
-            return
-        if sanctioned_worktree_root(git_cwd):
-            emit('allow', f'Inside a .claude/worktrees/ worktree; git {subcommand} auto-approved')
-            return
-        reason = unsafe_staging_reason(subcommand, tokens[subcommand_index + 1:], git_cwd)
-        if reason:
-            emit('ask', f"{reason}. Outside a worktree that can sweep in other sessions' work; "
-                        f'name the files instead, or confirm this git {subcommand}')
-        # Anywhere else stays silent, so the autoMode `soft_deny` rule in settings.json decides
-        # whether the user actually asked for this staging or commit.
+    verdicts = [judge(command, parsed, command_line, cwd) for command in gated]
+    strictest = max(verdicts, key=lambda verdict: VERDICT_SEVERITY[verdict and verdict[0]])
+    if strictest:
+        emit(*strictest)
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as error:
+        # A traceback exits non-zero, which Claude Code reads as "no opinion", so a crash here
+        # would wave through every command this hook gates. Prompting instead fails closed.
+        emit('ask', (
+            f'file-command-permissions crashed, so it cannot vouch for this command: {error!r}'
+        ))

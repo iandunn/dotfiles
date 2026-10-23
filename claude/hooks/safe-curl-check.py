@@ -2,20 +2,31 @@
 """
 Allowlist-based curl safety check for PreToolUse hook.
 
-Uses shlex.split() for reliable tokenization (handles quotes, escapes,
-combined short flags), then checks every token against an explicit
-allowlist of known-safe flags. Anything not on the allowlist falls
-through to normal permission handling (existing allow/deny rules or
-a user prompt). Nothing is explicitly blocked or denied here.
+Reads the line through bash_ast, so quoting, escapes, and redirects are resolved the way bash
+resolves them, then checks every curl argument against an explicit allowlist of known-safe flags.
+Anything not on the allowlist falls through to normal permission handling (existing allow/deny
+rules or a user prompt). Nothing is explicitly blocked or denied here, which is also why a line
+bash_ast can't parse just falls through.
+
+The line has to be one plain curl command and nothing else: no wrapper, no assignment, no
+substitution, and no second command. A trailing `| head`, `| tail`, or `| wc` is the one pipe
+that survives, because bash_ast drops it before reporting the line.
 
 GET requests are auto-approved for any domain.
 Requests with a body or non-safe HTTP method are auto-approved only for
 *.test and localhost (local dev environments).
 """
 import json
-import shlex
+import os
 import sys
 from urllib.parse import urlparse
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    import bash_ast
+except ImportError:
+    bash_ast = None
 
 
 def is_safe_url(s):
@@ -92,14 +103,10 @@ BODY_LONG_FLAGS = {
     '--data-urlencode', '--json', '--form', '--form-string',
 }
 
-# Shell redirect tokens that may appear alongside the curl command.
-SAFE_REDIRECTS = {'2>&1', '2>/dev/null', '>/dev/null', '1>/dev/null', '>&/dev/null'}
-
-# Read-only text-processing commands allowed after a pipe.
-SAFE_PIPE_CMDS = {
-    'head', 'tail', 'grep', 'egrep', 'fgrep', 'cat',
-    'wc', 'sort', 'uniq', 'cut', 'tr', 'jq',
-}
+# Redirect operators that may appear alongside the curl command, as long as each one is benign:
+# `2>&1`, `2>/dev/null`, `>/dev/null`, `&>/dev/null`, and the like. Nothing may write a real file
+# or feed curl a file on stdin.
+SAFE_REDIRECT_OPS = {'>', '>>', '>|', '&>', '&>>', '>&'}
 
 
 def value_ok(flag_key, value):
@@ -135,10 +142,6 @@ def check_curl_segment(tokens):
 
     while i < len(tokens):
         token = tokens[i]
-
-        if token in SAFE_REDIRECTS:
-            i += 1
-            continue
 
         # After '--', remaining tokens must still be http/https URLs.
         if end_of_flags:
@@ -239,11 +242,31 @@ def check_curl_segment(tokens):
     return True, needs_local, urls
 
 
-def check_pipe_segment(tokens):
-    """Validate a post-pipe segment. Only read-only text-processing commands are allowed."""
-    if not tokens:
-        return True
-    return tokens[0] in SAFE_PIPE_CMDS
+def redirect_ok(redirect):
+    if redirect.op not in SAFE_REDIRECT_OPS:
+        return False
+    # `>&/dev/null` is bash's spelling of `&>/dev/null`, which `Redirect.benign` reads as a dup.
+    if redirect.op == '>&' and redirect.target is not None and redirect.target.literal:
+        return redirect.benign or redirect.target.value == '/dev/null'
+    return redirect.benign
+
+
+def redirects_ok(redirects):
+    return all(redirect_ok(redirect) for redirect in redirects)
+
+
+def plain_curl(parsed):
+    """The curl command's arguments when the line is one plain curl command, else None."""
+    if parsed.chain or len(parsed.commands) != 1:
+        return None
+    command = parsed.commands[0]
+    if command.nested or command.wrappers or command.assigns or not command.literal:
+        return None
+    if not command.words or command.words[0].value != 'curl':
+        return None
+    if not redirects_ok(command.redirects):
+        return None
+    return command.argv[1:]
 
 
 def main():
@@ -253,48 +276,24 @@ def main():
         sys.exit(0)
 
     command = data.get('tool_input', {}).get('command', '')
-
-    # shlex.split() tokenizes but does not perform shell expansion; bash does.
-    # A command-substitution or variable inside an otherwise-valid URL token
-    # (https://x/$(cmd), backticks, $VAR) passes tokenization as a plain URL and
-    # would then be expanded by the shell after this hook auto-approves it, so
-    # never auto-approve a command carrying '$' or a backtick.
-    if '$' in command or '`' in command:
+    if not command or bash_ast is None:
         sys.exit(0)
 
     try:
-        tokens = shlex.split(command)
-    except ValueError:
+        parsed = bash_ast.parse(command)
+    except bash_ast.ParseError:
         sys.exit(0)
 
-    if not tokens or tokens[0] != 'curl':
+    tokens = plain_curl(parsed)
+    if tokens is None:
         sys.exit(0)
 
-    # Split token list on '|' into pipe segments.
-    segments = []
-    current = []
-    for token in tokens:
-        if token == '|':
-            segments.append(current)
-            current = []
-        else:
-            current.append(token)
-    segments.append(current)
-
-    curl_segment = segments[0]
-    if not curl_segment or curl_segment[0] != 'curl':
-        sys.exit(0)
-
-    ok, needs_local, urls = check_curl_segment(curl_segment[1:])
+    ok, needs_local, urls = check_curl_segment(tokens)
     if not ok:
         sys.exit(0)
 
     if needs_local and (not urls or not all(is_local_url(u) for u in urls)):
         sys.exit(0)
-
-    for segment in segments[1:]:
-        if not check_pipe_segment(segment):
-            sys.exit(0)
 
     reason = 'Local-domain curl auto-approved' if needs_local else 'Safe curl GET auto-approved'
     print(f'{{"hookSpecificOutput": {{"hookEventName": "PreToolUse", "permissionDecision": "allow", "permissionDecisionReason": "{reason}"}}}}')

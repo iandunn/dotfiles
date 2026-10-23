@@ -563,9 +563,9 @@ class LinkedWorktreeTest(unittest.TestCase):
     def test_backtick_inside_double_quotes_asks(self):
         self.assertInWorktree(ASK, 'git commit -m "Hooks: Rewrite `whoami`"')
 
-    def test_ansi_c_quoting_asks(self):
-        """`$'...'` is caught because its `$` is read while still unquoted."""
-        self.assertInWorktree(ASK, "git commit -m $'first\\nsecond'")
+    def test_ansi_c_quoting_allowed(self):
+        """The parser decodes `$'...'` into the literal text git receives, so nothing expands."""
+        self.assertInWorktree(ALLOW, "git commit -m $'first\\nsecond'")
 
     def test_escaped_dollar_inside_double_quotes_allowed(self):
         self.assertInWorktree(ALLOW, 'git commit -m "Costs \\$5 to run"')
@@ -576,14 +576,107 @@ class LinkedWorktreeTest(unittest.TestCase):
     def test_trailing_backslash_asks(self):
         self.assertInWorktree(ASK, 'git add a.log \\')
 
-    def test_line_continuation_asks(self):
-        """Bash joins the lines before parsing, so `rm \\` plus a newline runs whatever follows."""
+    def test_line_continuation_is_judged_as_joined(self):
+        """Bash joins the lines before parsing, and so does the parser, so `rm \\` plus a newline
+        is judged with whatever follows."""
         self.assertInWorktree(ASK, 'rm \\\n -rf a.log')
-        self.assertInWorktree(ASK, 'git add a.log \\\n b.log')
-        self.assertInWorktree(ASK, 'git commit -m "Hooks: Add \\\n a test"')
+        self.assertInWorktree(ALLOW, 'git add a.log \\\n b.log')
+        self.assertInWorktree(ALLOW, 'git commit -m "Hooks: Add \\\n a test"')
 
     def test_command_substitution_outside_quotes_asks(self):
         self.assertInWorktree(ASK, 'git add $(ls)')
+
+    def test_gated_command_second_in_a_chain_denied(self):
+        self.assertInMainTree(DENY, 'ls; git push')
+        self.assertInWorktree(DENY, 'echo x && rm tracked.txt')
+        self.assertInWorktree(DENY, 'if true; then git status; fi')
+        self.assertInWorktree(DENY, "bash -c 'git status; git push'")
+
+    def test_nested_gated_command_never_allowed(self):
+        """An allow covers the whole line, so a gated command inside another one asks instead."""
+        self.assertInWorktree(ASK, 'echo $(git status)')
+        self.assertInWorktree(ASK, 'echo "$(rm tracked.txt)"')
+        self.assertInWorktree(ASK, "bash -c 'git status'")
+        self.assertInWorktree(ASK, "bash -c 'git push'")
+
+    def test_another_command_alongside_an_allowed_one_asks(self):
+        """A process substitution runs its own command, which the allow would carry along."""
+        self.assertInWorktree(ASK, 'git status < <(curl https://example.test)')
+        self.assertInWorktree(ASK, 'git commit -F - <<EOF\n$(id)\nEOF')
+
+    def test_wrapped_gated_command_judged_like_the_plain_one(self):
+        self.assertInWorktree(ALLOW, 'env git commit -m x')
+        self.assertInWorktree(ASK, 'env git push')
+        self.assertInWorktree(ASK, 'nohup git push origin main')
+        self.assertInMainTree(ASK, 'env git add -A')
+
+    def test_wrapper_hides_a_settings_gated_subcommand(self):
+        """The plain form is left to settings.json, whose prefix rule can't see a wrapped one."""
+        self.assertInMainTree(None, 'git clean -fdx')
+        self.assertInMainTree(ASK, 'env git clean -fdx')
+        self.assertInMainTree(ASK, 'echo $(git reset --hard)')
+
+    def test_other_spellings_of_git_judged_like_the_plain_one(self):
+        for spelling in ('"git"', '\\git', 'Git', '/usr/bin/git'):
+            with self.subTest(spelling=spelling):
+                self.assertInWorktree(ALLOW, f'{spelling} status')
+                self.assertInWorktree(ALLOW, f'{spelling} commit -m x')
+                self.assertInWorktree(ASK, f'{spelling} push')
+                self.assertInMainTree(ASK, f'{spelling} add -A')
+                self.assertInMainTree(ASK, f'{spelling} clean -fdx')
+
+    def test_keyword_ahead_of_a_settings_gated_subcommand_asks(self):
+        self.assertInMainTree(ASK, 'time git clean -fdx')
+        self.assertInMainTree(ASK, '! git clean -fdx')
+
+    def test_opaque_wrapper_around_a_gated_program_asks(self):
+        """If `$FLAGS` is empty, bash runs `env git push`."""
+        self.assertInMainTree(ASK, 'env $FLAGS git push')
+        self.assertInMainTree(ASK, 'nice $N rm -rf x')
+        self.assertInMainTree(None, '$EDITOR file')
+
+    def test_unknown_path_to_a_gated_program_never_allowed(self):
+        """`./git` or `/tmp/git` can be any program, so the real binary's allow doesn't carry."""
+        for spelling in ('./git', '/tmp/git', '~/bin/git', 'sub/git'):
+            with self.subTest(spelling=spelling):
+                self.assertInWorktree(ASK, f'{spelling} status')
+        self.assertInWorktree(ASK, './rm tracked.txt')
+        self.assertInWorktree(ALLOW, '/bin/rm tracked.txt')
+
+    def test_git_dash_program_never_allowed(self):
+        """A `git-<name>` program on PATH isn't git, whatever subcommand its name spells."""
+        for spelling in ('git-status', './git-status', '/tmp/git-status'):
+            with self.subTest(spelling=spelling):
+                self.assertInWorktree(ASK, spelling)
+
+    def test_environment_assignment_asks(self):
+        self.assertInWorktree(ASK, 'FOO=1 git status')
+        self.assertInWorktree(ASK, 'env FOO=1 git status')
+        self.assertInWorktree(ASK, 'FOO=1 rm tracked.txt')
+
+    def test_runtime_arguments_ask(self):
+        self.assertInWorktree(ASK, 'xargs rm')
+        self.assertInWorktree(ASK, 'find . -name "*.log" -exec rm {} \\;')
+
+    def test_brace_group_with_a_quoted_brace_asks(self):
+        """`{sub"}",.}` expands to `sub}` and `.`, so the quoted brace must not end the group."""
+        self.assertInMainTree(ASK, 'git add {sub"}",.}')
+
+    def test_line_without_a_gated_command_is_silent(self):
+        for command in ('ls -la', 'mkdir -p x', 'echo git push', 'which git', 'ls; pwd',
+                        'command -v rm'):
+            with self.subTest(command=command):
+                self.assertInWorktree(None, command)
+
+    def test_unparseable_line_asks(self):
+        """A line bash can't parse could hide a gated command anywhere in it."""
+        self.assertInWorktree(ASK, "ls 'unterminated")
+        self.assertInWorktree(ASK, 'if true; then')
+
+    def test_worktree_remove_with_dash_c_judged_like_the_plain_one(self):
+        self.assertInMainTree(ALLOW, f'git -C {self.main_tree} worktree remove .claude/worktrees/x')
+        self.assertInWorktree(ALLOW, f'git -C {self.main_tree} worktree remove {self.worktree}')
+        self.assertInMainTree(ASK, f'git -C {self.main_tree} worktree remove -f {self.worktree}')
 
 
 class BranchDeleteTest(unittest.TestCase):
@@ -673,6 +766,17 @@ class BranchDeleteTest(unittest.TestCase):
     def test_chained_branch_delete_denied(self):
         self.assertInRepo(DENY, 'git branch -D worktree-squashed && echo done')
 
+    def test_dash_c_branch_delete_checks_the_named_repository(self):
+        """Run from outside the repository, so only the `-C` path can find the branch."""
+        for expected, branch in ((ALLOW, 'worktree-squashed'), (ASK, 'worktree-unlanded'),
+                                 (ASK, 'feature/real-work')):
+            out, code = run(f'git -C {self.repo} branch -D {branch}', cwd=self.temp)
+            self.assertEqual(code, 0)
+            self.assertEqual(decision(out), expected, f'wrong decision for: {branch}')
+
+    def test_nested_branch_delete_never_allowed(self):
+        self.assertInRepo(ASK, "bash -c 'git branch -D worktree-squashed'")
+
 
 class ClaudeTmpExemptionTest(unittest.TestCase):
     """Scratch cleanup under .claude/tmp/ is settings.json's turf; the hook stays silent."""
@@ -690,6 +794,13 @@ class ClaudeTmpExemptionTest(unittest.TestCase):
 
     def test_command_rm_tmp_file_silent(self):
         self.assertSilent('command rm .claude/tmp/scratch.txt')
+
+    def test_rm_hidden_from_the_scratch_rules_asks(self):
+        """Those settings.json rules only match `rm` or `command rm` at the start of the line."""
+        for command in ('/bin/rm .claude/tmp/scratch.txt', 'env rm .claude/tmp/scratch.txt',
+                        '"rm" .claude/tmp/scratch.txt'):
+            out, _ = run(command, cwd='/tmp')
+            self.assertEqual(decision(out), ASK, f'wrong decision for: {command}')
 
     def test_mv_sweep_into_tmp_decided_by_the_hook(self):
         """`mv` into scratch is the hook's alone, so a relative dest is not silent."""

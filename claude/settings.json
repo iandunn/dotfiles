@@ -550,12 +550,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/dangerous-command-shapes.js"
+            "command": "python3 ~/.claude/hooks/dangerous-command-shapes.py"
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/safe-curl-check.py",
-            "if": "Bash(curl *)"
+            "command": "python3 ~/.claude/hooks/desktop-app-permissions.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/safe-curl-check.py"
           },
           {
             "type": "command",
@@ -563,43 +566,7 @@
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(cp *)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(command cp *)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(rm *)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(command rm *)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(mv *)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(command mv *)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(git *)"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/file-command-permissions.py",
-            "if": "Bash(command git *)"
+            "command": "python3 ~/.claude/hooks/file-command-permissions.py"
           }
         ]
       }

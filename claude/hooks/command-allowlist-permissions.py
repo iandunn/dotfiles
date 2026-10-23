@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 """
 Auto-approves CLI subcommands that appear on a per-command allowlist, and forces a prompt for
-every other invocation of a covered command. Lines that never mention a covered command exit
-silently, so `settings.json` rules apply to them normally. A line with an unquoted brace
-expansion counts as a mention, because an expansion can build a covered name from pieces, so it
-prompts even when it has nothing to do with a covered command. A few shapes are denied outright
+every other invocation of a covered command. Lines that never run a covered command exit
+silently, so `settings.json` rules apply to them normally. A few shapes are denied outright
 rather than prompted: a VIP target named any way other than a single leading `@org.env` token,
-a covered binary at a path outside `BINARY_ALLOWED_PATHS`, and a line that chains a second
-command with `;`, `&`, `|`, or a newline, where splitting it into one call per command is a fix
-the caller can always apply. Add a new CLI by adding an entry to COMMANDS; nothing else needs to
-change.
+a covered binary at a path outside `BINARY_ALLOWED_PATHS`, and a line that runs a covered command
+alongside another one with `;`, `&`, `|`, a newline, or a compound command, where splitting it
+into one call per command is a fix the caller can always apply. Add a new CLI by adding an entry
+to COMMANDS; nothing else needs to change.
 
-The scanning behind that last one lives in `shell_line_shapes`, shared with
-`file-command-permissions.py` so the two cannot disagree about how bash reads a line. It also
-supplies the two exemptions: a redirect to `/dev/null` or a file descriptor, and a pipeline
-ending in `head`, `tail`, or `wc`, which is judged as the command feeding it.
+Reading the line is `bash_ast`'s job, which asks shfmt for the syntax tree and reports every
+command the line can run, wherever it's nested, with wrappers like `env` and `bash -c` peeled
+off. This hook only applies policy to what that reports. A pipeline ending in `head`, `tail`, or
+`wc` is judged as the command feeding it, and a redirect to `/dev/null` or a file descriptor
+doesn't count against a command.
 
 Most entries are prefix matches. `WP_VALIDATED` holds the ones where the arguments after the
 subcommand decide whether it's safe, which a prefix can't express.
@@ -41,7 +40,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 try:
-    import shell_line_shapes
+    import bash_ast
 except ImportError as _import_error:
     # A traceback would exit non-zero, which Claude Code reads as "no opinion", dropping every
     # command this hook covers to the auto-mode classifier. Prompting instead fails closed, the
@@ -51,7 +50,7 @@ except ImportError as _import_error:
             'hookEventName': 'PreToolUse',
             'permissionDecision': 'ask',
             'permissionDecisionReason': (
-                f'shell_line_shapes failed to load, so this hook cannot vouch for the '
+                f'bash_ast failed to load, so this hook cannot vouch for the '
                 f'command: {_import_error}'
             ),
         }
@@ -62,16 +61,13 @@ ALLOW = 'allow'
 ASK = 'ask'
 DENY = 'deny'
 
-BENIGN_REDIRECT = shell_line_shapes.BENIGN_REDIRECT
-
-STRIP_REDIRECT = shell_line_shapes.STRIP_REDIRECT
-
-# Tools that reach a binary without a shell in between, so the metacharacter guard has nothing to
-# defend and is skipped for them. Local WP's `localwp-agent-tools` addon splits its `args` string
-# with its own parser and passes the resulting array to Node's `execFile`, which takes an argv
-# directly -- see `lib/tools/wpcli.js` in that addon. Parens, `;`, and `$()` are inert there, and
-# leaving the guard on blocked every SQL query with a function call in it. Anything added here
-# must be verified the same way: an argv-taking call with no shell, checked in the code that runs.
+# Tools that reach a binary without a shell in between, so there's no shell line to parse and their
+# arguments are split as a plain argv instead. Local WP's `localwp-agent-tools` addon splits its
+# `args` string with its own parser and passes the resulting array to Node's `execFile`, which
+# takes an argv directly -- see `lib/tools/wpcli.js` in that addon. Parens, `;`, and `$()` are
+# inert there, and treating them as shell blocked every SQL query with a function call in it.
+# Anything added here must be verified the same way: an argv-taking call with no shell, checked in
+# the code that runs.
 SHELL_FREE_TOOLS = frozenset({'mcp__local-wp__wp_cli'})
 
 # VIP environments whose data is disposable enough to auto-approve reads and writes against.
@@ -293,12 +289,82 @@ BINARY_ALLOWED_PATHS = {
     LOCALWP_BINARY: 'localwp',
 }
 
-# Programs that hand their arguments to a shell to parse again, locally or on another host, so a
-# quoted `'wp db reset'` or `'/opt/homebrew/bin/w?'` runs as a command rather than staying data.
-REPARSING_LAUNCHERS = frozenset({
-    '.', 'bash', 'csh', 'dash', 'eval', 'fish', 'ksh', 'script', 'sh', 'source', 'ssh', 'su',
-    'tcsh', 'watch', 'zsh',
+# Programs that run their arguments, or a file they name, in a way `bash_ast` can't follow: on
+# another host (`ssh`), in a container (`docker exec`), through a shell it doesn't reparse (`csh`,
+# `su -c`, `script`), or by sourcing a file. A quoted `'wp db reset'` or `'/opt/homebrew/bin/w?'`
+# there runs as a command rather than staying data. `bash -c`, `eval`, `env -S`, `watch`, and
+# `sudo -s` aren't listed because `bash_ast` reparses their strings into real commands; the shells
+# themselves are, because `bash ./wp` runs a file named after a covered command.
+OPAQUE_LAUNCHERS = frozenset({
+    '.', 'csh', 'docker', 'expect', 'kubectl', 'parallel', 'podman', 'screen', 'script', 'source',
+    'ssh', 'su', 'tcsh', 'tmux',
+}) | bash_ast.SHELLS
+
+# Programs known to treat their arguments as data, never as a program to run. Any other program
+# with a bare covered name among its arguments (`parallel wp db reset`, `npx wp ...`) might exec
+# it, so the hook asks rather than assuming it won't. `command` reaches this list only as
+# `command -v`/`-V`, because `bash_ast` peels every other form.
+DATA_CONSUMERS = frozenset({
+    'cat', 'command', 'echo', 'find', 'git', 'grep', 'head', 'ls', 'man', 'printf', 'rg', 'tail',
+    'type', 'wc', 'whereis', 'which',
 })
+
+# Options that turn a data consumer into something that runs a program, like `rg --pre wp`.
+# Each maps to (short option letters, long options). A short letter counts anywhere in a cluster,
+# so `man -aP wp` is caught, and a long option counts bare or with `=value`.
+DATA_CONSUMER_RUNNING_OPTIONS = {
+    'rg': ('', ('--pre',)),
+    'man': ('PH', ('--pager', '--html')),
+}
+
+
+def runs_a_program_option(command):
+    """True when a data consumer has an option that runs a program, or one that might."""
+    letters, long_options = DATA_CONSUMER_RUNNING_OPTIONS.get(command.name, ('', ()))
+    if not letters and not long_options:
+        return False
+    for word in command.words[1:]:
+        if word.value is None:
+            # An expansion could become the option itself.
+            return True
+        value = word.value
+        if value.startswith('--'):
+            if value.split('=', 1)[0] in long_options:
+                return True
+        elif value.startswith('-') and any(letter in value[1:] for letter in letters):
+            return True
+    return False
+
+
+def option_value_texts(command):
+    """Every argument's text, plus each option's value cut free of the option it's attached to.
+
+    `man -Pwp\\ db\\ reset` glues the value to `-P`, where the letter before `wp` would hide it from
+    a word-boundary match, so the value is also checked on its own.
+    """
+    letters, _long_options = DATA_CONSUMER_RUNNING_OPTIONS.get(command.name, ('', ()))
+    texts = []
+    for word in command.words[1:]:
+        texts.append(word.raw)
+        value = word.value
+        if value is None:
+            continue
+        texts.append(value)
+        if value.startswith('--') and '=' in value:
+            texts.append(value.split('=', 1)[1])
+        elif value.startswith('-'):
+            position = next(
+                (index for index, letter in enumerate(value[1:], start=1) if letter in letters),
+                None,
+            )
+            if position is not None:
+                texts.append(value[position + 1:])
+    return texts
+
+
+def is_data_consumer(command):
+    """True when the program only reads its arguments, with no option that runs one of them."""
+    return command.name in DATA_CONSUMERS and not runs_a_program_option(command)
 
 COMMANDS = {
     'wp': {
@@ -321,19 +387,18 @@ COMMANDS = {
 }
 
 
-# Matches a covered command name as its own shell word. The name has to end where a word bash is
-# about to run can end -- whitespace, a metacharacter, a quote, or a `$`/`\` that the shell
-# resolves before running it -- so `/bin/wp`, `wp option`, `x&&wp`, `wp$X`, and a fully quoted
-# `"/Applications/.../wp" post list` all read as mentions, while `wp-content`, `wp/v2/media`, and
-# `wp:featuredmedia` are just text. A name reached through a path separator still counts, because
-# `/bin/wp` needs it to.
+# Matches a covered command name as its own shell word inside an `OPAQUE_LAUNCHERS` argument, which
+# a shell this hook can't see will parse again. The name has to end where a word bash is about to
+# run can end -- whitespace, a metacharacter, a quote, or a `$`/`\` that the shell resolves before
+# running it -- so `/bin/wp`, `wp option`, `x&&wp`, and `wp$X` all read as mentions, while
+# `wp-content`, `wp/v2/media`, and `wp:featuredmedia` are just text.
 COVERED_COMMAND_MENTION = re.compile(
     r'(?<![\w-])(?:' + '|'.join(re.escape(name) for name in COMMANDS) + r')(?=[\s;&|()<>"\'`$\\]|$)'
 )
 
 
 # Characters bash removes, or can expand to nothing, while it builds a word, so `w\p`, `"w"p`,
-# `w$''p`, `w$()p`, and `` w``p `` all run `wp`.
+# `w$''p`, `w$()p`, and `` w``p `` all run `wp` once a launcher hands them to a shell again.
 WORD_NOISE = re.compile(r'[\'"\\$`()]')
 
 LINE_CONTINUATION = re.compile(r'\\\n')
@@ -346,8 +411,8 @@ EXPANSION = re.compile(r'[$`]')
 # because `{wp,}` runs `wp`.
 WORD_BOUNDARY = re.compile(r'[\s;&|<>{},]+')
 
-# What separates words on the raw line, for the expansion check.
-RAW_WORD_BOUNDARY = re.compile(r'[\s;&|<>]+')
+# A brace group with no brace inside it, which `could_expand_to_covered_name` widens to `*`.
+INNERMOST_BRACE_GROUP = re.compile(r'\{[^{}]*\}')
 
 
 def contains_in_order(letters, word):
@@ -410,57 +475,32 @@ def is_glob_for_covered_command(word):
     return any(fnmatch.fnmatchcase(command, name) for command in COMMANDS)
 
 
-def unquoted_glob_words(command):
-    """Return each word on the line that holds a glob character bash would expand, unquoted.
+def could_expand_to_covered_name(word):
+    """Return whether a program word with an unquoted glob or brace could become a covered name.
 
-    A word whose glob characters are all quoted or backslash-escaped isn't returned, which keeps
-    `rg -g '!docs/**'` from reading as a glob that could expand into a covered name. The quoted
-    characters of a word that is returned are kept as glob characters rather than escaped, because
-    escaping them can't reproduce bash's bracket rules (`w["?"p]` matches `wp`), and treating them
-    as wildcards can only make a mixed word prompt more often.
+    A brace group can build a name from pieces (`w{x,p}`, `w{o..q}`, `{wp,}`) that no word on the
+    line spells out, so each group is widened to `*` rather than expanded. That over-matches, but
+    a brace in a program name is rare enough that a prompt costs little.
     """
-    words = []
-    pattern = []
-    has_glob = False
-    quote = None
-    escaped = False
-
-    for character in command:
-        if escaped:
-            pattern.append(character)
-            escaped = False
-        elif character == '\\' and quote != "'":
-            escaped = True
-        elif quote:
-            if character == quote:
-                quote = None
-            else:
-                pattern.append(character)
-        elif character in '\'"':
-            quote = character
-        # Only what bash splits words on, since `str.isspace()` would also cut a bracket
-        # expression at a vertical tab or a no-break space that bash keeps inside the word.
-        elif character in ' \t\n':
-            if has_glob:
-                words.append(''.join(pattern))
-            pattern = []
-            has_glob = False
-        else:
-            pattern.append(character)
-            has_glob = has_glob or bool(GLOB_CHARACTERS.match(character))
-
-    if has_glob:
-        words.append(''.join(pattern))
-    return words
+    if not (word.glob or word.brace):
+        return False
+    text = word.value if word.value is not None else word.raw
+    if word.brace:
+        widened = INNERMOST_BRACE_GROUP.sub('*', text)
+        while widened != text:
+            text, widened = widened, INNERMOST_BRACE_GROUP.sub('*', widened)
+    name = widen_bracket_expressions(text.rsplit('/', 1)[-1].lower())
+    return any(fnmatch.fnmatchcase(command, name) for command in COMMANDS)
 
 
 def mentions_covered_command(raw):
-    """Return whether the line might run a covered command, in any spelling bash accepts.
+    """Return whether shell text another program will parse again might run a covered command.
 
-    This only decides whether the hook looks at the line, so it errs toward a match. Quotes,
-    backslashes, and line continuations inside a name hide it from the regex while bash still runs
-    it, so the regex is tried again with them removed. Any brace expansion counts, because one can
-    build a name from pieces (`w{x,p}`, `w{o..q}`) that no word on the line spells out.
+    This is only used for `OPAQUE_LAUNCHERS` arguments, where `bash_ast` can't see the second
+    parse, so it errs toward a match. Quotes, backslashes, and line continuations inside a name
+    hide it from the regex while the shell still runs it, so the regex is tried again with them
+    removed. A brace group counts, because one can build a name from pieces, and so does an
+    expansion in a word holding a covered name's letters in order (`w${X}p`, `${X:-w}p`).
     """
     if COVERED_COMMAND_MENTION.search(raw):
         return True
@@ -473,16 +513,10 @@ def mentions_covered_command(raw):
         if word.rsplit('/', 1)[-1] in COMMANDS or is_glob_for_covered_command(word):
             return True
 
-    if shell_line_shapes.has_brace_expansion(LINE_CONTINUATION.sub('', raw)):
+    if '{' in collapsed and '}' in collapsed and (',' in collapsed or '..' in collapsed):
         return True
 
-    # An expansion can supply or remove any part of a name (`w${X}p`, `${X:-w}p`, `w$(true)p`),
-    # so a word with one counts when a covered name's letters appear in it in order. That costs a
-    # prompt on some unrelated lines, like `ls "$HOME/wp-content"`, because the guard asks on `$`.
-    return any(
-        EXPANSION.search(word) and any(contains_in_order(name, word) for name in COMMANDS)
-        for word in RAW_WORD_BOUNDARY.split(raw)
-    )
+    return bool(EXPANSION.search(raw)) and any(contains_in_order(name, raw) for name in COMMANDS)
 
 
 def no_opinion():
@@ -490,7 +524,7 @@ def no_opinion():
 
     The hook runs on every Bash line rather than behind `if` filters, because a filter can only
     match the spellings it lists, and `command wp`, a single-quoted path, or a backslash-escaped
-    one would skip it. Answering `ask` for lines that never mention a covered command would turn
+    one would skip it. Answering `ask` for lines that never run a covered command would turn
     every one of them into a prompt; staying silent hands them back to the permission system.
     """
     sys.exit(0)
@@ -505,33 +539,6 @@ def respond(decision, reason):
         }
     }))
     sys.exit(0)
-
-
-def shell_metacharacter_decision(raw):
-    """Return (decision, reason) when bash might run more than the matched prefix, or None.
-
-    A chaining operator is refused outright rather than prompted, because the agent that wrote
-    it always has a mechanical fix: send each command as its own tool call. Everything else --
-    an expansion, a redirect to a real file, a subshell, a line that can't be read to the end --
-    still prompts, because there's no rewrite to point the agent at.
-    """
-    finding = shell_line_shapes.first_operator(raw)
-    if finding is None:
-        return None
-
-    kind, description = finding
-    if kind == shell_line_shapes.CHAIN:
-        return DENY, (
-            f'{description}, so a prefix match cannot vouch for this command. Send each command '
-            'as its own tool call (running-commands.md). A trailing `| head`, `| tail`, or '
-            '`| wc` is the only pipeline this hook accepts; do not reword the line to get past '
-            'this.'
-        )
-    return ASK, (
-        f'{description}, so a prefix match cannot vouch for this command. Send one bare command '
-        'per call (running-commands.md); split a chain or drop a redirect rather than rewording '
-        'to get past this hook.'
-    )
 
 
 def matched_prefix(tokens, allowed):
@@ -549,7 +556,7 @@ def matched_prefix(tokens, allowed):
 def validate_db_query(tokens, raw):
     """Decide a `wp db query` invocation, where the SQL and the flags are what make it safe.
 
-    `tokens` starts at `db`; `raw` is the whole command line. Exactly one positional argument is
+    `tokens` starts at `db`; `raw` is the source text. Exactly one positional argument is
     required: with no SQL at all, `wp db query` reads a statement from stdin, and with more than
     one there's no single thing to check.
     """
@@ -567,13 +574,14 @@ def validate_db_query(tokens, raw):
     if not READ_ONLY_SQL_START.match(statements[0]):
         return ASK, 'wp db query SQL does not start with a read-only statement'
 
-    # Searched against the whole command line rather than the parsed statement, because this
-    # hook's `shlex` parse and the Local WP addon's own argument splitter disagree over
-    # backslashes, and a raw-string search can't be fooled by that disagreement. The `;` pattern
-    # is the only thing catching a second statement, since a quoted `;` clears the metacharacter
-    # guard on the Bash path and no guard runs at all on a shell-free one.
+    # Searched against the source text as well as the parsed statement. On the Bash path the
+    # statement is exactly the string bash passes, while on the shell-free path this hook's
+    # `shlex` parse and the Local WP addon's own splitter disagree over backslashes, which a
+    # raw-string search can't be fooled by. Matching either one only makes the check stricter.
+    # The `;` pattern is the only thing catching a second statement, since a quoted `;` is
+    # literal to bash and no shell runs at all on the shell-free path.
     for pattern in FORBIDDEN_SQL_PATTERNS:
-        if pattern.search(raw):
+        if pattern.search(raw) or pattern.search(statements[0]):
             return ASK, f'wp db query matches "{pattern.pattern}", so it may not be read-only'
 
     return ALLOW, '"wp db query" is allowlisted for read-only SQL'
@@ -791,30 +799,166 @@ def decide(base_command, tokens, raw):
     return ASK, f'{base_command} command is not allowlisted'
 
 
-def resolve_base_command(tokens):
-    """Return (base_command, remaining_tokens, denial_reason), stripping a `command` prefix.
+def chain_denial(description):
+    return DENY, (
+        f'{description}, so a prefix match cannot vouch for this command. Send each command as '
+        'its own tool call (running-commands.md). A trailing `| head`, `| tail`, or `| wc` is the '
+        'only pipeline this hook accepts; do not reword the line to get past this.'
+    )
 
-    Only the exact spellings in `BINARY_ALLOWED_PATHS` resolve. A different path to a binary
-    whose basename matches a covered command is denied rather than trusted -- anything on disk
-    can be named `wp`.
-    """
-    if tokens and tokens[0] == 'command':
-        tokens = tokens[1:]
-    if not tokens:
-        return None, [], None
 
-    spelling = tokens[0]
+def decide_covered(command, raw_line):
+    """Decide one parsed command whose program is a covered name."""
+    spelling = command.words[0].value
     base_command = BINARY_ALLOWED_PATHS.get(spelling)
-    if base_command:
-        return base_command, tokens[1:], None
-
-    if Path(spelling).name in COMMANDS or is_glob_for_covered_command(spelling):
-        return None, tokens[1:], (
+    if base_command is None:
+        return DENY, (
             f'"{spelling}" is not in BINARY_ALLOWED_PATHS in command-allowlist-permissions.py, '
             'so this hook cannot vouch for the binary behind it'
         )
 
-    return None, tokens[1:], None
+    if base_command == 'localwp' and not (
+        command.words[0].raw == 'localwp'
+        and not command.wrappers
+        and not command.nested
+        and LOCALWP_CANONICAL_SPELLING.match(raw_line)
+    ):
+        return DENY, (
+            'localwp only reaches Local when it is spelled as a bare, unquoted `localwp` at the '
+            'start of the line, because that is what `sandbox.excludedCommands` matches. Rewrite '
+            'the command that way rather than finding another spelling.'
+        )
+
+    if command.opaque:
+        return ASK, f'{command.opaque}, so a prefix match cannot vouch for this command'
+    if command.nested:
+        return ASK, (
+            f'{base_command} runs inside a substitution, compound command, or command string, '
+            'so a prefix match cannot vouch for it. Send one bare command per call.'
+        )
+    # `command` only skips aliases and functions. Anything else -- `env`, `sudo`, `nice` -- changes
+    # how the program runs, and an assignment like `WP_CLI_CONFIG_PATH=` can load arbitrary code.
+    other_wrappers = [wrapper for wrapper in command.wrappers if wrapper != 'command']
+    if other_wrappers or command.assigns:
+        return ASK, (
+            f'{base_command} runs behind `{other_wrappers[0]}`' if other_wrappers
+            else f'{base_command} runs with an environment assignment'
+        ) + ', which this hook cannot vouch for'
+    if command.dynamic_args:
+        return ASK, f'{base_command} receives arguments at run time that the line does not show'
+    if not all(word.literal for word in command.words):
+        return ASK, (
+            f'an argument to {base_command} expands at run time, so a prefix match cannot vouch '
+            'for this command. Send one bare command per call (running-commands.md) rather than '
+            'rewording to get past this hook.'
+        )
+    if any(not redirect.benign for redirect in command.redirects):
+        return ASK, (
+            'a redirect writes to a real file, so a prefix match cannot vouch for this command. '
+            'Drop the redirect rather than rewording to get past this hook.'
+        )
+
+    return decide(base_command, command.argv[1:], raw_line)
+
+
+def judge_command(command, raw_line):
+    """Return (decision, reason, names_covered) for one parsed command, or None for no opinion.
+
+    `names_covered` is True when the command runs, or could run, a covered program, as opposed to
+    one this hook only can't read. It decides whether a chained line is refused or prompted.
+    """
+    if not command.words:
+        # An opaque command with no words is something bash_ast saw run but couldn't read, like
+        # an array subscript that expands again; anything else wordless only redirects.
+        if command.opaque:
+            return ASK, f'{command.opaque}, so it might run a covered command', False
+        return None
+    program = command.words[0]
+
+    # An environment value that names a covered program can be run by the command, like
+    # `PAGER='wp db reset' man ls`.
+    for name, value in command.assigns:
+        if value is not None and mentions_covered_command(value.raw):
+            return ASK, (
+                f'`{name}=` names a covered command, and `{command.name or program.raw}` may run it'
+            ), True
+
+    if program.names_a_program and command.name in COMMANDS:
+        return (*decide_covered(command, raw_line), True)
+
+    if could_expand_to_covered_name(program):
+        # A bare glob at the head of the line is the same mistake as an unlisted path, so it gets
+        # the same refusal. Anything wrapped, nested, or built by a brace group prompts instead.
+        if program.glob and not program.brace and not command.wrappers and not command.nested:
+            return DENY, (
+                f'"{program.raw}" could expand to a covered command, and no glob is in '
+                'BINARY_ALLOWED_PATHS in command-allowlist-permissions.py'
+            ), True
+        return ASK, f'"{program.raw}" could expand to a covered command', True
+
+    if command.opaque:
+        return ASK, f'{command.opaque}, so it might run a covered command', False
+
+    if command.name in OPAQUE_LAUNCHERS and any(
+        mentions_covered_command(word.raw) for word in command.words[1:]
+    ):
+        return (
+            ASK,
+            'a covered command sits behind a launcher that runs it out of this hook\'s sight',
+            True,
+        )
+
+    # `man -P` hands its value to a shell, so a covered name anywhere in the arguments counts.
+    if runs_a_program_option(command) and any(
+        mentions_covered_command(text) for text in option_value_texts(command)
+    ):
+        return ASK, (
+            f'`{command.name}` has an option that runs a program, and a covered command is among '
+            'its arguments'
+        ), True
+
+    # An option's attached value names a program as readily as a separate word does: `--pre=wp`.
+    candidates = [
+        value
+        for word in command.words[1:] if word.literal
+        for value in (word.value, word.value.split('=', 1)[-1])
+    ]
+    if not is_data_consumer(command) and any(
+        os.path.basename(value).lower() in COMMANDS or value in BINARY_ALLOWED_PATHS
+        for value in candidates
+    ):
+        return ASK, (
+            f'`{command.name}` has a covered command among its arguments and may run it, which '
+            'this hook cannot vouch for'
+        ), True
+
+    return None
+
+
+def decide_bash_line(raw_line):
+    try:
+        parsed = bash_ast.parse(raw_line)
+    except bash_ast.ParseError as error:
+        return ASK, f'{error}, so this hook cannot tell whether it runs a covered command'
+
+    judgements = [
+        judgement for judgement in (judge_command(command, raw_line) for command in parsed.commands)
+        if judgement is not None
+    ]
+    if not judgements:
+        return None
+
+    if parsed.chain and any(names_covered for _, _, names_covered in judgements):
+        return chain_denial(parsed.chain)
+
+    for wanted in (DENY, ASK):
+        for decision, reason, _ in judgements:
+            if decision == wanted:
+                return decision, reason
+
+    if len(parsed.commands) > 1:
+        return ASK, 'the line runs more than the allowlisted command'
+    return judgements[0][0], judgements[0][1]
 
 
 def main():
@@ -826,81 +970,25 @@ def main():
     # command line, binary included.
     raw_arguments = tool_input.get('args')
     raw_command = tool_input.get('command')
-    raw = raw_arguments if raw_arguments else raw_command
-    if not raw:
+
+    if raw_arguments:
+        if not shell_free:
+            respond(ASK, 'this tool passes bare arguments but is not in SHELL_FREE_TOOLS')
+        try:
+            tokens = shlex.split(raw_arguments)
+        except ValueError:
+            respond(ASK, 'command could not be parsed into arguments')
+        respond(*decide('wp', tokens, raw_arguments))
+
+    if not raw_command:
         if raw_arguments is not None:
             respond(ASK, 'no command found in the tool input')
         no_opinion()
 
-    # This must run before the metacharacter guard: a compound line that never mentions a covered
-    # command isn't this hook's to judge, but one that does mention `wp`/`vip` must still hit the
-    # guard, or a rider like `wp option get x && wp db reset` slips past on the safe prefix.
-    if not raw_arguments and not mentions_covered_command(raw):
+    outcome = decide_bash_line(raw_command)
+    if outcome is None:
         no_opinion()
-
-    if not shell_free:
-        # `head`, `tail`, and `wc` can only trim what the covered command already printed, so a
-        # pipeline ending in one is judged as the command that feeds it.
-        raw = shell_line_shapes.strip_output_limiting_tail(raw)
-        metacharacter_decision = shell_metacharacter_decision(raw)
-        if metacharacter_decision:
-            respond(*metacharacter_decision)
-
-    # On the shell path the guard has already confirmed every redirect targets `/dev/null` or an
-    # fd, so dropping them leaves the argv `wp` actually receives. The MCP path has no shell, so
-    # its `args` are passed verbatim and nothing is stripped.
-    command_for_tokens = raw if raw_arguments else STRIP_REDIRECT.sub(' ', raw)
-
-    try:
-        tokens = shlex.split(command_for_tokens)
-    except ValueError:
-        respond(ASK, 'command could not be parsed into arguments')
-    line_tokens = tokens
-
-    if raw_arguments:
-        base_command = 'wp'
-    else:
-        base_command, tokens, denial_reason = resolve_base_command(tokens)
-        if denial_reason:
-            respond(DENY, denial_reason)
-
-    if base_command is None:
-        # Reaching here means the line mentions a covered command. A launcher that parses its
-        # arguments as shell again unquotes and expands them on that second pass, so nothing
-        # this hook reads from the first pass can show that the mention is only data.
-        # macOS resolves `BASH` to `/bin/bash`, because its filesystem ignores case.
-        glob_names = [
-            widen_bracket_expressions(word.rsplit('/', 1)[-1].lower())
-            for word in unquoted_glob_words(command_for_tokens)
-        ]
-        if any(
-            token in REPARSING_LAUNCHERS or Path(token).name.lower() in REPARSING_LAUNCHERS
-            for token in line_tokens
-        ) or any(
-            fnmatch.fnmatchcase(launcher, name)
-            # bash never globs a word into `.`, since a leading dot has to be written literally.
-            for launcher in REPARSING_LAUNCHERS - {'.'} for name in glob_names
-        ):
-            respond(ASK, 'a covered command sits behind a launcher that parses it as shell again')
-
-        # A covered command sitting behind a launcher (`env wp db reset`, `VAR=1 vip ...`) is
-        # still an execution this hook can't vouch for, so it gets a prompt. A covered name
-        # inside a larger token (`grep 'wp option' notes.txt`) is just data, and so is a quoted
-        # glob, because bash never expands it.
-        if any(token in BINARY_ALLOWED_PATHS for token in tokens) or any(
-            is_glob_for_covered_command(word) for word in unquoted_glob_words(command_for_tokens)
-        ):
-            respond(ASK, 'a covered command sits behind a launcher this hook cannot vouch for')
-        no_opinion()
-
-    if base_command == 'localwp' and not LOCALWP_CANONICAL_SPELLING.match(raw):
-        respond(DENY, (
-            'localwp only reaches Local when it is spelled as a bare, unquoted `localwp` at the '
-            'start of the line, because that is what `sandbox.excludedCommands` matches. Rewrite '
-            'the command that way rather than finding another spelling.'
-        ))
-
-    respond(*decide(base_command, tokens, raw))
+    respond(*outcome)
 
 
 if __name__ == '__main__':

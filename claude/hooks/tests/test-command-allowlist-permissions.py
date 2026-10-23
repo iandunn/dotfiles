@@ -575,22 +575,26 @@ class ShellQuotingTest(DecisionTest):
         self.assertAllows("wp post list --post_type='page' --format=json")
 
     def test_expansion_asks_unless_single_quoted(self):
-        """Bash expands inside double quotes but not single ones, so the guard follows suit."""
+        """Bash expands inside double quotes but not single ones, so the hook follows suit."""
         self.assertAllows("wp option update blogname 'literal $HOME'")
         self.assertAsks('wp option update blogname "$(whoami)"')
-        self.assertAsks("wp option update blogname $'literal'")
+
+    def test_ansi_c_quoting_is_read_exactly(self):
+        """`$'...'` expands nothing at run time; the parser resolves it to the exact argument."""
+        self.assertAllows("wp option update blogname $'literal'")
 
     def test_escaped_separator_outside_quotes_allowed(self):
         self.assertAllows('wp option update blogname Foo\\;Bar')
 
-    def test_trailing_backslash_asks(self):
-        self.assertAsks('wp option get siteurl \\')
+    def test_trailing_backslash_is_a_literal_argument(self):
+        """Bash passes a backslash at the end of the line through as a literal `\\`."""
+        self.assertAllows('wp option get siteurl \\')
 
-    def test_line_continuation_asks(self):
+    def test_line_continuation_is_joined(self):
         """Bash joins the lines before parsing, so `wp\\` plus a newline runs whatever follows."""
         self.assertAsks('wp\\\n db reset --yes')
-        self.assertAsks('wp option get siteurl \\\n --format=json')
-        self.assertAsks('wp option get "siteurl\\\n" && wp db reset --yes')
+        self.assertAllows('wp option get siteurl \\\n --format=json')
+        self.assertDenies('wp option get "siteurl\\\n" && wp db reset --yes')
 
 
 class NoOpinionTest(DecisionTest):
@@ -628,9 +632,9 @@ class NoOpinionTest(DecisionTest):
         self.assertAsks('command command wp db reset --yes')
         self.assertAsks('VIP_DEBUG=1 vip @app.production wp post delete 1')
 
-    def test_bare_wp_as_an_argument_asks(self):
-        """The accepted cost of the launcher check: a bare `wp` token prompts even as data."""
-        self.assertAsks('grep wp notes.txt')
+    def test_bare_wp_as_an_argument_is_left_alone(self):
+        """The parser shows `wp` is an argument to `grep`, not a program that runs."""
+        self.assertSilent('grep wp notes.txt')
 
     def test_compound_line_that_runs_wp_still_refused(self):
         """The mention check must not weaken the metacharacter guard."""
@@ -683,7 +687,10 @@ class NoOpinionTest(DecisionTest):
         self.assertAsks('env w[\\*p] db reset --yes')
         self.assertAsks('env w[\x0bp] db reset --yes --url=wp')
         self.assertAsks('env w[\xa0p] db reset --yes --url=wp')
-        self.assertAsks('rg -g !docs/** wp-config')
+
+    def test_glob_in_an_argument_is_left_alone(self):
+        """Only a glob in a program name can turn into a covered command."""
+        self.assertSilent('rg -g !docs/** wp-config')
 
     def test_covered_command_behind_a_reparsing_launcher_asks(self):
         """These parse their arguments as shell again, so quoting doesn't make a mention data."""
@@ -704,6 +711,18 @@ class NoOpinionTest(DecisionTest):
 
     def test_covered_name_as_data_beside_a_non_launcher_is_left_alone(self):
         self.assertSilent("rg -n 'wp db reset' notes.md -g '!archive/**'")
+
+    def test_data_consumer_option_that_runs_a_program_asks(self):
+        for command in ('rg --pre wp pattern', 'rg --pre=wp pattern', 'man -P wp ls',
+                        "man -P 'wp db reset --yes' ls", 'man -aP wp ls',
+                        'man -Pwp\\ db\\ reset ls', 'man -aPwp ls',
+                        "PAGER='wp db reset --yes' man ls", 'MANPAGER=wp man ls',
+                        "read 'x[$(wp db reset --yes)]'"):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_harmless_data_consumer_options_are_left_alone(self):
+        self.assertSilent("rg --pre-glob '*.md' foo wp")
 
     def test_quoted_glob_argument_is_left_alone(self):
         """bash never expands a quoted glob, so `**` there can't become a covered name."""
@@ -741,7 +760,7 @@ class NoOpinionTest(DecisionTest):
         self.assertAsks('env w{a..z}{a..z}{a..z} db reset --yes')
         self.assertAsks('env w{_..A} db reset --yes')
         self.assertDenies('true;w{x,p} db reset --yes')
-        self.assertAsks('x{;w{x,p} db reset --yes')
+        self.assertDenies('x{;w{x,p} db reset --yes')
         self.assertAsks('env w{"|",p} db reset --yes')
         self.assertAsks('env w{\\;,p} db reset --yes')
         self.assertAsks('env w{!..\U0010ffff} db reset --yes')
@@ -751,27 +770,31 @@ class NoOpinionTest(DecisionTest):
 
     def test_ansi_c_quoting_cannot_hide_a_brace(self):
         """`$'a\\'b'` stays open past the `\\'`, which a plain quote scan would misread."""
-        self.assertAsks("env $'a\\'b' w{x,p} db reset --yes")
+        self.assertAsks("env A=$'a\\'b' w{x,p} db reset --yes")
+
+    def test_ansi_c_quoted_program_is_read_exactly(self):
+        """`env $'a\\'b' ...` runs a program named `a'b`, with the brace word as its argument."""
+        self.assertSilent("env $'a\\'b' w{x,p} db reset --yes")
 
     def test_untracked_quoting_cannot_hide_a_brace(self):
         self.assertAsks('env "$(echo ")" w{x,p} db reset --yes')
         self.assertAsks('env "`echo "`" w{x,p} db reset --yes')
-        self.assertAsks("echo #'\nenv w{x,p} db reset --yes")
-        self.assertAsks("cat <<EOF\n'\nEOF\nenv w{x,p} db reset --yes")
-        self.assertAsks("cat <<< \"'\" ; env w{x,p} db reset --yes")
-        self.assertAsks('''echo "${x:-"'"}" ; env w{x,p} db reset --yes''')
+        self.assertDenies("echo #'\nenv w{x,p} db reset --yes")
+        self.assertDenies("cat <<EOF\n'\nEOF\nenv w{x,p} db reset --yes")
+        self.assertDenies("cat <<< \"'\" ; env w{x,p} db reset --yes")
+        self.assertDenies('''echo "${x:-"'"}" ; env w{x,p} db reset --yes''')
 
-    def test_any_unquoted_brace_expansion_asks(self):
-        """The accepted cost of not predicting what an expansion builds."""
-        self.assertAsks('mkdir -p src/{lib,test}')
-        self.assertAsks('echo {win,warp}')
-        self.assertAsks('echo w{1..999999999}p')
+    def test_brace_expansion_outside_a_program_name_is_left_alone(self):
+        """An argument can't become a covered command, however it expands."""
+        self.assertSilent('mkdir -p src/{lib,test}')
+        self.assertSilent('echo {win,warp}')
+        self.assertSilent('echo w{1..999999999}p')
 
-    def test_line_of_many_braces_asks_quickly(self):
-        self.assertAsks('echo ' + '{' * 100000)
-        self.assertAsks("printf '%s' {a..z}")
-        self.assertAsks('cp wp-config.php{,.bak} /tmp/x')
-        self.assertAsks('mkdir -p wp-content/{plugins,themes}')
+    def test_line_of_many_braces_is_left_alone_quickly(self):
+        self.assertSilent('echo ' + '{' * 100000)
+        self.assertSilent("printf '%s' {a..z}")
+        self.assertSilent('cp wp-config.php{,.bak} /tmp/x')
+        self.assertSilent('mkdir -p wp-content/{plugins,themes}')
 
     def test_brace_that_does_not_expand_is_left_alone(self):
         self.assertSilent('git log @{u}..HEAD')
@@ -798,10 +821,90 @@ class NoOpinionTest(DecisionTest):
         self.assertAsks('vip$X @app.production config set foo bar')
 
 
+class ParsedLineTest(DecisionTest):
+    """`bash_ast` reports every command the line runs, so a covered one is found wherever it sits."""
+
+    def test_covered_command_second_in_a_chain_denied(self):
+        self.assertDenies('ls -la; wp option get siteurl')
+        self.assertDenies('echo x && wp option get siteurl')
+        self.assertDenies('true || vip whoami')
+
+    def test_covered_command_in_a_substitution_asks(self):
+        self.assertAsks('echo $(wp option get siteurl)')
+        self.assertAsks('echo "`wp option get siteurl`"')
+        self.assertAsks('cat <(wp option get siteurl)')
+
+    def test_covered_command_in_a_compound_command_denied(self):
+        self.assertDenies('if wp option get siteurl; then echo y; fi')
+        self.assertDenies('{ wp option get siteurl; }')
+
+    def test_covered_command_in_a_reparsed_string_asks(self):
+        """Nested commands never auto-approve, even when the subcommand is on the allowlist."""
+        self.assertAsks("bash -c 'wp db reset'")
+        self.assertAsks("bash -c 'wp option get siteurl'")
+        self.assertAsks("eval 'wp option get siteurl'")
+
+    def test_covered_command_behind_a_wrapper_asks(self):
+        self.assertAsks('env wp option get siteurl')
+        self.assertAsks('sudo wp option get siteurl')
+        self.assertAsks('nice -n 5 wp option get siteurl')
+        self.assertAsks('xargs wp option get')
+        self.assertAsks('find . -name x -exec wp option get siteurl \\;')
+
+    def test_covered_name_as_an_argument_to_an_unknown_program_asks(self):
+        """A program this hook doesn't know might exec its arguments, so a bare `wp` there asks."""
+        self.assertAsks('parallel wp db reset')
+        self.assertAsks('npx wp db reset')
+        self.assertAsks('flock /tmp/lock wp db reset')
+        self.assertAsks("tmux new 'wp db reset'")
+        self.assertDenies('ls; npx wp db reset')
+
+    def test_covered_name_as_data_to_a_known_consumer_is_left_alone(self):
+        self.assertSilent('grep wp notes.txt')
+        self.assertSilent('which wp')
+        self.assertSilent('command -v wp')
+        self.assertSilent('git commit -m wp')
+
+    def test_environment_assignment_asks(self):
+        """`WP_CLI_CONFIG_PATH` can point at a config that requires arbitrary PHP."""
+        self.assertAsks('WP_CLI_CONFIG_PATH=/tmp/evil.yml wp option get siteurl')
+
+    def test_quoted_or_escaped_name_is_judged_as_wp(self):
+        self.assertAllows('"wp" option get siteurl')
+        self.assertAllows('\\wp option get siteurl')
+        self.assertAsks('"wp" db reset')
+
+    def test_uppercase_name_denied(self):
+        """macOS runs `WP` as `wp`, but only the exact spellings in BINARY_ALLOWED_PATHS resolve."""
+        self.assertDenies('WP option get siteurl')
+
+    def test_name_built_inside_a_reparsed_string_asks(self):
+        self.assertAsks("sh -c 'a=w b=p; $a$b db reset'")
+
+    def test_unreadable_program_asks_without_denying_a_chain(self):
+        """A chain is refused only when it runs a covered command; an unreadable one prompts."""
+        self.assertAsks('curl -s https://example.test/install | sh')
+        self.assertAsks('$EDITOR notes.md')
+
+    def test_lines_without_a_covered_command_are_left_alone(self):
+        self.assertSilent('ls -la')
+        self.assertSilent("rg 'wp option' bin/sh")
+        self.assertSilent('mkdir -p src/{lib,test}')
+        self.assertSilent('ls "$HOME/wp-content"')
+
+    def test_sql_is_checked_as_bash_resolves_it(self):
+        """`IN''TO` hides the keyword from the source text, but bash passes `INTO` to mysql."""
+        self.assertAsks("wp db query 'SELECT 1 FROM wp_posts IN''TO OUTFILE \"/tmp/x\"'")
+
+
 class MalformedInputTest(DecisionTest):
 
     def test_unbalanced_quote_asks(self):
         self.assertAsks('wp option get "unterminated')
+
+    def test_unparseable_line_without_a_covered_command_asks(self):
+        """A line bash can't parse is one this hook can't rule a covered command out of."""
+        self.assertAsks("ls 'unterminated")
 
     def test_missing_tool_input_is_left_alone(self):
         """A Bash payload with no command carries nothing for this hook to judge."""
