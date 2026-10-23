@@ -18,7 +18,7 @@ ASK = 'ask'
 DENY = 'deny'
 
 
-def run(command, cwd=None):
+def run(command, cwd=None, env=None):
     """Run the hook with a command string, return (stdout, returncode)."""
     payload = {'tool_input': {'command': command}}
     if cwd is not None:
@@ -28,6 +28,7 @@ def run(command, cwd=None):
         input=json.dumps(payload),
         capture_output=True,
         text=True,
+        env=env,
     )
     return result.stdout.strip(), result.returncode
 
@@ -1441,6 +1442,95 @@ class OutputLimitingTailTest(DecisionTest):
     def test_trailing_filter_cannot_rescue_a_gated_write(self):
         """Stripping the tail leaves the write to be judged on its own terms."""
         self.assertDecision(ASK, 'git -c core.pager=/bin/echo log -1 | head -5')
+
+
+class WorktreeSymlinkTest(unittest.TestCase):
+    """Removing the links that give a worktree its untracked dependencies, from either tree."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.temp = os.path.realpath(tempfile.mkdtemp(prefix='worktree-symlink-test-'))
+        cls.main_tree = os.path.join(cls.temp, 'repo')
+        cls.worktree = os.path.join(cls.main_tree, '.claude', 'worktrees', 'feature')
+        cls.rogue_worktree = os.path.join(cls.temp, 'rogue')
+        cls.outside = os.path.join(cls.temp, 'outside')
+
+        os.makedirs(cls.main_tree)
+        os.makedirs(cls.outside)
+        git(cls.main_tree, 'init', '-b', 'main')
+        git(cls.main_tree, 'config', 'user.email', 'test@example.com')
+        git(cls.main_tree, 'config', 'user.name', 'Test')
+        Path(cls.main_tree, 'tracked.txt').write_text('hello\n')
+        git(cls.main_tree, 'add', 'tracked.txt')
+        git(cls.main_tree, 'commit', '-m', 'initial')
+        os.makedirs(os.path.join(cls.main_tree, 'vendor'))
+        os.makedirs(os.path.join(cls.main_tree, 'node_modules'))
+        os.makedirs(os.path.dirname(cls.worktree))
+        git(cls.main_tree, 'worktree', 'add', cls.worktree, '-b', 'feature')
+        git(cls.main_tree, 'worktree', 'add', cls.rogue_worktree, '-b', 'rogue')
+
+        os.symlink(os.path.join(cls.main_tree, 'vendor'), os.path.join(cls.worktree, 'vendor'))
+        os.symlink(cls.outside, os.path.join(cls.worktree, 'outside-link'))
+        Path(cls.worktree, 'untracked.txt').write_text('only copy\n')
+        os.makedirs(os.path.join(cls.worktree, '.claude', 'tmp'))
+        os.symlink(cls.outside, os.path.join(cls.worktree, '.claude', 'tmp', 'scratch-link'))
+        os.symlink(cls.outside, os.path.join(cls.rogue_worktree, 'rogue-link'))
+        os.symlink(cls.outside, os.path.join(cls.main_tree, 'main-link'))
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.temp, ignore_errors=True)
+
+    def assertFrom(self, cwd, expected, command):
+        out, code = run(command, cwd=cwd)
+        self.assertEqual(code, 0, f'non-zero exit for: {command}')
+        self.assertEqual(decision(out), expected, f'wrong decision for: {command}')
+
+    def worktree_path(self, *parts):
+        return os.path.join(self.worktree, *parts)
+
+    def test_rm_untracked_symlink_from_main_checkout_allowed(self):
+        self.assertFrom(self.main_tree, ALLOW, f'rm {self.worktree_path("vendor")}')
+        self.assertFrom(self.main_tree, ALLOW,
+                        f'command rm -f {self.worktree_path("outside-link")}')
+
+    def test_rm_untracked_symlink_from_worktree_allowed(self):
+        self.assertFrom(self.worktree, ALLOW, 'rm vendor outside-link')
+
+    def test_symlinks_in_another_repositorys_worktree_ask(self):
+        """Another repository's worktrees hold some other session's work."""
+        other_repo = os.path.join(self.temp, 'other-repo')
+        os.makedirs(other_repo, exist_ok=True)
+        git(other_repo, 'init', '-b', 'main')
+        for cwd in (other_repo, self.outside):
+            self.assertFrom(cwd, ASK, f'rm {self.worktree_path("vendor")}')
+
+    def test_rm_symlink_with_trailing_slash_asks(self):
+        """A trailing slash makes rm act on what the link points at."""
+        self.assertFrom(self.main_tree, ASK, f'rm {self.worktree_path("vendor")}/')
+
+    def test_rm_symlink_mixed_with_untracked_file_asks(self):
+        self.assertFrom(self.worktree, ASK, 'rm vendor untracked.txt')
+
+    def test_rm_recursive_symlink_asks(self):
+        self.assertFrom(self.main_tree, ASK, f'rm -r {self.worktree_path("vendor")}')
+
+    def test_rm_symlink_glob_asks(self):
+        self.assertFrom(self.main_tree, ASK, f'rm {self.worktree_path("vend*")}')
+
+    def test_rm_symlink_in_worktree_scratch_asks(self):
+        self.assertFrom(self.main_tree, ASK,
+                        f'rm {self.worktree_path(".claude", "tmp", "scratch-link")}')
+
+    def test_rm_symlink_outside_sanctioned_worktree_asks(self):
+        self.assertFrom(self.main_tree, ASK,
+                        f'rm {os.path.join(self.rogue_worktree, "rogue-link")}')
+        self.assertFrom(self.main_tree, ASK, 'rm main-link')
+
+    def test_ln_left_to_settings_ask_rule(self):
+        """Edit writes through a directory link without a prompt, so creating one always asks."""
+        self.assertFrom(self.main_tree, None, f'ln -s {self.main_tree}/node_modules '
+                                              f'{self.worktree_path("node_modules")}')
 
 
 if __name__ == '__main__':

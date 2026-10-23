@@ -126,6 +126,15 @@ allow rules exist to approve. Silence hands the decision back to them. The
 shared operator guard runs first, so a chained or `$`-bearing command never
 reaches this exemption.
 
+A second exemption covers symlinks. When every operand is a symlink whose parent
+resolves inside a `.claude/worktrees/` worktree of the working directory's own
+repository, the rm is allowed from the main checkout or any of its worktrees,
+whether or not git tracks the link. A link holds no content, only a path that
+`ln -s` recreates, and the agent that links a worktree's untracked dependencies
+into it usually works from the main checkout. Creating a link is left to the
+`Bash(ln *)` ask rule, because the Edit tool writes through a directory link
+without a prompt.
+
 The same sweep written with ABSOLUTE paths is allowed here rather than passed
 back, and that asymmetry is deliberate. Those settings.json rules are literal
 prefixes that an absolute path can never match, so silence would drop the
@@ -312,6 +321,7 @@ reaches this hook. Nothing regresses when that happens: such a shape matched no
 permissions.ask entry before this hook existed either, so it falls through to
 the same place it always did.
 """
+import functools
 import glob
 import json
 import os
@@ -1294,6 +1304,7 @@ def is_linked_worktree(cwd):
     return resolve(git_dir) != resolve(common_dir)
 
 
+@functools.lru_cache(maxsize=None)
 def sanctioned_worktree_root(cwd):
     """The worktree root if cwd is inside a linked worktree under `.claude/worktrees/`, else None."""
     if not is_linked_worktree(cwd):
@@ -1382,8 +1393,77 @@ def decide_branch_delete(tokens, cwd):
                    'destroy that work; confirm this delete')
 
 
+# Directories where a symlink is never treated as disposable.
+PROTECTED_LINK_COMPONENTS = frozenset({'.git', '.claude'})
+
+
+def has_protected_link_component(relative_path):
+    """True if any component is in PROTECTED_LINK_COMPONENTS, in any letter case.
+
+    `realpath` keeps the case it was given, and a case-insensitive volume opens `.GIT` as `.git`.
+    """
+    return any(component.lower() in PROTECTED_LINK_COMPONENTS
+               for component in relative_path.split(os.sep))
+
+
+@functools.lru_cache(maxsize=None)
+def git_common_dir(directory):
+    """The fully resolved common git dir shared by every worktree of this directory's repo."""
+    common_dir = git_rev_parse(directory, '--git-common-dir')
+    if not common_dir:
+        return None
+    return os.path.realpath(os.path.join(directory, common_dir))
+
+
+def worktree_link_location_root(resolved, cwd):
+    """The sanctioned worktree root holding this link path, if a link there is disposable.
+
+    The worktree can be any of the cwd's own repository, rather than only the one the cwd is in,
+    because the agent that set up a worktree usually works from the main checkout. Another
+    repository's worktrees belong to some other session's work. A path inside `.git` or `.claude`
+    is refused, since a link there can redirect what git runs, what the scratch exemptions act on,
+    or the settings and hooks Claude Code loads.
+    """
+    root = sanctioned_worktree_root(os.path.dirname(resolved))
+    if not root:
+        return None
+    cwd_common_dir = git_common_dir(cwd)
+    if not cwd_common_dir or git_common_dir(root) != cwd_common_dir:
+        return None
+    if has_protected_link_component(os.path.relpath(resolved, root)):
+        return None
+    return root
+
+
+RM_SYMLINK_FLAGS = re.compile(r'-[fiv]+')
+
+
+def rm_symlinks_decision(flags, operands, cwd):
+    """Allow an rm whose every operand is a symlink inside a sanctioned worktree, or return None.
+
+    A link holds no content, only a target path that `ln -s` recreates, so deleting one loses
+    nothing even when git doesn't track it. That is why the tracked-only rule doesn't apply here.
+    Anything this can't vouch for returns None, so the general rm gate below still decides it.
+    """
+    if not operands or not all(RM_SYMLINK_FLAGS.fullmatch(flag) for flag in flags):
+        return None
+    for operand in operands:
+        if expands_after_this_hook(operand) or any(char in operand for char in GLOB_CHARS):
+            return None
+        # A trailing slash makes rm follow the link, and resolve_all_but_final follows it too, so
+        # such an operand never reads as a link here.
+        resolved = resolve_all_but_final(operand, cwd)
+        if not os.path.islink(resolved) or not worktree_link_location_root(resolved, cwd):
+            return None
+    return 'allow', ('Every operand is a symlink inside a .claude/worktrees/ worktree; '
+                     'nothing is lost')
+
+
 def decide_rm(tokens, cwd):
-    """Allow only a non-recursive rm of tracked files contained in a sanctioned worktree.
+    """Allow a non-recursive rm of tracked files contained in a sanctioned worktree.
+
+    Symlinks in any of the cwd repository's sanctioned worktrees are allowed too, from the main
+    checkout as well, by `rm_symlinks_decision`.
 
     Returns (decision, reason), or None to stay silent and leave the decision
     to settings.json rules.
@@ -1397,6 +1477,10 @@ def decide_rm(tokens, cwd):
 
     if sweeps_into_cwd_scratch(operands, cwd):
         return 'allow', "Every operand is in this directory's own .claude/tmp/ scratch"
+
+    symlinks_decision = rm_symlinks_decision(flags, operands, cwd)
+    if symlinks_decision:
+        return symlinks_decision
 
     root = sanctioned_worktree_root(cwd)
     if not root:
