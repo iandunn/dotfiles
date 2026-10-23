@@ -61,10 +61,14 @@ todo this may not be necessary now that using claude fullscreen TUI  -->
 
 - Before creating a commit:
 	* If Relay is set up in this repo, then run `relay-site pull` and reserve merge conflicts. Then commit only the relay changes.
-	* Run these two reviews in parallel and wait for both to come back:
-		* A code review, using the `code-review` skill at `medium` effort.
-		* A security review, using a subagent running Fable.
+
+	* Check for any commits that were made by other sessions since you started your session. Read them to see if they affect what you're about to commit or work that may come up later in your session.
+
+	* Run these two reviews in parallel and wait for both to come back.
+		* A code review, using the `code-review` skill at `high` effort.
+		* A security review, using a Fable subagent with `high` effort.
 		<!-- there's also a /security-review skill but it might not let you choose model. check -->
+
 	* Both reviews follow the same rules:
 		* Only report findings in the files and hunks you plan to commit, because the working tree often holds other sessions' uncommitted changes. If the session would have produced multiple commits, then review everything that you plan to commit in one pass, rather than doing a review for each individual commit.
 		* Ignore nits and any low-severity/intangible/theoretical findings, and focus on ones that would have a real impact on users or on the system's security.

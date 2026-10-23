@@ -25,3 +25,7 @@ Public repo, but some files are intentionally `.gitignore`d because they're priv
 Live in `claude/hooks/` (Python + a few shell/JS), symlinked into `~/.claude/hooks`. They gate
 tool permissions (Chrome MCP, WP-CLI, worktrees, curl, textutil, dangerous command shapes). Create new
 hooks here, then symlink. Tests are in `claude/hooks/tests/`.
+
+
+## Parking lot
+The parking lot file for this repo is `_notes/parking-lot.md`.

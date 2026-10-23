@@ -18,7 +18,7 @@ When the session root isn't a git repo -- a site root like `~/local-sites/10up/d
 
 ## Working in it
 
-Run all verification (`tsc`, `lint`, `test`) from inside the worktree, and confirm the files under test actually contain the change -- `grep` for a distinctive string. A green run against the wrong tree is worse than no run.
+Until the `go` patch applies, run all verification (`tsc`, `lint`, `test`) from inside the worktree, and confirm the files under test actually contain the change -- `grep` for a distinctive string. A green run against the wrong tree is worse than no run.
 
 When you commit to the work tree, make sure the same code review and security review passes run, and then iterate based on them. That catches issues early so that they don't delay attaching to the main tree.
 
@@ -28,11 +28,13 @@ When you commit to the work tree, make sure the same code review and security re
 2. **Generate the patch while still inside the worktree**, since the diff has to be taken from the worktree branch: `git diff <base>..HEAD > <patch path>`. Write it outside the worktree (the session scratchpad) so it survives the worktree being removed.
 3. **Exit the worktree with `ExitWorktree` and `action: "keep"`.** That restores the session's working directory to the main checkout and leaves the branch and its commits on disk. Use `"keep"` rather than `"remove"`: until the patch lands, that branch is the only other copy of the work.
 4. Create a new branch off of the main/integration branch. i.e., `git checkout -b <new branch name> $(git bmain)`
-5. **`git apply <patch path>` from the restored working directory** -- a bare invocation, no `-C` and no `cd`. Run `git apply --check` first; the main tree may have advanced while the worktree was open.
+5. **`git apply <patch path>` from the restored working directory** -- a bare invocation, no `-C` and no `cd`. Run `git apply --check` first; the main tree may have advanced while the worktree was open. If it refuses, tell the user what collided and wait for their answer. To fix the patch, re-enter the kept worktree with `EnterWorktree` and its `path`, then run `pwd` and `git status` before editing anything.
 
 Committing on the worktree branch is fine; advancing main is not.
 
 `git apply` fails safe: it refuses rather than clobbering an existing untracked file, and leaves what it applies unstaged.
+
+After applying, follow the post-`go` rule in `CLAUDE.md`: the rest of the session works in the main checkout. The kept worktree stays on disk until cleanup, but don't re-enter it. Run verification for any follow-up change in the main checkout too.
 
 After applying, kill any artifacts the session left running -- `npm dev` services, Chrome MCP, etc.
 
@@ -46,7 +48,7 @@ Do it after the patch has been committed in the main checkout, not at `go` time.
 
 - Created by `EnterWorktree`, still inside it: use `ExitWorktree` with `action: "remove"`. It refuses to delete uncommitted or unmerged work unless you pass `discard_changes`. If it refuses, tell the user what it found instead of overriding it.
 
-- Created by `EnterWorktree`, already exited with `action: "keep"` -- which is every worktree that has been patched back on `go`: `ExitWorktree` is a no-op now, so remove it with `git worktree remove <path>` followed by `git branch -D <branch>`. The branch needs `-D` rather than `-d` because its commits are unmerged even once the patch has landed in the main tree. `hooks/file-command-permissions.py` auto-approves that `-D` for a `worktree-*` branch after verifying every file it touched is identical on `HEAD`, so no prompt appears once the work is really in. If it does prompt, the work is not all there yet -- read the reason and tell the user rather than forcing it.
+- Created by `EnterWorktree`, already exited with `action: "keep"` -- which is every worktree that has been patched back on `go`: `ExitWorktree` is a no-op now, so remove it with `git worktree remove <path>` followed by `git branch -D <branch>`. The branch needs `-D` rather than `-d` because its commits are unmerged even once the patch has landed in the main tree. `hooks/file-command-permissions.py` auto-approves that `-D` for a `worktree-*` branch after verifying every file it touched is identical on `HEAD`, so no prompt appears once the work is really in. It prompts when some of the branch's work is missing from `HEAD`, and also when a post-`go` follow-up or another session's commit changed a file the branch touched. The prompt names the files that differ. Those paths are relative to the repo root, so show the user `git -C <repo root> diff <branch> HEAD -- <file>` for them, let them decide, and never force it.
 
 - Created by `git worktree add`: `ExitWorktree` won't touch it. Use `git worktree remove`, without `--force`.
 
