@@ -3,6 +3,7 @@
 # snapshots that `claude-session-snapshot.py` saves. Run it from iTerm's Scripts menu after iTerm
 # has reopened its windows.
 
+import asyncio
 import glob
 import json
 import os
@@ -30,6 +31,11 @@ CLEAR_LINE = "\x15\x0b"
 # A shutdown can kill some sessions before the last snapshot is taken, so sessions from snapshots
 # shortly before it are included too.
 SHUTDOWN_WINDOW_SECONDS = 180
+
+# Claude Code checks whether the terminal supports status reporting once, while it starts up, and
+# a session that starts in a background tab, or alongside several others, can fail that check.
+# Each one gets its tab brought to the front and time to finish starting before the next one.
+RESUME_DELAY_SECONDS = 3
 
 
 def log(message):
@@ -199,8 +205,10 @@ async def restore(connection):
                 continue
 
             command = "cd %s && claude --resume %s\n" % (shlex.quote(root), session_id)
+            await session.async_activate(select_tab=True, order_window_front=True)
             # With Broadcast Input on, the text would also reach panes the shell check never saw.
             await session.async_send_text(CLEAR_LINE + command, suppress_broadcast=True)
+            await asyncio.sleep(RESUME_DELAY_SECONDS)
             used_panes.add(session.session_id)
             done.add(session_id)
             skipped.pop(session_id, None)
