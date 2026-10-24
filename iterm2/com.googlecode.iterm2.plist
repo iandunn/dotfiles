@@ -34,6 +34,8 @@
 	<true/>
 	<key>AlternateMouseScroll</key>
 	<true/>
+	<key>AlwaysOpenWindowAtStartup</key>
+	<true/>
 	<key>BracketedPasteMode</key>
 	<true/>
 	<key>ConvertDosNewlines</key>
@@ -51,7 +53,7 @@
 	<key>DimOnlyText</key>
 	<false/>
 	<key>EnableAPIServer</key>
-	<false/>
+	<true/>
 	<key>EscapeShellCharsWithBackslash</key>
 	<false/>
 	<key>GlobalKeyMap</key>
@@ -180,6 +182,8 @@
 	<true/>
 	<key>IRMemory</key>
 	<integer>4</integer>
+	<key>KillJobsInServersOnQuit</key>
+	<false/>
 	<key>LeftOption</key>
 	<integer>2</integer>
 	<key>New Bookmarks</key>
@@ -542,7 +546,7 @@
 	<key>OnlyWhenMoreTabs</key>
 	<false/>
 	<key>OpenArrangementAtStartup</key>
-	<true/>
+	<false/>
 	<key>OpenBookmark</key>
 	<false/>
 	<key>OpenNoWindowsAtStartup</key>
@@ -602,6 +606,8 @@
 	<true/>
 	<key>QuitWhenAllWindowsClosed</key>
 	<false/>
+	<key>RestoreWindowsToSameSpaces</key>
+	<true/>
 	<key>ShowFullScreenTabBar</key>
 	<false/>
 	<key>ShowNewOutputIndicator</key>

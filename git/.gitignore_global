@@ -38,8 +38,15 @@ npm-debug.log
 .DS_Store
 .idea
 .vscode
-.claude
+**/.claude/*
 .yalc
+
+## Repo-specific Claude files should be tracked
+!**/.claude/commands/
+!**/.claude/hooks/
+!**/.claude/rules/
+!**/.claude/skills/
+!**/.claude/settings.json
 
 
 # Local customizations

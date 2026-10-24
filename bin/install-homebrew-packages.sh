@@ -47,6 +47,7 @@ packages=(
   poppler
   qmk/qmk/qmk
   ripgrep
+  shfmt
   svn
   telnet
   tree
