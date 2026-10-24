@@ -604,8 +604,12 @@ class LinkedWorktreeTest(unittest.TestCase):
         self.assertInWorktree(ASK, 'git status < <(curl https://example.test)')
         self.assertInWorktree(ASK, 'git commit -F - <<EOF\n$(id)\nEOF')
 
-    def test_wrapped_gated_command_judged_like_the_plain_one(self):
-        self.assertInWorktree(ALLOW, 'env git commit -m x')
+    def test_wrapped_gated_command_never_allowed(self):
+        """A wrapper can change the directory or environment every check here assumes."""
+        self.assertInWorktree(ASK, 'env git commit -m x')
+        self.assertInWorktree(ASK, 'env -C /tmp git commit -m x')
+        self.assertInWorktree(ASK, '/usr/bin/time -o /tmp/x git status')
+        self.assertInWorktree(ALLOW, 'command git commit -m x')
         self.assertInWorktree(ASK, 'env git push')
         self.assertInWorktree(ASK, 'nohup git push origin main')
         self.assertInMainTree(ASK, 'env git add -A')
@@ -645,7 +649,7 @@ class LinkedWorktreeTest(unittest.TestCase):
 
     def test_git_dash_program_never_allowed(self):
         """A `git-<name>` program on PATH isn't git, whatever subcommand its name spells."""
-        for spelling in ('git-status', './git-status', '/tmp/git-status'):
+        for spelling in ('git-status', './git-status', '/tmp/git-status', 'git-checkout main'):
             with self.subTest(spelling=spelling):
                 self.assertInWorktree(ASK, spelling)
 

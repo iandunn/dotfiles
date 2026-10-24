@@ -206,7 +206,8 @@ GIT_GLOBAL_VALUE_OPTIONS = frozenset({
 GIT_GLOBAL_FLAGS = frozenset({
     '--exec-path', '-p', '-P', '--paginate', '--no-pager', '--bare', '--literal-pathspecs',
     '--glob-pathspecs', '--noglob-pathspecs', '--icase-pathspecs', '--no-replace-objects',
-    '--no-optional-locks', '--no-lazy-fetch', '--no-advice', '--html-path', '--man-path', '--info-path', '--version',
+    '--no-optional-locks', '--no-lazy-fetch', '--no-advice', '--html-path', '--man-path',
+    '--info-path', '--version',
     '--help',
 })
 
@@ -319,10 +320,13 @@ class Redirect:
             return self.target.value is not None and (
                 self.target.value == '-' or self.target.value.isdigit()
             )
-        if self.op in ('<<', '<<-', '<<<'):
-            return True
-        if self.op == '<':
-            return True
+        if self.op in ('<<', '<<-'):
+            # Only a literal body; one that expands could feed the command anything.
+            return self.heredoc is not None and self.heredoc.value is not None
+        if self.op == '<<<':
+            return self.target.value is not None
+        # Reading a named file can hand the command content this hook never sees, so only
+        # `/dev/null` counts, for input as well as output.
         return self.target.literal and self.target.value == '/dev/null'
 
 
@@ -345,6 +349,9 @@ class Command:
     wrappers: list = field(default_factory=list)
     nested: bool = False
     dynamic_args: bool = False
+    # True when `xargs -I` or `find -exec ... {}` substitutes text into the words themselves,
+    # rather than only appending arguments.
+    replaces_text: bool = False
     opaque: str | None = None
 
     @property
@@ -797,14 +804,10 @@ class LineParser:
         # Only output to `/dev/null` and fd duplication pass; any input redirect, heredoc, or
         # here-string could carry a substitution that runs a command.
         for node in statement.get('Redirs', []) or []:
+            # `benign` already limits `<` to `/dev/null`; heredocs and here-strings are refused
+            # outright here, since even a literal one hands the filter text this hook drops.
             redirect = self.redirect(node)
-            reads_dev_null = (
-                redirect.op == '<' and redirect.target is not None and redirect.target.literal
-                and redirect.target.value == '/dev/null'
-            )
-            if not redirect.benign or (
-                redirect.op in ('<', '<<', '<<-', '<<<', '<>') and not reads_dev_null
-            ):
+            if not redirect.benign or redirect.op in ('<<', '<<-', '<<<', '<>'):
                 return False
         words = [self.word(arg) for arg in command.get('Args', [])]
         if not words or not all(word.literal for word in words):
@@ -905,7 +908,9 @@ class LineParser:
                         break
                     letters = set(value[1:])
                     if letters - set('pvV'):
-                        command.opaque = f'`command` has an option this hook does not know, `{value}`'
+                        command.opaque = (
+                            f'`command` has an option this hook does not know, `{value}`'
+                        )
                         self.emit(command)
                         return
                     describes_only = describes_only or bool(letters & {'v', 'V'})
@@ -952,6 +957,13 @@ class LineParser:
                     self.emit(command)
                     return
                 command.dynamic_args = True
+                options = command.words[1:len(command.words) - len(rest)]
+                command.replaces_text = any(
+                    word.value.startswith('--replace') or (
+                        not word.value.startswith('--') and bool(set(word.value[1:]) & set('IiJ'))
+                    )
+                    for word in options
+                )
                 self.peel(command, 'xargs', rest)
                 continue
 
@@ -1169,7 +1181,27 @@ class LineParser:
                     )]
                     after = words[index + 1:]
                 command.wrappers = command.wrappers + ['env']
-                self.unwrap_string(command, split + after, 'env -S')
+                # `env -S` splits with its own escapes (`\_`, `\c`, `${VAR}`) and quoting, which
+                # bash's grammar would read differently, so only a plain string is reparsed.
+                special = '\\$#\'"'
+                # The split words go back through env's own option and assignment parsing, so a
+                # string that starts with `-C dir` or `NAME=value` isn't just a command line.
+                first = (split[0].value or '').split()[:1] if split else []
+                if not split or split[0].value is None or any(
+                    character in split[0].value for character in special
+                ) or not first or first[0].startswith('-') or '=' in first[0]:
+                    command.opaque = (
+                        '`env -S` splits its string with rules this hook does not parse'
+                    )
+                    self.emit(command)
+                    return True
+                if not all(word.literal for word in after):
+                    self.opaque_wrapper(after, 'env -S')
+                    return True
+                # The words after the string are passed through as they are, so they're quoted
+                # for the reparse; a `#` among them is an argument, not a comment.
+                text = ' '.join([split[0].value] + [shlex.quote(word.value) for word in after])
+                self.reparse(command, text, 'env -S')
                 return True
             if ENV_ASSIGNMENT.match(value):
                 name, assigned = value.split('=', 1)
@@ -1374,10 +1406,15 @@ class LineParser:
                     words[end].literal and words[end].value in (';', '+')
                 ):
                     end += 1
+                inner_words = words[index + 1:end]
                 inner = Command(
-                    words=words[index + 1:end], raw=command.raw, assigns=list(command.assigns),
+                    words=inner_words, raw=command.raw, assigns=list(command.assigns),
                     wrappers=command.wrappers + [f'find {word.value}'], nested=command.nested,
                     dynamic_args=True,
+                    replaces_text=any(
+                        inner_word.value is not None and '{}' in inner_word.value
+                        for inner_word in inner_words
+                    ),
                 )
                 self.unwrap(inner)
                 index = end + 1
@@ -1398,6 +1435,14 @@ class LineParser:
             )
             self.emit(command)
             return
+        if command.replaces_text:
+            # `xargs -I{} sh -c '{}'` fills the string in at run time, so what the shell runs
+            # isn't only the text read here. The text is still reparsed below, so a destructive
+            # command written into it is still found.
+            self.emit(self.detached(command, wrapper, opaque=(
+                f'`{wrapper}` runs a command string that `xargs` or `find` fills in at run time, '
+                'so this hook cannot read all of it'
+            )))
         join_word = sudo_escape if quote else (lambda value: value)
         text = ' '.join(join_word(word.value) for word in words)
         self.reparse(command, text, wrapper)
@@ -1480,7 +1525,9 @@ class LineParser:
             break
         rest = words[index:]
 
-        reads_commands = runs_string or reads_stdin or not rest or rest[0].value in STDIN_SCRIPT_PATHS
+        reads_commands = (
+            runs_string or reads_stdin or not rest or rest[0].value in STDIN_SCRIPT_PATHS
+        )
         if reads_commands and name not in BASH_GRAMMAR_SHELLS:
             # zsh, fish, and ksh parse differently enough that reading their code with bash's
             # grammar could miss what runs.

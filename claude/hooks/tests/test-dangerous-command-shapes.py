@@ -160,6 +160,11 @@ class DestructiveGitTest(HookTestCase):
             with self.subTest(command=command):
                 self.assertNotEqual(run(command)[0], DENY)
 
+    def test_destructive_git_in_a_string_xargs_runs_is_denied(self):
+        for command in ("xargs sh -c 'git reset --hard'", "find . -exec sh -c 'git reset --hard' \\;"):
+            with self.subTest(command=command):
+                self.assertDenies(command)
+
     def test_abbreviated_long_options_are_recognized(self):
         """Git accepts any unambiguous prefix of a long option."""
         for command in ('git reset --har', 'git push --forc', 'git push --mirr origin',

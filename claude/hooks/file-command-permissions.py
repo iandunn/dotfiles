@@ -494,10 +494,14 @@ def redirect_reason(redirect, cwd):
     if redirect.benign:
         return None
     target = redirect.target
-    if (redirect.op in SCRATCH_REDIRECT_OPERATORS and target is not None and target.literal
-            and is_scratch_destination(target.value, cwd)):
+    # Reading a scratch file is as safe as writing one, so `git commit -F - < .claude/tmp/msg`
+    # gets the same grant.
+    if (redirect.op in SCRATCH_REDIRECT_OPERATORS | {'<'} and target is not None
+            and target.literal and is_scratch_destination(target.value, cwd)):
         return None
     shown = f'{redirect.fd or ""}{redirect.op} {target.raw if target else ""}'.strip()
+    if redirect.op in ('<', '<<', '<<-', '<<<'):
+        return f'`{shown}` feeds input from outside scratch, or text that expands at run time'
     return f'`{shown}` redirects to a file outside scratch'
 
 
@@ -588,6 +592,18 @@ def judge(command, parsed, command_line, cwd):
     reason = unreadable_reason(command, cwd)
     if reason:
         return 'ask', f'{reason}; confirm it'
+
+    # Every check below assumes the command runs in `cwd` with this environment, and a wrapper
+    # can change either: `env -C <dir>`, `sudo -D <dir>`, `chroot`, or `time -o <file>` writing a
+    # file of its own. `command` changes neither.
+    if bash_ast.GIT_EXEC_PATH_WRAPPER in command.wrappers:
+        # Asked here rather than only on an allow, because subcommands the classifier decides
+        # would otherwise stay silent for a program that isn't git.
+        return 'ask', f'{untrusted_program_reason(command)}; confirm it'
+    wrappers = [wrapper for wrapper in command.wrappers if wrapper != 'command']
+    if wrappers:
+        return 'ask', (f'`{wrappers[0]}` can change where or how {command.name} runs, which this '
+                       'hook cannot vouch for; confirm it')
 
     tokens = [command.name] + command.argv[1:]
     verdict = decide_tokens(tokens, command, command_line, cwd)

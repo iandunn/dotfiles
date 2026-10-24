@@ -122,6 +122,30 @@ class WrapperTest(unittest.TestCase):
         self.assertEqual(commands('command -v git')[0].name, 'command')
         self.assertEqual(commands('command -pV git')[0].name, 'command')
 
+    def test_env_split_string_with_its_own_escapes_is_opaque(self):
+        for line in ("env -S 'git\\_push'", "env -S 'git ${X}'", "env -S 'git push #x'",
+                     "env -S '-C /tmp git add -A'", "env -S 'GIT_DIR=/x git status'"):
+            with self.subTest(line=line):
+                self.assertIsNotNone(commands(line)[0].opaque)
+
+    def test_input_redirects_are_benign_only_when_literal_or_dev_null(self):
+        self.assertFalse(commands('git commit -F - < msg.txt')[0].redirects[0].benign)
+        self.assertTrue(commands('git log < /dev/null')[0].redirects[0].benign)
+        self.assertTrue(commands("git commit -F - <<'EOF'\nmsg\nEOF")[0].redirects[0].benign)
+
+    def test_shell_string_filled_in_by_xargs_or_find_is_opaque(self):
+        for line in ("xargs -I{} sh -c '{}'", "find . -exec sh -c '{}' \\;", "xargs eval"):
+            with self.subTest(line=line):
+                self.assertTrue(any(c.opaque for c in commands(line)))
+
+    def test_shell_string_under_xargs_is_still_reparsed(self):
+        self.assertIn(['git', 'reset', '--hard'], argvs("xargs sh -c 'git reset --hard'"))
+        self.assertIn(['git', 'reset', '--hard', '{}'], argvs("xargs -I{} sh -c 'git reset --hard {}'"))
+        self.assertFalse(any(c.opaque for c in commands("xargs -0 sh -c 'git status' _")))
+
+    def test_env_split_string_passes_later_words_through(self):
+        self.assertEqual(argvs("env -S 'git reset' '#' --hard"), [['git', 'reset', '#', '--hard']])
+
     def test_command_option_clusters_are_parsed(self):
         self.assertEqual(argvs('command -pp git push'), [['git', 'push']])
         self.assertEqual(argvs('command -p -- git push'), [['git', 'push']])
