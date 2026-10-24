@@ -124,7 +124,9 @@ class WrapperTest(unittest.TestCase):
 
     def test_env_split_string_with_its_own_escapes_is_opaque(self):
         for line in ("env -S 'git\\_push'", "env -S 'git ${X}'", "env -S 'git push #x'",
-                     "env -S '-C /tmp git add -A'", "env -S 'GIT_DIR=/x git status'"):
+                     "env -S '-C /tmp git add -A'", "env -S 'GIT_DIR=/x git status'",
+                     "env -S 'git status;git clean -fdx'", "env -S $'git\\tstatus'",
+                     "env -S 'git status | sh'"):
             with self.subTest(line=line):
                 self.assertIsNotNone(commands(line)[0].opaque)
 
@@ -134,7 +136,8 @@ class WrapperTest(unittest.TestCase):
         self.assertTrue(commands("git commit -F - <<'EOF'\nmsg\nEOF")[0].redirects[0].benign)
 
     def test_shell_string_filled_in_by_xargs_or_find_is_opaque(self):
-        for line in ("xargs -I{} sh -c '{}'", "find . -exec sh -c '{}' \\;", "xargs eval"):
+        for line in ("xargs -I{} sh -c '{}'", "find . -exec sh -c '{}' \\;", "xargs eval",
+                     "xargs -I{} env -S 'git {}'"):
             with self.subTest(line=line):
                 self.assertTrue(any(c.opaque for c in commands(line)))
 

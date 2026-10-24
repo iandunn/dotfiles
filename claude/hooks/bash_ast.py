@@ -250,6 +250,8 @@ GIT_OPTIONAL_VALUE_OPTIONS = frozenset({'grep -O', 'grep --open-files-in-pager'}
 # Code points beyond this aren't characters, and `chr()` refuses them.
 MAX_CODE_POINT = 0x10FFFF
 
+ENV_SPLIT_SAFE = re.compile(r'[A-Za-z0-9_./:=@%+,-]+( [A-Za-z0-9_./:=@%+,-]+)*')
+
 ENV_ASSIGNMENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
 
 # Source-text kinds of compound command, named the way an error message should name them.
@@ -857,6 +859,14 @@ class LineParser:
             command.opaque = f'`{wrapper}` nests more shells than this hook will follow'
             self.emit(command)
             return
+        if command.replaces_text:
+            # `xargs -I{} sh -c '{}'` fills the string in at run time, so what runs isn't only
+            # the text read here. It's still reparsed below, so a destructive command written
+            # into it is still found.
+            self.emit(self.detached(command, wrapper, opaque=(
+                f'`{wrapper}` runs a command string that `xargs` or `find` fills in at run time, '
+                'so this hook cannot read all of it'
+            )))
         inner = LineParser(
             text, depth=self.depth + 1, nested=True,
             wrappers=command.wrappers + [wrapper],
@@ -1183,12 +1193,14 @@ class LineParser:
                 command.wrappers = command.wrappers + ['env']
                 # `env -S` splits with its own escapes (`\_`, `\c`, `${VAR}`) and quoting, which
                 # bash's grammar would read differently, so only a plain string is reparsed.
-                special = '\\$#\'"'
-                # The split words go back through env's own option and assignment parsing, so a
-                # string that starts with `-C dir` or `NAME=value` isn't just a command line.
+                # Only reparse a string made of characters `env -S` and bash split the same way:
+                # plain words and spaces. Its escapes, quoting, `${VAR}`, tabs, and every shell
+                # metacharacter differ. The split words also go back through env's own option and
+                # assignment parsing, so a string that starts with `-C dir` or `NAME=value` isn't
+                # just a command line.
                 first = (split[0].value or '').split()[:1] if split else []
-                if not split or split[0].value is None or any(
-                    character in split[0].value for character in special
+                if not split or split[0].value is None or not ENV_SPLIT_SAFE.fullmatch(
+                    split[0].value
                 ) or not first or first[0].startswith('-') or '=' in first[0]:
                     command.opaque = (
                         '`env -S` splits its string with rules this hook does not parse'
@@ -1435,14 +1447,6 @@ class LineParser:
             )
             self.emit(command)
             return
-        if command.replaces_text:
-            # `xargs -I{} sh -c '{}'` fills the string in at run time, so what the shell runs
-            # isn't only the text read here. The text is still reparsed below, so a destructive
-            # command written into it is still found.
-            self.emit(self.detached(command, wrapper, opaque=(
-                f'`{wrapper}` runs a command string that `xargs` or `find` fills in at run time, '
-                'so this hook cannot read all of it'
-            )))
         join_word = sudo_escape if quote else (lambda value: value)
         text = ' '.join(join_word(word.value) for word in words)
         self.reparse(command, text, wrapper)
