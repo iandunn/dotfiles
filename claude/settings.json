@@ -528,7 +528,7 @@
   "hooks": {
     "PreToolUse": [
       {
-		"matcher": "mcp__(chrome-devtools|chrome-retail|plugin_chrome-devtools-mcp_chrome-devtools)__.*",
+        "matcher": "mcp__(chrome-devtools|chrome-retail|plugin_chrome-devtools-mcp_chrome-devtools)__.*",
         "hooks": [
           {
             "type": "command",
@@ -578,14 +578,24 @@
             "type": "command",
             "command": "node ~/.claude/hooks/inject-open-vscode-tabs.js"
           },
-		  {
+          {
             "type": "command",
             "command": "node ~/.claude/hooks/name-session.js",
             "timeout": 30
           }
         ]
       }
-    ]
+    ],
+	"PermissionRequest": [
+		{
+			"hooks": [
+				{
+					"type": "command",
+					"command": "python3 ~/.claude/hooks/iterm-approval-dot.py"
+				}
+			]
+		}
+	]
   },
   "worktree": {
     "baseRef": "head"
@@ -679,5 +689,6 @@
       "Creating persistence mechanisms: modifying shell startup files, launch agents or daemons, crontab, or login items"
     ]
   },
-  "omitClaudeMd": false
+  "omitClaudeMd": false,
+  "terminalProgressBarEnabled": false
 }
