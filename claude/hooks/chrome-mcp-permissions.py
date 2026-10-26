@@ -17,7 +17,17 @@ Currently implemented:
     is not written) so it fires on the next safe opportunity instead of being
     silently dropped.
 
-    The sole exception is a project listed in PRE_AUTHORIZED_SITE_MATRICES:
+    The `blocked-site-browser` server is one exception: hosts named in the
+    `blockedSiteBrowser.sites` list of ~/.claude/settings.json, or of a trusted
+    project's .claude/settings.json or .claude/settings.local.json, are allowed
+    silently for that server only. The global list is the default for every
+    project, and a project's lists add to it. For that server the hook is an
+    allowlist that fails closed: it allows only the read-only calls and arguments
+    in BLOCKED_SITE_ALLOWED_ARGUMENTS and prompts for every other call, and a
+    crash prompts too. Its settings also deny evaluate_script, fill, and the
+    other input and file-writing tools, as a second layer.
+
+    The other exception is a project listed in PRE_AUTHORIZED_SITE_MATRICES:
     while cwd is inside one, the hosts named by that project's own site matrix
     are allowed silently. That exists for repos whose test loop IS driving live
     external sites -- a browser extension exercised against a fixed list of
@@ -81,8 +91,30 @@ SESSION_GATE_MARKER_DIR = os.path.join(tempfile.gettempdir(), 'claude-chrome-mcp
 # without a prompt, so adding a site to it is the only step needed.
 PRE_AUTHORIZED_SITE_MATRICES = {
     '~/local-sites/misc/app/public/browser-extensions/slash-to-search': ('test/sites.json', None),
-    '~/Documents/4015 Basement Rehab': ('.claude/hooks/retail-browser-sites.json', 'mcp__chrome-retail__'),
 }
+
+BLOCKED_SITE_TOOL_PREFIX = 'mcp__blocked-site-browser__'
+BLOCKED_SITE_SETTINGS_KEY = 'blockedSiteBrowser'
+PROJECT_SETTINGS_FILES = ('.claude/settings.json', '.claude/settings.local.json')
+
+# The only `blocked-site-browser` calls this hook allows, and the only arguments each
+# may carry. Every other tool or argument prompts, so a new tool or argument in a later
+# `@latest` release, like a file path to save to or an `initScript`, can't slip through.
+BLOCKED_SITE_ALLOWED_ARGUMENTS = {
+    'navigate_page': {'url', 'type', 'timeout', 'pageId', 'ignoreCache', 'handleBeforeUnload'},
+    'new_page': {'url', 'timeout', 'background'},
+    'take_snapshot': {'pageId', 'verbose'},
+    'list_pages': set(),
+    'select_page': {'pageId', 'bringToFront'},
+    'close_page': {'pageId'},
+    'wait_for': {'pageId', 'text', 'timeout', 'visible'},
+    'press_key': {'pageId', 'key', 'includeSnapshot'},
+}
+
+# Chrome reads a backslash as a slash and drops tabs and newlines, but urlparse keeps
+# them in the authority, so `https://evil.com\@www.homedepot.com/` parses as Home Depot
+# while Chrome opens evil.com. An unmatched bracket makes urlparse raise instead.
+AMBIGUOUS_URL_CHARACTERS = ('\\', '\t', '\r', '\n', ' ', '[', ']')
 
 
 def is_local_host(host):
@@ -124,6 +156,116 @@ def pre_authorized_hosts(cwd, tool_name):
     return set()
 
 
+def site_host(site):
+    """Returns the host of one `blockedSiteBrowser.sites` entry, which can be a URL, a bare
+    host like `www.lowes.com`, or a `{"url": ...}` object. None for anything else."""
+    if isinstance(site, dict):
+        site = site.get('url')
+    if not isinstance(site, str) or any(c in site for c in AMBIGUOUS_URL_CHARACTERS):
+        return None
+    if '://' not in site:
+        site = 'https://' + site
+    try:
+        return urlparse(site).hostname
+    except ValueError:
+        return None
+
+
+def listed_sites_in(settings_path):
+    """Returns the hosts in one settings file's `blockedSiteBrowser.sites` list. Empty if
+    the file is missing or unparseable, or has no list, so a broken file adds no
+    hosts rather than blocking the others. A bad entry skips only itself."""
+    try:
+        with open(settings_path) as settings_file:
+            sites = json.load(settings_file)[BLOCKED_SITE_SETTINGS_KEY]['sites']
+    except (OSError, ValueError, KeyError, TypeError):
+        return set()
+
+    if not isinstance(sites, list):
+        return set()
+
+    return {host for host in map(site_host, sites) if host}
+
+
+def is_trusted_project(project_dir):
+    """Returns True when Claude Code's trust dialog was accepted for project_dir or
+    one of its ancestors, the same inheritance Claude Code itself applies."""
+    try:
+        with open(os.path.expanduser('~/.claude.json')) as config_file:
+            projects = json.load(config_file)['projects']
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+
+    if not isinstance(projects, dict):
+        return False
+
+    # The config keys a project by the path it was opened from, which can differ
+    # from the resolved path when it was opened through a symlink.
+    for directory in {os.path.abspath(project_dir), os.path.realpath(project_dir)}:
+        while True:
+            entry = projects.get(directory)
+            if isinstance(entry, dict) and entry.get('hasTrustDialogAccepted') is True:
+                return True
+            if directory == os.path.dirname(directory):
+                break
+            directory = os.path.dirname(directory)
+
+    return False
+
+
+def main_checkout(project_dir):
+    """Returns the directory in the main checkout that matches project_dir, project_dir
+    itself outside a linked worktree, or None for a worktree of a bare repo, which has
+    no main checkout. A linked worktree's tracked `.claude/settings.json` can be
+    overwritten without a prompt, so it must not be the file that adds sites."""
+    try:
+        result = subprocess.run(
+            ['git', '-C', project_dir, 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir', '--show-toplevel'],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return project_dir
+
+    lines = result.stdout.splitlines()
+    if result.returncode != 0 or len(lines) != 3:
+        return project_dir
+
+    git_dir, common_dir, toplevel = lines
+
+    # The main checkout keeps the path it was opened by, symlinks included, because
+    # that's the path its trust is recorded under.
+    if os.path.realpath(git_dir) == os.path.realpath(common_dir):
+        return project_dir
+
+    if os.path.basename(common_dir) != '.git':
+        return None
+
+    relative_path = os.path.relpath(os.path.realpath(project_dir), os.path.realpath(toplevel))
+    return os.path.normpath(os.path.join(os.path.dirname(common_dir), relative_path))
+
+
+def is_listed_host(host):
+    """Returns True when `blocked-site-browser` may open host without a prompt: it's on
+    the global list or the project's lists, read fresh on every call. The project
+    comes from CLAUDE_PROJECT_DIR rather than the hook's cwd, because cwd follows the
+    shell's `cd`, so a session could otherwise write a list into any directory and
+    move there. A project's lists count only once its trust dialog has been accepted."""
+    if host in listed_sites_in(os.path.expanduser('~/.claude/settings.json')):
+        return True
+
+    hosts = set()
+    project_dir = os.environ.get('CLAUDE_PROJECT_DIR')
+
+    if project_dir:
+        project_dir = main_checkout(project_dir)
+
+    if project_dir and is_trusted_project(project_dir):
+        for name in PROJECT_SETTINGS_FILES:
+            hosts |= listed_sites_in(os.path.join(project_dir, name))
+
+    return host in hosts
+
+
 def emit(decision, reason):
     print(json.dumps({
         'hookSpecificOutput': {
@@ -152,7 +294,17 @@ def gate_navigation(tool_input, session_id, cwd, tool_name):
             emit('allow', 'about:blank auto-approved')
         return
 
-    host = urlparse(url).hostname or ''
+    if not isinstance(url, str) or any(c in url for c in AMBIGUOUS_URL_CHARACTERS):
+        emit('ask', f"'{url}' isn't a plain http or https URL, so its host can't be checked reliably.")
+        return
+
+    parsed_url = urlparse(url)
+
+    if parsed_url.scheme not in ('http', 'https'):
+        emit('ask', f"'{url}' isn't a plain http or https URL, so its host can't be checked reliably.")
+        return
+
+    host = parsed_url.hostname or ''
 
     if host and is_local_host(host):
         if not gate_session_usage(session_id):
@@ -162,6 +314,11 @@ def gate_navigation(tool_input, session_id, cwd, tool_name):
     if host and host in pre_authorized_hosts(cwd, tool_name):
         if not gate_session_usage(session_id):
             emit('allow', f"{host} is in this project's pre-authorized site matrix")
+        return
+
+    if host and tool_name.startswith(BLOCKED_SITE_TOOL_PREFIX) and is_listed_host(host):
+        if not gate_session_usage(session_id):
+            emit('allow', f'{host} is in a blockedSiteBrowser.sites list')
         return
 
     reason = (
@@ -233,12 +390,17 @@ def main():
     try:
         data = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
-        sys.exit(0)
+        emit('ask', "chrome-mcp-permissions.py couldn't read the tool call, so it could not check it.")
+        return
 
     tool_name = data.get('tool_name', '')
     tool_input = data.get('tool_input', {})
     session_id = data.get('session_id', '')
     cwd = data.get('cwd') or os.getcwd()
+
+    if tool_name.startswith(BLOCKED_SITE_TOOL_PREFIX):
+        gate_blocked_site_tool(tool_name, tool_input, session_id, cwd)
+        return
 
     if tool_name.endswith(('navigate_page', 'new_page')):
         gate_navigation(tool_input, session_id, cwd, tool_name)
@@ -248,5 +410,33 @@ def main():
         gate_session_usage(session_id)
 
 
+def gate_blocked_site_tool(tool_name, tool_input, session_id, cwd):
+    """Allows only the calls in BLOCKED_SITE_ALLOWED_ARGUMENTS, with navigation still
+    limited to listed hosts, and prompts for everything else."""
+    tool = tool_name[len(BLOCKED_SITE_TOOL_PREFIX):]
+    allowed_arguments = BLOCKED_SITE_ALLOWED_ARGUMENTS.get(tool)
+
+    if allowed_arguments is None or not isinstance(tool_input, dict):
+        emit('ask', f"{tool_name} isn't on this hook's read-only allowlist.")
+        return
+
+    extra_arguments = set(tool_input) - allowed_arguments
+    if extra_arguments:
+        emit('ask', f"{tool_name} with {', '.join(sorted(extra_arguments))} isn't on this hook's read-only allowlist.")
+        return
+
+    if tool in ('navigate_page', 'new_page'):
+        gate_navigation(tool_input, session_id, cwd, tool_name)
+        return
+
+    if not gate_session_usage(session_id):
+        emit('allow', f'{tool_name} is on the read-only allowlist')
+
+
 if __name__ == '__main__':
-    main()
+    # A crash would leave the call to the normal permission flow with no host check,
+    # so any error prompts instead.
+    try:
+        main()
+    except Exception as error:
+        emit('ask', f'chrome-mcp-permissions.py failed, so it could not check this call: {error!r}')

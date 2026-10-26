@@ -8,6 +8,15 @@
     "pr": "",
     "sessionUrl": false
   },
+  "blockedSiteBrowser": {
+    "sites": [
+      "https://www.ebay.com/",
+      "https://www.homedepot.com/",
+      "https://www.lowes.com/",
+      "https://www.nytimes.com/",
+      "https://www.wirecutter.com/"
+    ]
+  },
   "permissions": {
     "allow": [
       "Bash(./vendor/bin/phpunit *)",
@@ -212,9 +221,27 @@
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_screenshot",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_snapshot",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__type_text",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__wait_for"
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__wait_for",
+      "mcp__blocked-site-browser__take_snapshot",
+      "mcp__blocked-site-browser__wait_for",
+      "mcp__blocked-site-browser__list_pages",
+      "mcp__blocked-site-browser__select_page",
+      "mcp__blocked-site-browser__close_page",
+      "mcp__blocked-site-browser__press_key"
     ],
     "deny": [
+      "mcp__blocked-site-browser__evaluate_script",
+      "mcp__blocked-site-browser__fill",
+      "mcp__blocked-site-browser__fill_form",
+      "mcp__blocked-site-browser__type_text",
+      "mcp__blocked-site-browser__upload_file",
+      "mcp__blocked-site-browser__handle_dialog",
+      "mcp__blocked-site-browser__take_heapsnapshot",
+      "mcp__blocked-site-browser__performance_start_trace",
+      "mcp__blocked-site-browser__performance_stop_trace",
+      "mcp__blocked-site-browser__screencast_start",
+      "mcp__blocked-site-browser__screencast_stop",
+      "mcp__blocked-site-browser__lighthouse_audit",
       "Edit(~/.ssh/**)",
       "Edit(~/.aws/**)",
       "Edit(~/.gnupg/**)",
@@ -239,7 +266,8 @@
       "Edit(/etc/ssh/**)",
       "Edit(~/.claude/settings.json)",
       "Edit(~/.claude/settings.local.json)",
-      "Edit(**/.claude/settings.local.json)",
+      "Edit(//**/.claude/settings.local.json)",
+      "Edit(//**/.claude/settings.json)",
       "Edit(**/.git/**)",
       "Edit(**/vendor/**)",
       "Edit(**/node_modules/**)",
@@ -412,7 +440,12 @@
       "Bash(npm uninstall *)",
       "Bash(npm remove *)",
       "Bash(find * -exec *)",
-      "Edit(~/.claude/**)"
+      "Edit(~/.claude/**)",
+      "mcp__blocked-site-browser__click",
+      "mcp__blocked-site-browser__hover",
+      "mcp__blocked-site-browser__drag",
+      "mcp__blocked-site-browser__take_screenshot",
+      "mcp__blocked-site-browser__get_network_request"
     ],
     "defaultMode": "auto",
     "disableBypassPermissionsMode": "disable"
@@ -528,11 +561,12 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__(chrome-devtools|chrome-retail|plugin_chrome-devtools-mcp_chrome-devtools)__.*",
+        "matcher": "mcp__(chrome-devtools|blocked-site-browser|plugin_chrome-devtools-mcp_chrome-devtools)__.*",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/chrome-mcp-permissions.py"
+            "command": "python3 ~/.claude/hooks/chrome-mcp-permissions.py",
+            "onFailure": "block"
           }
         ]
       },
