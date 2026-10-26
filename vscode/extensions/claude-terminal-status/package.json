@@ -1,0 +1,15 @@
+{
+  "name": "claude-terminal-status",
+  "displayName": "Claude Terminal Status",
+  "description": "Shows a colored dot in the status bar for each Claude Code session in this window's terminals: working, waiting on a permission prompt, or done.",
+  "version": "0.0.1",
+  "publisher": "iandunn",
+  "private": true,
+  "engines": {
+    "vscode": "^1.68.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js"
+}
