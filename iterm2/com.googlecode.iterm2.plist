@@ -175,7 +175,7 @@
 	<key>HapticFeedbackForEsc</key>
 	<false/>
 	<key>HideActivityIndicator</key>
-	<false/>
+	<true/>
 	<key>HideMenuBarInFullscreen</key>
 	<true/>
 	<key>HideTab</key>
@@ -637,11 +637,23 @@
 	<key>ShowFullScreenTabBar</key>
 	<false/>
 	<key>ShowNewOutputIndicator</key>
-	<true/>
+	<false/>
+	<key>ShowSessionStatusInTabSubtitle</key>
+	<false/>
 	<key>SoundForEsc</key>
 	<false/>
 	<key>SplitPaneDimmingAmount</key>
 	<real>0.30488943960661113</real>
+	<key>StatusPriorityAddedDoneAndError</key>
+	<true/>
+	<key>StatusPriorityEntries</key>
+	<data>
+	W3sicGF0dGVybiI6Il9kaXNhYmxlLXN0YXR1cy1pbmRpY2F0b3ItZG90LWJvcmRlciIs
+	Im5vdGlmeSI6ZmFsc2V9LHsicGF0dGVybiI6IndhaXQiLCJub3RpZnkiOmZhbHNlfSx7
+	InBhdHRlcm4iOiJkb25lIiwibm90aWZ5IjpmYWxzZX0seyJwYXR0ZXJuIjoiZXJyb3Ii
+	LCJub3RpZnkiOmZhbHNlfSx7InBhdHRlcm4iOiJ3b3JrIiwibm90aWZ5IjpmYWxzZX0s
+	eyJwYXR0ZXJuIjoiaWRsZSIsIm5vdGlmeSI6ZmFsc2V9XQ==
+	</data>
 	<key>SuppressMultilinePasteWarningWhenNotAtShellPrompt</key>
 	<true/>
 	<key>TabStyle</key>
@@ -650,6 +662,11 @@
 	<integer>0</integer>
 	<key>TabTransform</key>
 	<integer>0</integer>
+	<key>ToolbeltTools</key>
+	<array>
+		<string>Session Status</string>
+		<string>Codecierge</string>
+	</array>
 	<key>UseBorder</key>
 	<false/>
 	<key>VisualIndicatorForEsc</key>
