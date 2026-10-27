@@ -214,6 +214,26 @@ class BlockedSiteListTest(GateTestCase):
         self.commit()
         self.assertListed(ALLOW, 'https://evil.com/', self.project)
 
+    def test_git_file_or_symlink_asks(self):
+        """A `.git` file or symlink can point git at a repository the session controls."""
+        elsewhere = self.home / 'elsewhere'
+        write_settings(elsewhere / '.claude/settings.json', ['https://www.crescentelectric.com/'])
+        (elsewhere / '.git').symlink_to(self.project / '.git')
+        self.trust(elsewhere)
+        self.assertListed(ASK, 'https://www.crescentelectric.com/', elsewhere)
+
+        (elsewhere / '.git').unlink()
+        (elsewhere / '.git').write_text(f'gitdir: {self.project / ".git"}\n')
+        self.assertListed(ASK, 'https://www.crescentelectric.com/', elsewhere)
+
+    def test_folder_without_its_own_git_does_not_use_a_parent_repository(self):
+        nested = self.project / 'nested'
+        write_settings(nested / '.claude/settings.json', ['https://www.crescentelectric.com/'])
+        self.git('add', 'nested/.claude/settings.json')
+        self.commit()
+        self.trust(nested)
+        self.assertListed(ASK, 'https://www.crescentelectric.com/', nested)
+
     def test_project_that_is_not_a_git_repository_asks(self):
         self.trust(self.untrusted)
         self.assertListed(ASK, 'https://www.crescentelectric.com/', self.untrusted)

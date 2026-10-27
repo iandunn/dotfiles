@@ -77,6 +77,7 @@ Currently implemented:
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 import tempfile
@@ -201,11 +202,24 @@ def committed_sites_in(project_dir):
     `.claude` or an unsandboxed git command can change the working tree without the
     Edit tool, while the sandbox denies writes under `.git`, so moving HEAD takes a
     commit or a command that runs outside the sandbox."""
+    git_dir = os.path.join(project_dir, '.git')
+
+    # A `.git` file or symlink can point git at any repository, and without a `.git` git would
+    # search the parent folders for one. A worktree's `.git` is a file, so its list never counts.
+    try:
+        if not stat.S_ISDIR(os.lstat(git_dir).st_mode):
+            return set()
+    except OSError:
+        return set()
+
+    # Inherited variables like `GIT_OBJECT_DIRECTORY` would also change which objects git reads.
+    environment = {name: value for name, value in os.environ.items() if not name.startswith('GIT_')}
+
     try:
         result = subprocess.run(
             # A replace ref is a plain file under `.git`, so it could swap the blob without a commit.
-            ['git', '--no-replace-objects', '-C', project_dir, 'cat-file', 'blob', f'HEAD:./{PROJECT_SETTINGS_FILE}'],
-            capture_output=True, text=True, timeout=GIT_TIMEOUT_SECONDS,
+            ['git', '--no-replace-objects', f'--git-dir={git_dir}', 'cat-file', 'blob', f'HEAD:{PROJECT_SETTINGS_FILE}'],
+            capture_output=True, text=True, timeout=GIT_TIMEOUT_SECONDS, env=environment,
         )
     except (OSError, subprocess.TimeoutExpired):
         return set()
