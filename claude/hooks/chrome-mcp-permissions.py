@@ -19,9 +19,9 @@ Currently implemented:
 
     The `blocked-site-browser` server is one exception: hosts named in the
     `blockedSiteBrowser.sites` list of ~/.claude/settings.json, or of a trusted
-    project's .claude/settings.json or .claude/settings.local.json, are allowed
-    silently for that server only. The global list is the default for every
-    project, and a project's lists add to it. For that server the hook is an
+    project's committed .claude/settings.json, are allowed silently for that
+    server only. The global list is the default for every project, and a
+    project's list adds to it. For that server the hook is an
     allowlist that fails closed: it allows only the read-only calls and arguments
     in BLOCKED_SITE_ALLOWED_ARGUMENTS and prompts for every other call, and a
     crash prompts too. Its settings also deny evaluate_script, fill, and the
@@ -95,7 +95,9 @@ PRE_AUTHORIZED_SITE_MATRICES = {
 
 BLOCKED_SITE_TOOL_PREFIX = 'mcp__blocked-site-browser__'
 BLOCKED_SITE_SETTINGS_KEY = 'blockedSiteBrowser'
-PROJECT_SETTINGS_FILES = ('.claude/settings.json', '.claude/settings.local.json')
+PROJECT_SETTINGS_FILE = '.claude/settings.json'
+PROJECT_LOCAL_SETTINGS_FILE = '.claude/settings.local.json'
+GIT_TIMEOUT_SECONDS = 5
 
 # The only `blocked-site-browser` calls this hook allows, and the only arguments each
 # may carry. Every other tool or argument prompts, so a new tool or argument in a later
@@ -171,14 +173,13 @@ def site_host(site):
         return None
 
 
-def listed_sites_in(settings_path):
-    """Returns the hosts in one settings file's `blockedSiteBrowser.sites` list. Empty if
-    the file is missing or unparseable, or has no list, so a broken file adds no
-    hosts rather than blocking the others. A bad entry skips only itself."""
+def listed_sites(settings_text):
+    """Returns the hosts in a settings file's `blockedSiteBrowser.sites` list. Empty if
+    the text is unparseable or has no list, so a broken file adds no hosts rather
+    than blocking the others. A bad entry skips only itself."""
     try:
-        with open(settings_path) as settings_file:
-            sites = json.load(settings_file)[BLOCKED_SITE_SETTINGS_KEY]['sites']
-    except (OSError, ValueError, KeyError, TypeError):
+        sites = json.loads(settings_text)[BLOCKED_SITE_SETTINGS_KEY]['sites']
+    except (ValueError, KeyError, TypeError):
         return set()
 
     if not isinstance(sites, list):
@@ -187,9 +188,36 @@ def listed_sites_in(settings_path):
     return {host for host in map(site_host, sites) if host}
 
 
+def listed_sites_in(settings_path):
+    try:
+        with open(settings_path) as settings_file:
+            return listed_sites(settings_file.read())
+    except OSError:
+        return set()
+
+
+def committed_sites_in(project_dir):
+    """Returns the hosts listed in the project's settings file as of HEAD. A rename of
+    `.claude` or an unsandboxed git command can change the working tree without the
+    Edit tool, while the sandbox denies writes under `.git`, so moving HEAD takes a
+    commit or a command that runs outside the sandbox."""
+    try:
+        result = subprocess.run(
+            # A replace ref is a plain file under `.git`, so it could swap the blob without a commit.
+            ['git', '--no-replace-objects', '-C', project_dir, 'cat-file', 'blob', f'HEAD:./{PROJECT_SETTINGS_FILE}'],
+            capture_output=True, text=True, timeout=GIT_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return set()
+
+    if result.returncode != 0:
+        return set()
+
+    return listed_sites(result.stdout)
+
+
 def is_trusted_project(project_dir):
-    """Returns True when Claude Code's trust dialog was accepted for project_dir or
-    one of its ancestors, the same inheritance Claude Code itself applies."""
+    """Returns True when Claude Code's trust dialog was accepted for project_dir itself."""
     try:
         with open(os.path.expanduser('~/.claude.json')) as config_file:
             projects = json.load(config_file)['projects']
@@ -200,70 +228,53 @@ def is_trusted_project(project_dir):
         return False
 
     # The config keys a project by the path it was opened from, which can differ
-    # from the resolved path when it was opened through a symlink.
+    # from the resolved path when it was opened through a symlink. Trust isn't
+    # inherited from a parent folder, so a worktree or other folder inside a trusted
+    # project doesn't get to add sites from its own settings.
     for directory in {os.path.abspath(project_dir), os.path.realpath(project_dir)}:
-        while True:
-            entry = projects.get(directory)
-            if isinstance(entry, dict) and entry.get('hasTrustDialogAccepted') is True:
-                return True
-            if directory == os.path.dirname(directory):
-                break
-            directory = os.path.dirname(directory)
+        entry = projects.get(directory)
+        if isinstance(entry, dict) and entry.get('hasTrustDialogAccepted') is True:
+            return True
 
     return False
 
 
-def main_checkout(project_dir):
-    """Returns the directory in the main checkout that matches project_dir, project_dir
-    itself outside a linked worktree, or None for a worktree of a bare repo, which has
-    no main checkout. A linked worktree's tracked `.claude/settings.json` can be
-    overwritten without a prompt, so it must not be the file that adds sites."""
-    try:
-        result = subprocess.run(
-            ['git', '-C', project_dir, 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir', '--show-toplevel'],
-            capture_output=True, text=True, timeout=5,
-        )
-    except (OSError, subprocess.TimeoutExpired):
+def trusted_project_dir():
+    """Returns CLAUDE_PROJECT_DIR when its trust dialog has been accepted, else None. The
+    hook's cwd isn't used, because it follows the shell's `cd`, so a session could
+    otherwise write a list into any directory and move there."""
+    project_dir = os.environ.get('CLAUDE_PROJECT_DIR')
+
+    if project_dir and is_trusted_project(project_dir):
         return project_dir
 
-    lines = result.stdout.splitlines()
-    if result.returncode != 0 or len(lines) != 3:
-        return project_dir
-
-    git_dir, common_dir, toplevel = lines
-
-    # The main checkout keeps the path it was opened by, symlinks included, because
-    # that's the path its trust is recorded under.
-    if os.path.realpath(git_dir) == os.path.realpath(common_dir):
-        return project_dir
-
-    if os.path.basename(common_dir) != '.git':
-        return None
-
-    relative_path = os.path.relpath(os.path.realpath(project_dir), os.path.realpath(toplevel))
-    return os.path.normpath(os.path.join(os.path.dirname(common_dir), relative_path))
+    return None
 
 
 def is_listed_host(host):
     """Returns True when `blocked-site-browser` may open host without a prompt: it's on
-    the global list or the project's lists, read fresh on every call. The project
-    comes from CLAUDE_PROJECT_DIR rather than the hook's cwd, because cwd follows the
-    shell's `cd`, so a session could otherwise write a list into any directory and
-    move there. A project's lists count only once its trust dialog has been accepted."""
+    the global list or the trusted project's committed list, read fresh on every call."""
     if host in listed_sites_in(os.path.expanduser('~/.claude/settings.json')):
         return True
 
-    hosts = set()
-    project_dir = os.environ.get('CLAUDE_PROJECT_DIR')
+    project_dir = trusted_project_dir()
 
-    if project_dir:
-        project_dir = main_checkout(project_dir)
+    return bool(project_dir) and host in committed_sites_in(project_dir)
 
-    if project_dir and is_trusted_project(project_dir):
-        for name in PROJECT_SETTINGS_FILES:
-            hosts |= listed_sites_in(os.path.join(project_dir, name))
 
-    return host in hosts
+def uncommitted_listing(host):
+    """Returns the trusted project's settings file that lists host without it counting,
+    because the listing isn't committed, or None."""
+    project_dir = trusted_project_dir()
+
+    if not project_dir:
+        return None
+
+    for name in (PROJECT_SETTINGS_FILE, PROJECT_LOCAL_SETTINGS_FILE):
+        if host in listed_sites_in(os.path.join(project_dir, name)):
+            return name
+
+    return None
 
 
 def emit(decision, reason):
@@ -330,6 +341,16 @@ def gate_navigation(tool_input, session_id, cwd, tool_name):
         're-prompt if an approved page later redirects or a link leads to another '
         'external host.'
     )
+
+    if host and tool_name.startswith(BLOCKED_SITE_TOOL_PREFIX):
+        uncommitted_file = uncommitted_listing(host)
+        if uncommitted_file:
+            reason = (
+                f'{host} is listed in {uncommitted_file}, but only the list in the committed '
+                f'{PROJECT_SETTINGS_FILE} counts, so commit it there to stop this prompt. '
+                + reason
+            )
+
     emit('ask', reason)
 
 

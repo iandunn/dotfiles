@@ -63,6 +63,10 @@ def decision(stdout):
     return json.loads(stdout)['hookSpecificOutput']['permissionDecision']
 
 
+def reason(stdout):
+    return json.loads(stdout)['hookSpecificOutput']['permissionDecisionReason']
+
+
 def a_matrix_url():
     """A URL from the real site matrix, so the test can't drift from its contents."""
     with open(SITE_MATRIX) as matrix_file:
@@ -131,8 +135,8 @@ def write_settings(path, sites):
 
 
 class BlockedSiteListTest(GateTestCase):
-    """Uses a throwaway HOME, so the real global list and trust config can't change
-    the results."""
+    """Uses a throwaway HOME, so the real global list, git config, and trust config
+    can't change the results."""
 
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -140,13 +144,26 @@ class BlockedSiteListTest(GateTestCase):
         self.project = self.home / 'project'
         self.untrusted = self.home / 'untrusted'
         write_settings(self.home / '.claude/settings.json', ['https://www.homedepot.com/'])
-        write_settings(self.project / '.claude/settings.json', ['https://www.crescentelectric.com/'])
-        write_settings(self.project / '.claude/settings.local.json', ['www.lowes.com', {'url': 'https://www.ebay.com/'}, 42])
+        write_settings(self.project / '.claude/settings.json', ['https://www.crescentelectric.com/', 'www.lowes.com', {'url': 'https://www.ebay.com/'}, 42])
+        self.git('init', '--quiet')
+        self.commit()
+        write_settings(self.project / '.claude/settings.local.json', ['https://www.acehardware.com/'])
         write_settings(self.untrusted / '.claude/settings.json', ['https://www.crescentelectric.com/'])
         self.trust(self.project)
 
     def tearDown(self):
         self.temp_dir.cleanup()
+
+    def git(self, *arguments):
+        subprocess.run(
+            ['git', '-C', str(self.project), *arguments],
+            check=True, capture_output=True,
+            env={**os.environ, 'HOME': str(self.home), 'GIT_CONFIG_NOSYSTEM': '1'},
+        )
+
+    def commit(self):
+        self.git('add', '.claude/settings.json')
+        self.git('-c', 'user.name=test', '-c', 'user.email=test@example.test', 'commit', '--quiet', '-m', 'Settings')
 
     def trust(self, *directories):
         (self.home / '.claude.json').write_text(json.dumps({
@@ -168,13 +185,44 @@ class BlockedSiteListTest(GateTestCase):
     def test_project_site_allowed(self):
         self.assertListed(ALLOW, 'https://www.crescentelectric.com/', self.project)
 
-    def test_project_site_allowed_when_an_ancestor_is_trusted(self):
+    def test_project_site_asks_when_only_an_ancestor_is_trusted(self):
         self.trust(self.home)
-        self.assertListed(ALLOW, 'https://www.crescentelectric.com/', self.project)
+        self.assertListed(ASK, 'https://www.crescentelectric.com/', self.project)
 
-    def test_local_settings_bare_host_and_object_entries_allowed(self):
+    def test_folder_inside_a_trusted_project_lists_ignored(self):
+        """A worktree sits inside its trusted main checkout, but doesn't inherit its trust."""
+        worktree = self.project / '.claude/worktrees/x'
+        write_settings(worktree / '.claude/settings.json', ['https://evil.com/'])
+        self.assertListed(ASK, 'https://evil.com/', worktree)
+
+    def test_bare_host_and_object_entries_allowed(self):
         self.assertListed(ALLOW, 'https://www.lowes.com/', self.project)
         self.assertListed(ALLOW, 'https://www.ebay.com/', self.project)
+
+    def test_local_settings_site_asks_with_a_warning(self):
+        """settings.local.json is never committed, so its list never counts."""
+        self.assertUncommittedWarning('https://www.acehardware.com/', '.claude/settings.local.json')
+
+    def test_uncommitted_project_site_asks_with_a_warning(self):
+        """A rename of `.claude` or an unsandboxed git command can change the working
+        tree without the Edit tool, so only HEAD counts."""
+        write_settings(self.project / '.claude/settings.json', ['https://evil.com/'])
+        self.assertUncommittedWarning('https://evil.com/', '.claude/settings.json')
+
+    def test_project_site_counts_once_committed(self):
+        write_settings(self.project / '.claude/settings.json', ['https://evil.com/'])
+        self.commit()
+        self.assertListed(ALLOW, 'https://evil.com/', self.project)
+
+    def test_project_that_is_not_a_git_repository_asks(self):
+        self.trust(self.untrusted)
+        self.assertListed(ASK, 'https://www.crescentelectric.com/', self.untrusted)
+
+    def assertUncommittedWarning(self, url, settings_file):
+        out, code = run(url, self.home, tool_name=BLOCKED_SITE_TOOL, home=self.home, project_dir=self.project)
+        self.assertEqual(code, 0)
+        self.assertEqual(decision(out), ASK)
+        self.assertIn(f'is listed in {settings_file}, but only', reason(out))
 
     def test_project_site_asks_outside_project(self):
         self.assertListed(ASK, 'https://www.crescentelectric.com/')
@@ -192,7 +240,6 @@ class BlockedSiteListTest(GateTestCase):
 
     def test_project_opened_through_a_symlink_keeps_its_lists(self):
         """Trust is recorded under the path the project was opened by."""
-        self.git(self.project, 'init', '-q')
         link = self.home / 'link'
         link.symlink_to(self.project)
         self.trust(link)
@@ -247,59 +294,13 @@ class BlockedSiteListTest(GateTestCase):
     def test_snapshot_without_file_path_allowed(self):
         self.assertListed(ALLOW, None, self.project, 'mcp__blocked-site-browser__take_snapshot', {'pageId': 1})
 
-    def git(self, repo, *arguments):
-        """Uses the fixture HOME and no hooks, so the real git config can't interfere."""
-        env = {**os.environ, 'HOME': str(self.home), 'GIT_CONFIG_NOSYSTEM': '1'}
-        git = ['git', '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null', '-C', str(repo)]
-        subprocess.run([*git, *arguments], check=True, env=env)
-
-    def make_repo_with_worktree(self, repo):
-        self.git(repo, 'init', '-q')
-        self.git(repo, 'commit', '-q', '--allow-empty', '-m', 'x')
-        worktree = repo / 'worktree'
-        self.git(repo, 'worktree', 'add', '-q', str(worktree))
-        return worktree
-
-    def test_bare_repo_worktree_lists_ignored(self):
-        """A bare repo has no main checkout whose settings could stand in."""
-        bare = self.project / 'repo.git'
-        bare.mkdir()
-        self.git(bare, 'init', '-q', '--bare')
-        source = self.home / 'source'
-        self.git(self.home, 'init', '-q', str(source))
-        self.git(source, 'commit', '-q', '--allow-empty', '-m', 'x')
-        self.git(source, 'push', '-q', str(bare), 'HEAD:main')
-        worktree = self.project / 'worktree'
-        self.git(bare, 'worktree', 'add', '-q', str(worktree), 'main')
-        write_settings(worktree / '.claude/settings.json', ['https://evil.com/'])
-
-        self.assertListed(ASK, 'https://evil.com/', worktree)
-
-    def test_worktree_uses_main_checkout_lists(self):
-        """A worktree's tracked settings can be overwritten without a prompt."""
-        worktree = self.make_repo_with_worktree(self.project)
-        write_settings(worktree / '.claude/settings.json', ['https://evil.com/'])
-
-        self.assertListed(ASK, 'https://evil.com/', worktree)
-        self.assertListed(ALLOW, 'https://www.crescentelectric.com/', worktree)
-
-    def test_project_in_a_repo_subdirectory_keeps_its_own_lists(self):
-        repo = self.home / 'repo'
-        project = repo / 'app/public'
-        write_settings(project / '.claude/settings.json', ['https://www.fastenersplus.com/'])
-        self.trust(project)
-        worktree = self.make_repo_with_worktree(repo)
-        (worktree / 'app/public').mkdir(parents=True)
-
-        self.assertListed(ALLOW, 'https://www.fastenersplus.com/', project)
-        self.assertListed(ALLOW, 'https://www.fastenersplus.com/', worktree / 'app/public')
-
     def test_listed_site_asks_for_default_chrome_server(self):
         """The list pre-authorizes only blocked-site-browser, whose input tools are denied."""
         self.assertListed(ASK, 'https://www.homedepot.com/', self.project, 'mcp__chrome-devtools__new_page')
 
     def test_broken_project_settings_keep_global_list(self):
         (self.project / '.claude/settings.json').write_text('{ not json')
+        self.commit()
         self.assertListed(ALLOW, 'https://www.homedepot.com/', self.project)
         self.assertListed(ASK, 'https://www.crescentelectric.com/', self.project)
 
