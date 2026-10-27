@@ -392,6 +392,11 @@ GIT_FETCH_OPTIONS = {
 # A short-option cluster carrying grep's `-O`, whose optional value names the pager to run.
 GIT_GREP_PAGER_CLUSTER = re.compile(r'-[^-]*O')
 
+# The `git symbolic-ref` options that only read. A second operand, `-d`, or `-m` moves or deletes
+# the ref, and pointing HEAD at another branch changes what every reader of HEAD sees without a
+# commit.
+GIT_SYMBOLIC_REF_READ_OPTIONS = frozenset({'-q', '--quiet', '--short', '--no-short', '--recurse', '--no-recurse'})
+
 # The options that keep `git branch` and `git tag` listing refs rather than creating, deleting, or
 # moving one. Long options must be spelled in full, since an abbreviation like `--cop` is `--copy`.
 # Only the `takes_a_value` options consume the next token; `--color` and friends take theirs
@@ -913,6 +918,14 @@ def git_read_only_option_reason(subcommand, arguments, cwd, git_cwd):
             # Every operand after this is another remote, which the refspec check below can't vet.
             if is_long_option(argument, '--multiple'):
                 return f'`{argument}` reads every operand as a remote; confirm it'
+    if subcommand == 'symbolic-ref':
+        operands = [argument for argument in arguments if not argument.startswith('-')]
+        for argument in arguments:
+            if argument.startswith('-') and argument not in GIT_SYMBOLIC_REF_READ_OPTIONS:
+                return f'`{argument}` is not an option this hook can vouch for on git symbolic-ref'
+        if len(operands) > 1:
+            return 'a second operand makes git symbolic-ref point the ref somewhere else'
+        return None
     if subcommand == 'fetch':
         # An option's separate value isn't an operand, and one that isn't recognized could shift the
         # operands: `--server origin sibling` fetches from the directory `sibling`. So every option

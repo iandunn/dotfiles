@@ -1112,6 +1112,14 @@ class GitReadOnlySubcommandTest(DecisionTest):
         self.assertDecision(ALLOW, 'git ls-tree --name-only HEAD')
         self.assertDecision(ALLOW, 'git symbolic-ref --short HEAD')
 
+    def test_symbolic_ref_that_moves_or_deletes_a_ref_asks(self):
+        """Pointing HEAD at another branch changes what every reader of HEAD sees, with no commit."""
+        self.assertDecision(ASK, 'git symbolic-ref HEAD refs/heads/worktree-x')
+        self.assertDecision(ASK, 'git -C /some/repo symbolic-ref HEAD refs/heads/worktree-x')
+        self.assertDecision(ASK, 'git symbolic-ref -m reason HEAD refs/heads/worktree-x')
+        self.assertDecision(ASK, 'git symbolic-ref -d HEAD')
+        self.assertDecision(ASK, 'git symbolic-ref --delete HEAD')
+
 
 class GitRefListingTest(DecisionTest):
     """`git branch` and `git tag` are safe only while they list refs rather than create them."""
