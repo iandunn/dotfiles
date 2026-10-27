@@ -2,14 +2,21 @@ const vscode = require('vscode');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const readline = require('readline');
 const { execFile } = require('child_process');
 
 const SESSIONS_DIR = path.join(os.homedir(), '.claude', 'sessions');
+const PROJECTS_DIR = path.join(os.homedir(), '.claude', 'projects');
 const STATE_KEY = 'savedSessions';
 const POLL_INTERVAL_MS = 5000;
 
 // The session ID is typed into a shell, so anything that isn't a plain UUID is rejected.
 const SESSION_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+// The folder is typed into a shell too, and a control character would act as a key like Enter
+// that quoting can't neutralize.
+const CONTROL_CHARACTER_PATTERN = /[\x00-\x1f\x7f]/;
+const WORKTREE_NAME_PATTERN = /^[A-Za-z0-9._][A-Za-z0-9._\/-]*$/;
 
 // Quitting VS Code kills every terminal, and the snapshot has to survive that. So a session is
 // only forgotten when it's gone for longer than a shutdown takes, which the extension host
@@ -28,6 +35,18 @@ const tracked = new Map();
 // they've written their own session files.
 const restored = new Set();
 
+// Session ID -> transcript path, so the projects folder isn't searched again on every poll.
+const transcripts = new Map();
+
+// Session ID -> when its transcript was last searched for and not found. A new session has none
+// until its first message, and searching every folder on every poll would block the host.
+const missingTranscripts = new Map();
+const MISSING_TRANSCRIPT_RETRY_MS = 30000;
+
+// Only POSIX shells, because `shellQuote` isn't safe in shells like fish. This also rules out a
+// program that replaced the shell with `exec`, which has the shell's PID and no children.
+const SHELLS = new Set(['bash', 'zsh', 'sh']);
+
 let workspaceState = null;
 let polling = false;
 
@@ -43,6 +62,10 @@ function setSaved(sessions) {
 }
 
 function forget(sessionIds) {
+  for (const sessionId of sessionIds) {
+    transcripts.delete(sessionId);
+    missingTranscripts.delete(sessionId);
+  }
   const remaining = getSaved().filter((session) => !sessionIds.includes(session.sessionId));
   return setSaved(remaining);
 }
@@ -96,6 +119,155 @@ function readLiveSessions(processes) {
   return sessions;
 }
 
+// Claude Code names a transcript's folder after the folder the session was launched in.
+function projectFolderName(folder) {
+  return folder.replace(/[^a-zA-Z0-9]/g, '-');
+}
+
+// A session has no transcript until its first message, and `--resume` can't open it before then.
+// The transcript is usually in the folder named after the session's current folder, so that's
+// checked on every poll, and the slower search through every folder is rate limited.
+function hasTranscript(session) {
+  const cached = transcripts.get(session.sessionId);
+  if (cached && fs.existsSync(cached)) {
+    return true;
+  }
+  transcripts.delete(session.sessionId);
+
+  const likely = path.join(
+    PROJECTS_DIR, projectFolderName(session.cwd), `${session.sessionId}.jsonl`
+  );
+  if (fs.existsSync(likely)) {
+    transcripts.set(session.sessionId, likely);
+    return true;
+  }
+
+  const lastMissed = missingTranscripts.get(session.sessionId) || 0;
+  if (Date.now() - lastMissed < MISSING_TRANSCRIPT_RETRY_MS) {
+    return false;
+  }
+  const [found] = findTranscripts(session.sessionId);
+  if (found) {
+    transcripts.set(session.sessionId, found);
+    missingTranscripts.delete(session.sessionId);
+    return true;
+  }
+  missingTranscripts.set(session.sessionId, Date.now());
+  return false;
+}
+
+// Every transcript for the session, newest first. A session can have copies in several project
+// folders, like when it was resumed from a different folder, and the newest has its latest state.
+function findTranscripts(sessionId) {
+  let folders = [];
+  try {
+    folders = fs.readdirSync(PROJECTS_DIR);
+  } catch (error) {
+    return [];
+  }
+
+  const found = [];
+  for (const folder of folders) {
+    const transcript = path.join(PROJECTS_DIR, folder, `${sessionId}.jsonl`);
+    try {
+      found.push({ transcript, modified: fs.statSync(transcript).mtimeMs });
+    } catch (error) {
+      // Not in this folder.
+    }
+  }
+  return found
+    .sort((first, second) => second.modified - first.modified)
+    .map((item) => item.transcript);
+}
+
+// Returns the folder to resume the session from, the worktree to pass to `--worktree`, and the
+// path of a worktree that can't be resumed automatically, so the user can check it by hand.
+//
+// `--resume` only finds a transcript from the folder the session was launched in, which the
+// transcript's folder is named after. The candidates are the launch folder that the worktree
+// record holds, the worktree itself, which Claude Code can move the transcript to when a session
+// enters one, and the first `cwd` in the transcript and its parents.
+//
+// Resuming without `--worktree` takes the session out of its worktree, so the worktree from the
+// last `worktree-state` record is passed along, the same as the command Claude Code prints on
+// exit. `--worktree` only looks in `.claude/worktrees` under the folder Claude Code starts in,
+// so a worktree anywhere else, like one in a nested repository, can't be passed.
+//
+// With `allowFallback`, the first `cwd` is used when no candidate matches.
+async function readResumeTarget(transcript, allowFallback = true) {
+  const { cwd, worktree } = await readTranscript(transcript);
+  const folderName = path.basename(path.dirname(transcript));
+  const validWorktree = worktree
+    && typeof worktree.worktreeName === 'string'
+    && WORKTREE_NAME_PATTERN.test(worktree.worktreeName)
+    && typeof worktree.worktreePath === 'string'
+    && path.isAbsolute(worktree.worktreePath)
+    ? worktree
+    : null;
+
+  const candidates = [];
+  if (validWorktree) {
+    if (typeof validWorktree.originalCwd === 'string') {
+      candidates.push(validWorktree.originalCwd);
+    }
+    candidates.push(validWorktree.worktreePath);
+  }
+  for (let candidate = cwd; candidate; candidate = path.dirname(candidate)) {
+    candidates.push(candidate);
+    if (candidate === path.dirname(candidate)) {
+      break;
+    }
+  }
+  const root = candidates.find(
+    (candidate) => path.isAbsolute(candidate) && projectFolderName(candidate) === folderName
+  ) || (allowFallback ? cwd : null);
+
+  if (!validWorktree || !root || validWorktree.worktreePath === root) {
+    return { root, worktreeName: null, lostWorktree: null };
+  }
+  const expectedPath = path.join(root, '.claude', 'worktrees', validWorktree.worktreeName);
+  if (validWorktree.worktreePath === expectedPath && fs.existsSync(expectedPath)) {
+    return { root, worktreeName: validWorktree.worktreeName, lostWorktree: null };
+  }
+  return { root, worktreeName: null, lostWorktree: validWorktree.worktreePath };
+}
+
+async function readTranscript(transcript) {
+  let cwd = null;
+  let worktree = null;
+  const stream = fs.createReadStream(transcript, 'utf8');
+  const lines = readline.createInterface({ input: stream, crlfDelay: Infinity });
+  try {
+    for await (const line of lines) {
+      // Most lines hold neither, and parsing every line of a long transcript is slow.
+      if (cwd && !line.includes('"worktree-state"')) {
+        continue;
+      }
+      try {
+        const entry = JSON.parse(line);
+        if (!cwd && typeof entry.cwd === 'string' && path.isAbsolute(entry.cwd)) {
+          cwd = entry.cwd;
+        }
+        if (entry.type === 'worktree-state') {
+          worktree = entry.worktreeSession;
+        }
+      } catch (error) {
+        // A line that isn't JSON can't hold either.
+      }
+    }
+  } catch (error) {
+    // Unreadable; the caller skips the session.
+  } finally {
+    lines.close();
+    stream.destroy();
+  }
+  return { cwd, worktree };
+}
+
+function shellQuote(value) {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
 // `claude` is normally a direct child of the terminal's shell, but this allows for a wrapper,
 // or for `exec claude` replacing the shell outright.
 function findShellPid(pid, processes, shellPids) {
@@ -141,8 +313,19 @@ async function poll() {
     const session = sessionsByShell.get(shellPids[index]);
     const previous = tracked.get(terminal);
 
+    if (session && !hasTranscript(session)) {
+      // Keep whatever this terminal had saved until the new session can be resumed.
+      return;
+    }
+
     if (session) {
-      const entry = { sessionId: session.sessionId, cwd: session.cwd, name: session.name || '' };
+      // VS Code reopens terminals in the same order after a restart, so the index finds the
+      // reopened terminal that this session should resume in.
+      const entry = {
+        sessionId: session.sessionId,
+        name: session.name || '',
+        terminalIndex: index,
+      };
 
       // `/clear` starts a new session ID in the same terminal, so it takes over the old slot.
       const previousId = previous ? previous.sessionId : null;
@@ -191,6 +374,28 @@ async function forgetIfNotResumed(sessionId) {
   }
 }
 
+// Terminal index -> terminal, for terminals whose shell isn't running anything. Those are the
+// ones VS Code reopened after a restart, with fresh shells in place of the sessions. A terminal
+// someone has typed in is left alone, since the command would be appended to whatever's there.
+async function findIdleTerminals(processes) {
+  const terminals = vscode.window.terminals;
+  const shellPids = await Promise.all(terminals.map((terminal) => terminal.processId));
+  const busyShells = new Set([...processes.values()].map((processInfo) => processInfo.ppid));
+
+  const idle = new Map();
+  terminals.forEach((terminal, index) => {
+    const shell = processes.get(shellPids[index]);
+    const isIdleShell = shell
+      && SHELLS.has(path.basename(shell.command).replace(/^-/, ''))
+      && !busyShells.has(shellPids[index]);
+
+    if (isIdleShell && !terminal.state.isInteractedWith && !tracked.has(terminal)) {
+      idle.set(index, terminal);
+    }
+  });
+  return idle;
+}
+
 async function restore() {
   const processes = await listProcesses();
   const running = new Set(readLiveSessions(processes).map((session) => session.sessionId));
@@ -203,25 +408,48 @@ async function restore() {
     return;
   }
 
-  const skipped = [];
-  for (const session of toRestore) {
-    // Checked again here, because saved state from an older version could hold anything.
-    if (!SESSION_ID_PATTERN.test(session.sessionId)) {
-      skipped.push(session);
+  // Claimed before anything is awaited, so running Restore again meanwhile can't pick them up.
+  toRestore.forEach((session) => restored.add(session.sessionId));
+
+  const targets = await Promise.all(toRestore.map(resolveTarget));
+  const ready = targets.filter((target) => target.root);
+  const skipped = targets.filter((target) => !target.root).map((target) => target.session);
+  skipped.forEach((session) => restored.delete(session.sessionId));
+
+  // Checked after reading the transcripts, which can take seconds, and again right before
+  // typing, so text someone starts typing meanwhile isn't run with the command appended.
+  const currentProcesses = await listProcesses();
+  const idleTerminals = await findIdleTerminals(currentProcesses);
+  const resumedMeanwhile = new Set(
+    readLiveSessions(currentProcesses).map((session) => session.sessionId)
+  );
+  for (const { session, root, worktreeName } of ready) {
+    if (resumedMeanwhile.has(session.sessionId)) {
       continue;
     }
-
-    // A worktree that was cleaned up has no folder to resume in.
-    if (!fs.existsSync(session.cwd)) {
-      skipped.push(session);
-      continue;
+    const worktreeOption = worktreeName ? `--worktree ${shellQuote(worktreeName)} ` : '';
+    const command = `claude ${worktreeOption}--resume ${session.sessionId}`;
+    const reopened = idleTerminals.get(session.terminalIndex);
+    if (reopened && !reopened.state.isInteractedWith) {
+      idleTerminals.delete(session.terminalIndex);
+      reopened.sendText(`cd ${shellQuote(root)} && ${command}`);
+    } else {
+      const name = session.name || 'claude';
+      vscode.window.createTerminal({ name, cwd: root }).sendText(command);
     }
-
-    restored.add(session.sessionId);
-    const name = session.name || 'claude';
-    const terminal = vscode.window.createTerminal({ name, cwd: session.cwd });
-    terminal.sendText(`claude --resume ${session.sessionId}`);
     setTimeout(() => forgetIfNotResumed(session.sessionId), RESUME_TIMEOUT_MS);
+  }
+
+  const lostWorktrees = ready.filter((target) => target.lostWorktree);
+  if (lostWorktrees.length) {
+    const details = lostWorktrees
+      .map((target) => `${target.session.name || target.session.sessionId}: ${target.lostWorktree}`)
+      .join('\n');
+    vscode.window.showWarningMessage(
+      'These sessions were resumed outside the worktree they were in. Check each worktree for '
+        + 'uncommitted work before continuing in the session.',
+      { modal: true, detail: details }
+    );
   }
 
   if (skipped.length) {
@@ -231,6 +459,28 @@ async function restore() {
       `These sessions couldn't be restored, so they were removed: ${names}`
     );
   }
+}
+
+// Finds the newest transcript that gives a usable folder to resume from. A copy whose folder name
+// matches a candidate is preferred over guessing from the first `cwd` of a newer one.
+async function resolveTarget(session) {
+  // Checked again here, because saved state from an older version could hold anything.
+  if (!SESSION_ID_PATTERN.test(session.sessionId)) {
+    return { session, root: null };
+  }
+  const transcriptPaths = findTranscripts(session.sessionId);
+  for (const allowFallback of [false, true]) {
+    for (const transcript of transcriptPaths) {
+      const target = await readResumeTarget(transcript, allowFallback);
+      const isUsable = target.root
+        && fs.existsSync(target.root)
+        && !CONTROL_CHARACTER_PATTERN.test(target.root);
+      if (isUsable) {
+        return { session, ...target };
+      }
+    }
+  }
+  return { session, root: null };
 }
 
 function activate(context) {

@@ -4,6 +4,7 @@
 # has reopened its windows.
 
 import asyncio
+import functools
 import glob
 import json
 import os
@@ -23,6 +24,7 @@ SESSION_ID_PATTERN = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4
 # The command is typed as keystrokes, so a control character in a folder name would act as a key
 # like Ctrl-C or Enter that quoting can't neutralize.
 CONTROL_CHARACTER_PATTERN = re.compile(r"[\x00-\x1f\x7f]")
+WORKTREE_NAME_PATTERN = re.compile(r"[A-Za-z0-9._][A-Za-z0-9._/-]*")
 
 # Ctrl-U and Ctrl-K clear anything already typed on either side of the cursor, so the command
 # isn't mixed into it.
@@ -98,22 +100,113 @@ def claude_panes(snapshot):
                     yield window, tab_index, pane_index, pane
 
 
-# Worktree sessions report the worktree as their folder, but `--resume` only finds a transcript
-# from the folder the session started in, which the transcript's first `cwd` records.
-def project_root(session_id):
-    for path in glob.glob(TRANSCRIPTS % session_id):
-        try:
-            with open(path) as file:
-                for line in file:
-                    try:
-                        cwd = json.loads(line).get("cwd")
-                    except ValueError:
-                        continue
-                    if cwd:
-                        return cwd
-        except OSError:
-            continue
-    return None
+def read_transcript(path):
+    """Returns the first `cwd` in the transcript and its last `worktree-state` record."""
+    cwd = None
+    worktree = None
+    # A crash can cut a transcript off in the middle of a character.
+    with open(path, encoding="utf-8", errors="replace") as file:
+        for line in file:
+            # Most lines hold neither, and parsing every line of a long transcript is slow.
+            if cwd and '"worktree-state"' not in line:
+                continue
+            try:
+                entry = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(entry, dict):
+                continue
+            entry_cwd = entry.get("cwd")
+            if not cwd and isinstance(entry_cwd, str) and os.path.isabs(entry_cwd):
+                cwd = entry_cwd
+            if entry.get("type") == "worktree-state":
+                worktree = entry.get("worktreeSession")
+    return cwd, worktree
+
+
+def read_resume_target(path, allow_fallback=True):
+    """Returns the folder to resume from, the worktree to pass to `--worktree`, and the path of a
+    worktree that can't be resumed automatically, so the user can check it by hand.
+
+    `--resume` only finds a transcript from the folder the session was launched in, which the
+    transcript's folder is named after. The candidates are the launch folder that the worktree
+    record holds, the worktree itself, which Claude Code can move the transcript to when a
+    session enters one, and the first `cwd` in the transcript and its parents.
+
+    Resuming without `--worktree` takes the session out of its worktree, so the worktree from the
+    last `worktree-state` record is passed along, the same as the command Claude Code prints on
+    exit. `--worktree` only looks in `.claude/worktrees` under the folder Claude Code starts in,
+    so a worktree anywhere else, like one in a nested repository, can't be passed.
+
+    With `allow_fallback`, the first `cwd` is used when no candidate matches.
+    """
+    cwd, worktree = read_transcript(path)
+    folder_name = os.path.basename(os.path.dirname(path))
+    is_valid_worktree = (
+        isinstance(worktree, dict)
+        and isinstance(worktree.get("worktreeName"), str)
+        and WORKTREE_NAME_PATTERN.fullmatch(worktree["worktreeName"])
+        and isinstance(worktree.get("worktreePath"), str)
+        and os.path.isabs(worktree["worktreePath"])
+    )
+
+    candidates = []
+    if is_valid_worktree:
+        if isinstance(worktree.get("originalCwd"), str):
+            candidates.append(worktree["originalCwd"])
+        candidates.append(worktree["worktreePath"])
+    candidate = cwd
+    while candidate:
+        candidates.append(candidate)
+        if candidate == os.path.dirname(candidate):
+            break
+        candidate = os.path.dirname(candidate)
+    root = next(
+        (
+            candidate
+            for candidate in candidates
+            if os.path.isabs(candidate)
+            and re.sub(r"[^a-zA-Z0-9]", "-", candidate) == folder_name
+        ),
+        cwd if allow_fallback else None,
+    )
+
+    if not is_valid_worktree or not root or worktree["worktreePath"] == root:
+        return root, None, None
+    expected_path = os.path.join(root, ".claude", "worktrees", worktree["worktreeName"])
+    if worktree["worktreePath"] == expected_path and os.path.isdir(expected_path):
+        return root, worktree["worktreeName"], None
+    return root, None, worktree["worktreePath"]
+
+
+def modified_time(path):
+    try:
+        return os.path.getmtime(path)
+    except OSError:
+        return 0
+
+
+@functools.lru_cache(maxsize=None)
+def resume_target(session_id):
+    """Returns `read_resume_target()` for the newest transcript with a usable folder, or None
+    when there's no transcript at all.
+
+    A session can have copies in several project folders, like when it was resumed from a
+    different folder, and the newest has its latest state. A copy whose folder name matches a
+    candidate is preferred over guessing from the first `cwd` of a newer one.
+    """
+    paths = glob.glob(TRANSCRIPTS % session_id)
+    if not paths:
+        return None
+    for allow_fallback in (False, True):
+        for path in sorted(paths, key=modified_time, reverse=True):
+            try:
+                root, worktree_name, lost_worktree = read_resume_target(path, allow_fallback)
+            except OSError:
+                continue
+            if root and os.path.isdir(root) and not CONTROL_CHARACTER_PATTERN.search(root):
+                return root, worktree_name, lost_worktree
+    return None, None, None
 
 
 async def find_pane(app, window_frames, saved_window, tab_index, pane_index, pane_id):
@@ -165,6 +258,7 @@ async def restore(connection):
     # Newest snapshots first. A session skipped in one snapshot is tried again from an older one,
     # and only the reason from its newest attempt is reported.
     resumed = []
+    lost_worktrees = []
     skipped = {}
     done = running_session_ids()
     used_panes = set()
@@ -181,11 +275,13 @@ async def restore(connection):
             if not SESSION_ID_PATTERN.fullmatch(session_id):
                 reason = "invalid session ID"
             else:
-                root = project_root(session_id)
-                if not isinstance(root, str) or not os.path.isdir(root):
-                    reason = "no transcript or project folder"
-                elif CONTROL_CHARACTER_PATTERN.search(root):
-                    reason = "control character in project folder"
+                target = resume_target(session_id)
+                if target is None:
+                    reason = "no transcript"
+                elif target[0] is None:
+                    reason = "no usable project folder in the transcript"
+                else:
+                    root, worktree_name, lost_worktree = target
 
             if not reason:
                 session, matched_by = await find_pane(
@@ -204,7 +300,10 @@ async def restore(connection):
                 skipped.setdefault(session_id, "%s (%s)" % (label, reason))
                 continue
 
-            command = "cd %s && claude --resume %s\n" % (shlex.quote(root), session_id)
+            worktree_option = "--worktree %s " % shlex.quote(worktree_name) if worktree_name else ""
+            command = "cd %s && claude %s--resume %s\n" % (
+                shlex.quote(root), worktree_option, session_id
+            )
             await session.async_activate(select_tab=True, order_window_front=True)
             # With Broadcast Input on, the text would also reach panes the shell check never saw.
             await session.async_send_text(CLEAR_LINE + command, suppress_broadcast=True)
@@ -213,10 +312,18 @@ async def restore(connection):
             done.add(session_id)
             skipped.pop(session_id, None)
             resumed.append("%s (by %s)" % (label, matched_by))
+            if lost_worktree:
+                lost_worktrees.append("%s: %s" % (label, lost_worktree))
 
     summary = "Resumed %d sessions: %s." % (len(resumed), "; ".join(resumed))
+    if lost_worktrees:
+        summary += (
+            "\n\nThese sessions were resumed outside the worktree they were in. Check each"
+            " worktree for uncommitted work before continuing in the session: "
+            + "; ".join(lost_worktrees)
+        )
     if skipped:
-        summary += " Skipped: " + "; ".join(skipped.values())
+        summary += "\n\nSkipped: " + "; ".join(skipped.values())
     return summary
 
 
