@@ -70,7 +70,8 @@ DENY = 'deny'
 # the code that runs.
 SHELL_FREE_TOOLS = frozenset({'mcp__local-wp__wp_cli'})
 
-# VIP environments whose data is disposable enough to auto-approve reads and writes against.
+# VIP environments where reads are safe to auto-approve. Writes never are on any VIP environment,
+# since every one is remote, which is why the `vip` delegate gets only `WP_READ_ALLOWED`.
 # Deliberately conservative: production is absent by design, and so is every environment not
 # listed, because an unrecognized target is not a safe one.
 VIP_SAFE_ENVIRONMENTS = frozenset({'develop', 'staging', 'staging.wpvip-publix-staging', 'preprod'})
@@ -160,11 +161,12 @@ WP_DB_QUERY_ALLOWED_FLAGS = WP_SKIPPABLE_GLOBAL_FLAGS | frozenset({
     '--xml',
 })
 
-WP_ALLOWED = [
+# WP-CLI subcommands that only read, so they're allowed against a local site and against a VIP
+# environment on `VIP_SAFE_ENVIRONMENTS`. Production always prompts.
+WP_READ_ALLOWED = [
     '--info',
     '--version',
     'akismet status',
-    'cache flush',
     'cache get',
     'cache stats',
     'cap list',
@@ -176,15 +178,13 @@ WP_ALLOWED = [
     'config get',
     'config list',
     'core check-update',
-    'core update',
-    'core update-db',
     'core version',
     'cron event list',
     'cron schedule list',
     'db check',
+    'db prefix',
     'db size',
     'db tables',
-    'elasticpress index',
     'elasticpress list-features',
     'elasticpress stats',
     'elasticpress status',
@@ -201,30 +201,25 @@ WP_ALLOWED = [
     'network meta get',
     'network meta list',
     'network meta pluck',
-    'option add',
-    'option delete',
     'option get',
     'option list',
-    'option update',
+    'option pluck',
     'package list',
     'plugin active-on-sites',
     'plugin get',
     'plugin is-active',
     'plugin is-installed',
     'plugin list',
-    'plugin update',
-    'post create',
     'post get',
     'post list',
     'post meta get',
     'post meta list',
+    'post meta pluck',
     'post term list',
     'post-type get',
     'post-type list',
     'publix petition-load-test count',
-    'publix petition-load-test seed',
     'publix petition-load-test time-count',
-    'rewrite flush',
     'rewrite list',
     'role get',
     'role list',
@@ -242,16 +237,38 @@ WP_ALLOWED = [
     'theme is-active',
     'theme is-installed',
     'theme list',
-    'theme update',
-    'transient delete update_plugins',
-    'transient delete update_themes',
     'transient get',
     'user get',
     'user list',
     'user meta get',
-    'vip-search index',
     'widget list',
 ]
+
+# WP-CLI subcommands that change the site. They're allowed only against a local site, through
+# `wp` or `localwp`, because a local database is disposable. Against any VIP environment, staging
+# and preprod included, they prompt.
+WP_LOCAL_WRITE_ALLOWED = [
+    'cache flush',
+    'core update',
+    'core update-db',
+    'elasticpress index',
+    'option add',
+    'option delete',
+    'option patch update',
+    'option update',
+    'plugin update',
+    'post create',
+    'post meta update',
+    'post update',
+    'publix petition-load-test seed',
+    'rewrite flush',
+    'theme update',
+    'transient delete update_plugins',
+    'transient delete update_themes',
+    'vip-search index',
+]
+
+WP_LOCAL_ALLOWED = WP_READ_ALLOWED + WP_LOCAL_WRITE_ALLOWED
 
 # VIP-CLI's own subcommands, as opposed to the WP-CLI it proxies. Reads only -- `db`, `backup`,
 # `export`, `import`, and `sync` move real data around and belong behind a prompt.
@@ -368,21 +385,22 @@ def is_data_consumer(command):
 
 COMMANDS = {
     'wp': {
-        'allowed': WP_ALLOWED,
+        'allowed': WP_LOCAL_ALLOWED,
         'normalizer': 'wp',
     },
     'vip': {
         'allowed': VIP_NATIVE_ALLOWED,
         'normalizer': 'vip',
         # After VIP's target and global flags are consumed, a `wp` subcommand is plain WP-CLI, so
-        # it reuses that allowlist rather than duplicating it.
-        'delegates': {'wp': WP_ALLOWED},
+        # it reuses that allowlist rather than duplicating it. Only the reads, because every VIP
+        # environment is remote.
+        'delegates': {'wp': WP_READ_ALLOWED},
     },
     'localwp': {
         # Local's own reads only -- `start`, `stop`, and `new` change which sites exist or run.
         'allowed': ['info', 'list'],
         'normalizer': 'localwp',
-        'delegates': {'cli': WP_ALLOWED},
+        'delegates': {'cli': WP_LOCAL_ALLOWED},
     },
 }
 
@@ -553,6 +571,50 @@ def matched_prefix(tokens, allowed):
     return None
 
 
+def strip_sql_literals(sql):
+    """Blank out MySQL string literals, or return None if the SQL can't be read one way for sure.
+
+    Handles `'...'` and `"..."`, where a doubled quote stands for itself. Backtick-quoted
+    identifiers are skipped over so a quote inside one opens nothing, but their text is kept,
+    since an identifier like `` `load_file` `` still names something the check looks for.
+
+    Any backslash returns None. Inside a literal, whether it escapes the next character depends
+    on the server's `NO_BACKSLASH_ESCAPES` mode, so `'a\\''; DELETE ...'` has two readings. Outside
+    one, the mysql client treats `\\g` as the end of a statement, `\\.` as sourcing a file, and
+    `\\!` as a shell command. A comment returns None too, because a quote inside a comment
+    doesn't open a literal.
+    """
+    if '\\' in sql:
+        return None
+    out = []
+    index = 0
+    while index < len(sql):
+        character = sql[index]
+        if character == '#' or sql.startswith(('--', '/*'), index):
+            # A quote inside a comment opens nothing, so stripping past one would read a real
+            # `;` after it as part of a literal. Comments have no place in a quick read anyway.
+            return None
+        if character not in ('\'', '"', '`'):
+            out.append(character)
+            index += 1
+            continue
+        quote = character
+        start = index
+        index += 1
+        while True:
+            if index >= len(sql):
+                return None
+            if sql[index] == quote:
+                if sql[index + 1:index + 2] == quote:
+                    index += 2
+                    continue
+                index += 1
+                break
+            index += 1
+        out.append(sql[start:index] if quote == '`' else ' ')
+    return ''.join(out)
+
+
 def validate_db_query(tokens, raw):
     """Decide a `wp db query` invocation, where the SQL and the flags are what make it safe.
 
@@ -574,14 +636,23 @@ def validate_db_query(tokens, raw):
     if not READ_ONLY_SQL_START.match(statements[0]):
         return ASK, 'wp db query SQL does not start with a read-only statement'
 
-    # Searched against the source text as well as the parsed statement. On the Bash path the
-    # statement is exactly the string bash passes, while on the shell-free path this hook's
-    # `shlex` parse and the Local WP addon's own splitter disagree over backslashes, which a
-    # raw-string search can't be fooled by. Matching either one only makes the check stricter.
-    # The `;` pattern is the only thing catching a second statement, since a quoted `;` is
-    # literal to bash and no shell runs at all on the shell-free path.
+    # String literals can't end a statement or name a keyword, so they're blanked out first,
+    # which keeps `LIKE '%a;b%'` or `'&#039;'` from reading as a second statement.
+    code = strip_sql_literals(statements[0])
+    if code is None:
+        return ASK, (
+            'wp db query SQL has a comment, an unterminated string literal, or a backslash, any '
+            'of which can make the SQL run differently than it reads'
+        )
+
+    # On the Bash path `raw` is None, because the parser hands over exactly the string bash
+    # passes. On the shell-free path this hook's `shlex` parse and the Local WP addon's own
+    # splitter disagree over backslashes, so the source text is searched too, unstripped, which
+    # only makes the check stricter. The `;` pattern is the only thing catching a second
+    # statement, since no shell runs at all on that path.
+    texts = [code] if raw is None else [code, raw]
     for pattern in FORBIDDEN_SQL_PATTERNS:
-        if pattern.search(raw) or pattern.search(statements[0]):
+        if any(pattern.search(text) for text in texts):
             return ASK, f'wp db query matches "{pattern.pattern}", so it may not be read-only'
 
     return ALLOW, '"wp db query" is allowlisted for read-only SQL'
@@ -858,7 +929,9 @@ def decide_covered(command, raw_line):
             'Drop the redirect rather than rewording to get past this hook.'
         )
 
-    return decide(base_command, command.argv[1:], raw_line)
+    # Every word is literal by now, so the argv is exactly what the program receives, and the
+    # `db query` check needs no source text.
+    return decide(base_command, command.argv[1:], None)
 
 
 def judge_command(command, raw_line):
@@ -935,7 +1008,7 @@ def judge_command(command, raw_line):
     return None
 
 
-def decide_bash_line(raw_line):
+def decide_bash_line(raw_line, cwd=None):
     try:
         parsed = bash_ast.parse(raw_line)
     except bash_ast.ParseError as error:
@@ -958,7 +1031,49 @@ def decide_bash_line(raw_line):
 
     if len(parsed.commands) > 1:
         return ASK, 'the line runs more than the allowlisted command'
-    return judgements[0][0], judgements[0][1]
+
+    decision, reason = judgements[0][0], judgements[0][1]
+    remote_config = cwd and wp_cli_remote_config(cwd)
+    if decision == ALLOW and parsed.commands[0].name in ('wp', 'localwp') and remote_config:
+        return ASK, (
+            f'`{remote_config}` has an `ssh:`, `http:`, or `inherit:` key that can point WP-CLI '
+            'at a remote host, so this command may not run against a local site'
+        )
+    return decision, reason
+
+
+# Where WP-CLI looks for a config file, besides the `WP_CLI_CONFIG_PATH` override. Project files
+# are found by walking up from the working directory.
+WP_CLI_PROJECT_CONFIGS = ('wp-cli.local.yml', 'wp-cli.yml')
+WP_CLI_GLOBAL_CONFIG = os.path.expanduser('~/.wp-cli/config.yml')
+
+# An `ssh:` or `http:` key sends commands to that host, and `inherit:` loads another config that
+# might. This is matched anywhere in the file, in block or flow style, rather than parsed as
+# YAML: telling a top-level key from one under an `@alias` reliably needs a full parser, and
+# guessing wrong would let a remote command through, so a config with any of them prompts.
+WP_CLI_REMOTE_KEY = re.compile(
+    r'(?:^[ \t-]*|[{,][ \t]*)["\']?(?:ssh|http|inherit)["\']?[ \t]*:', re.MULTILINE,
+)
+
+
+def wp_cli_remote_config(cwd):
+    """The first WP-CLI config file that sends every command to a remote host, or None."""
+    candidates = [os.environ.get('WP_CLI_CONFIG_PATH') or WP_CLI_GLOBAL_CONFIG]
+    directory = os.path.abspath(cwd)
+    while True:
+        candidates.extend(os.path.join(directory, name) for name in WP_CLI_PROJECT_CONFIGS)
+        parent = os.path.dirname(directory)
+        if parent == directory:
+            break
+        directory = parent
+    for path in candidates:
+        try:
+            with open(path, encoding='utf-8', errors='replace') as config:
+                if WP_CLI_REMOTE_KEY.search(config.read()):
+                    return path
+        except OSError:
+            continue
+    return None
 
 
 def main():
@@ -985,7 +1100,7 @@ def main():
             respond(ASK, 'no command found in the tool input')
         no_opinion()
 
-    outcome = decide_bash_line(raw_command)
+    outcome = decide_bash_line(raw_command, payload.get('cwd') or os.getcwd())
     if outcome is None:
         no_opinion()
     respond(*outcome)

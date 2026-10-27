@@ -51,6 +51,40 @@ class DecisionTest(unittest.TestCase):
         self.assertIsNone(self.outcome(command), f'expected no opinion for: {command}')
 
 
+class RemoteConfigTest(unittest.TestCase):
+    """A `wp-cli.yml` with a top-level `ssh:` or `http:` sends every `wp` command to that host."""
+
+    def outcome_in(self, directory, command):
+        stdout, _code = run({
+            'tool_name': 'Bash', 'tool_input': {'command': command}, 'cwd': directory,
+        })
+        return decision(stdout)
+
+    def test_remote_project_config_asks(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as root:
+            nested = Path(root) / 'wp-content' / 'plugins'
+            nested.mkdir(parents=True)
+            (Path(root) / 'wp-cli.yml').write_text('ssh: user@prod.example/var/www\n')
+            self.assertEqual(self.outcome_in(str(nested), 'wp option get siteurl'), ASK)
+            self.assertEqual(self.outcome_in(str(nested), 'wp post update 1 --post_title=x'), ASK)
+
+    def test_any_remote_or_inherit_key_asks(self):
+        """Without a YAML parser, an alias-only `ssh:` can't be told apart, so it prompts too."""
+        import tempfile
+        for config in ('@prod:\n  ssh: user@prod.example/var/www\n', '{ssh: user@host}\n',
+                       '_:\n  inherit: /tmp/other.yml\n', '"http": https://example.test\n'):
+            with self.subTest(config=config), tempfile.TemporaryDirectory() as root:
+                (Path(root) / 'wp-cli.yml').write_text(config)
+                self.assertEqual(self.outcome_in(root, 'wp option get siteurl'), ASK)
+
+    def test_local_only_config_is_allowed(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as root:
+            (Path(root) / 'wp-cli.yml').write_text('path: wp\nurl: http://example.test\n')
+            self.assertEqual(self.outcome_in(root, 'wp option get siteurl'), ALLOW)
+
+
 class WpAllowlistTest(DecisionTest):
 
     def test_bare_globals_allowed(self):
@@ -262,6 +296,14 @@ class VipProxiedWpTest(DecisionTest):
     def test_target_without_separator(self):
         self.assertAllows('vip @co-williams.staging wp post list')
 
+    def test_writes_ask_on_every_vip_environment(self):
+        """Writes are only automatic on a local site; staging and preprod are still remote."""
+        for command in ('vip @wpvip-publix.preprod wp option update blogname x',
+                        'vip @co-williams.staging wp post update 1 --post_title=x',
+                        'vip @co-williams.develop wp cache flush'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
     def test_target_with_separator(self):
         self.assertAllows('vip @co-williams.staging -- wp post list')
 
@@ -399,6 +441,18 @@ class LocalWpCliTest(DecisionTest):
         self.assertAsks('localwp cli --progress publix -- option get siteurl')
         self.assertAsks('localwp cli publix --no-progress -- option get siteurl')
 
+    def test_writes_allowed_locally(self):
+        for command in ('localwp cli publix -- post update 674 /tmp/content.html',
+                        'localwp cli publix -- post meta update 1 key value',
+                        'localwp cli publix -- option patch update opt key 1',
+                        'wp option update blogname x'):
+            with self.subTest(command=command):
+                self.assertAllows(command)
+
+    def test_proxied_reads_allowed(self):
+        self.assertAllows('localwp cli dmv -- option pluck wpseo_titles title-page')
+        self.assertAllows('localwp cli dmv -- db prefix')
+
     def test_native_reads_allowed(self):
         self.assertAllows('localwp list')
         self.assertAllows('localwp list --json --full')
@@ -507,6 +561,27 @@ class WpDbQueryTest(DecisionTest):
 
     def test_second_statement_asks(self):
         self.assertAsks("wp db query 'SELECT 1 FROM wp_posts; DROP TABLE wp_posts'")
+
+    def test_semicolons_and_keywords_inside_string_literals_allowed(self):
+        """A string literal can't end a statement, so `'a;b'` or `'&#039;'` is just data."""
+        self.assertAllows("wp db query \"SELECT 'a;b' LIKE '%x;y%' AS m\"")
+        self.assertAllows("wp db query \"SELECT REPLACE(name, CHAR(39), '&#039;') FROM wp_terms\"")
+        self.assertAllows("wp db query \"SELECT 'into' AS word, \\`post_title\\` FROM wp_posts\"")
+
+    def test_literal_tricks_still_ask(self):
+        for sql in ("SELECT 'it''s'; DELETE FROM wp_posts",
+                    "SELECT 'a\\\\'; DELETE FROM wp_posts",
+                    "SELECT 'unterminated",
+                    "SELECT 1 /* ; */ FROM wp_posts",
+                    "SELECT 1 -- '\n; DELETE FROM wp_posts; SELECT '",
+                    "SELECT 1 # '\n; DELETE FROM wp_posts; SELECT '",
+                    "SELECT 1 /* ' */ ; DELETE FROM wp_posts; SELECT '",
+                    "SELECT 'a\\\\''; DELETE FROM wp_posts; SELECT '",
+                    "SELECT 1 \\\\g DELETE FROM wp_posts",
+                    "SELECT 1 \\\\! touch /tmp/pwned",
+                    "SELECT \\`load_file\\`('/etc/passwd')"):
+            with self.subTest(sql=sql):
+                self.assertAsks(f'wp db query "{sql}"')
 
     def test_unlisted_flag_asks(self):
         """WP-CLI passes flags it doesn't recognize to mysql, so `--execute` runs a real query."""
