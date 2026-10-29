@@ -1,10 +1,12 @@
 ---
-name: relay-merge-sync
-description: "Merges the trunk into feature branches in a Relay repo: resolves the Relay doc conflicts, commits the merge, pulls and publishes Relay Cloud, commits the sync state, and pushes. Given GitHub PR or GitLab MR numbers, it does that for each one in order and then merges it."
-when_to_use: "Use when the user is merging a series of PRs or MRs, or updating a branch, in a repo with `.relay/` and `requirements/`. With no PR numbers, it finishes the merge already in progress on the current branch. Invoking this skill is the user's request to commit and push those branches, and, when PR numbers are given, to merge every one of them, but nothing else."
+name: relay-sync-target-branch
+description: "Merges the trunk into feature branches in a Relay repo: resolves the Relay doc conflicts, commits the merge, pulls and publishes Relay Cloud, commits the sync state, and pushes. Given GitHub PR or GitLab MR numbers, it does that for each one in order, so each can be merged by hand without Relay conflicts. It never merges a PR or MR, and never pushes the repo's default branch."
+when_to_use: "Use when the user is syncing a series of PRs or MRs with the trunk, or updating a branch, in a repo with `.relay/` and `requirements/`. With no PR numbers, it finishes the merge already in progress on the current branch. Invoking this skill is the user's request to commit and push those branches, but nothing else. It never merges a PR or MR."
 ---
 
 With no arguments, run steps 1-5 on the merge already in progress on the current branch. With a list of PR or MR numbers, follow **Batch mode** at the bottom, which wraps steps 1-5 around each one.
+
+Never push the repo's default branch, which `git symbolic-ref --short refs/remotes/origin/HEAD` names as `origin/<branch>`. With no arguments, stop and tell the user if the current branch is the default branch.
 
 Run every step from the repo root, because `relay-site` looks for its project slug in the current directory and fails with "No project slug found" anywhere else. `git add`, `git commit`, `git push`, and `relay-site` all need `dangerouslyDisableSandbox: true` on the first attempt: the sandbox can't write `.git/index.lock`, reach the SSH agent for signing, or reach Relay Cloud.
 
@@ -56,23 +58,25 @@ Run `git push`. Report the branch, and anything the user has to act on: code con
 
 ## Batch mode
 
-The user's list of numbers is their approval to merge every PR in it, so don't confirm each merge. Don't wait for CI either. The checks have almost always passed already, and the user chose not to block on them.
+The user's list of numbers is their approval to sync every PR in it, so don't confirm each one. This mode never merges a PR. The user merges each PR by hand afterward.
 
-Work through the list in the order given, because each merge changes the trunk that the next PR has to absorb. Stop the whole batch at the first PR that hits any of these, and report which PRs merged and which didn't:
+Work through the list in the order given, except that a PR whose base is another listed PR's head goes after that PR. That way it absorbs the base branch after the base branch has been synced. Stop the whole batch at the first PR that hits any of these, and report which PRs were synced and which weren't:
 
 - A conflict in any file outside `.relay/` and `requirements/`. Leave the merge in progress so the user can resolve it, then run this skill again with the PRs that are left.
 
-- A PR that is closed, already merged, or a draft.
+- A PR that is closed or already merged.
+
+- A PR whose head is the default branch, like a back-merge from `main` into `develop`.
 
 - Any command that fails. Report its full output.
 
-Before the first PR, run `git status`. If the working tree has uncommitted changes, stop and tell the user. Checking out other branches would carry another session's work along with it, or refuse to switch.
+Before the first PR, run `git status`. If the working tree has uncommitted changes, stop and tell the user. Checking out other branches would carry another session's work along with it, or refuse to switch. Record `git branch --show-current` too, so you can return to it at the end.
 
 Use `gh` when `git remote get-url origin` points at GitHub, and `glab` when it points at GitLab. `gh` and `glab` need `dangerouslyDisableSandbox: true` to reach the network.
 
 For each PR:
 
-1. Read the PR's head and base branches and its state, with `gh pr view <number> --json headRefName,baseRefName,state,isDraft` or `glab mr view <number> -F json`. In GitLab's JSON those fields are `source_branch`, `target_branch`, `state`, and `draft`.
+1. Read the PR's head and base branches and its state, with `gh pr view <number> --json headRefName,baseRefName,state` or `glab mr view <number> -F json`. In GitLab's JSON those fields are `source_branch`, `target_branch`, and `state`.
 
 2. Run `git fetch origin`, `git checkout <head>`, then `git merge --ff-only origin/<head>`, so the local branch has every commit already pushed to it.
 
@@ -80,6 +84,4 @@ For each PR:
 
 4. Do steps 3-5 of the main procedure: pull Relay Cloud, publish, and push. Then, if `.relay/config.json` is still modified and its diff only moves keys, run `git restore .relay/config.json`, because the next `git checkout` refuses to switch with it dirty, and the next `publish` reorders it again anyway. The clean-tree check before the first PR guarantees that reorder is the only change in it. If the diff changes any value, stop the batch and tell the user.
 
-5. Merge the PR with a merge commit: `gh pr merge <number> --merge` or `glab mr merge <number> --yes`. Don't pass a delete-branch flag. GitLab chooses the merge method from the project settings, so if the project is set to squash or fast-forward, stop before the first merge and tell the user.
-
-Once the list is done, run `git fetch origin`, check out the base branch, and run `git merge --ff-only origin/<base>`, so the local trunk includes everything that was just merged. Report the merged PR numbers in one line.
+Once the list is done, check out the branch you recorded before the first PR. Report the synced PR numbers in one line.
