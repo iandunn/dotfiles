@@ -429,6 +429,11 @@ LOCALWP_BINARY = os.path.expanduser('~/Library/Application Support/Local/bin/loc
 # socket, so it's denied with a pointer to this one instead of failing with `connect EPERM`.
 LOCALWP_CANONICAL_SPELLING = re.compile(r'localwp( |$)')
 
+# An unquoted `--key=` at the start of a word, with nothing in the key that bash could expand. The
+# key must be lowercase, like every flag the hook disqualifies, so `nocaseglob` can't widen a
+# harmless-looking `--Path=*` into a real `--path=`.
+WP_ASSOC_ARG_KEY = re.compile(r'--[a-z0-9_-]+=')
+
 # The exact binary spellings this hook will vouch for. Resolving by basename alone would treat
 # any executable named `wp` at any path as WP-CLI, so an unlisted path is denied instead --
 # the deny reason names this constant so the block is visible in the session.
@@ -636,6 +641,41 @@ def widen_bracket_expressions(pattern):
             widened.append('?')
             index = end + 1
     return ''.join(widened)
+
+
+def is_wp_assoc_arg_glob(word):
+    """True when the word's only expansion is a glob in the value of a WP-CLI assoc arg.
+
+    `option list --search=foo*` is the documented spelling, and bash can only turn it into more
+    `--search=` words, or drop it under `nullglob`. Either way the key the allowlist judges is
+    unchanged, and WP-CLI keeps the last of a repeated assoc arg. Under `nocaseglob` the key's
+    case can change too, which is why `WP_ASSOC_ARG_KEY` accepts only lowercase keys.
+    """
+    return (
+        word.value is not None
+        and word.glob
+        and not word.brace
+        and WP_ASSOC_ARG_KEY.match(word.raw) is not None
+    )
+
+
+def wp_cli_argv_start(base_command, argv):
+    """Index of the first word WP-CLI itself parses, or past the end when it parses none.
+
+    Local's and VIP-CLI's own subcommands use their own option parsers, so only the argv they hand
+    to WP-CLI gets the assoc arg glob exemption.
+    """
+    if None in argv:
+        return len(argv)
+    if base_command == 'wp':
+        return 1
+    if base_command == 'localwp' and argv[1:2] == ['cli'] and argv[3:4] == ['--']:
+        return 4
+    if base_command == 'vip':
+        subcommand_tokens, _environment, _violation = normalize_vip(argv[1:])
+        if subcommand_tokens and subcommand_tokens[0] == 'wp':
+            return len(argv) - len(subcommand_tokens) + 1
+    return len(argv)
 
 
 def is_glob_for_covered_command(word):
@@ -942,7 +982,7 @@ def decide_vip(tokens, config, raw):
 
     # Checked across the whole line rather than just the leading flags, because a confirmation
     # flag disqualifies the command wherever it sits.
-    if VIP_CONFIRMATION_FLAGS.intersection(tokens):
+    if VIP_CONFIRMATION_FLAGS.intersection(token.partition('=')[0] for token in tokens):
         return ASK, 'VIP command suppresses its own confirmation prompt'
 
     if environment is not None and environment not in VIP_SAFE_ENVIRONMENTS:
@@ -1205,7 +1245,11 @@ def decide_covered(command, raw_line):
         ) + ', which this hook cannot vouch for'
     if command.dynamic_args:
         return ASK, f'{base_command} receives arguments at run time that the line does not show'
-    if not all(word.literal for word in command.words):
+    wp_cli_start = wp_cli_argv_start(base_command, command.argv)
+    if not all(
+        word.literal or (index >= wp_cli_start and is_wp_assoc_arg_glob(word))
+        for index, word in enumerate(command.words)
+    ):
         return ASK, (
             f'an argument to {base_command} expands at run time, so a prefix match cannot vouch '
             'for this command. Send one bare command per call (running-commands.md) rather than '
@@ -1217,8 +1261,9 @@ def decide_covered(command, raw_line):
             'Drop the redirect rather than rewording to get past this hook.'
         )
 
-    # Every word is literal by now, so the argv is exactly what the program receives, and the
-    # `db query` check needs no source text.
+    # Every word is literal by now, or a glob confined to an assoc arg's value, so the argv is
+    # what the program receives as far as any check here can tell, and the `db query` check needs
+    # no source text.
     return decide(base_command, command.argv[1:], None)
 
 

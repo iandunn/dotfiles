@@ -768,6 +768,38 @@ class ShellQuotingTest(DecisionTest):
         self.assertAllows("wp option update blogname 'literal $HOME'")
         self.assertAsks('wp option update blogname "$(whoami)"')
 
+    def test_glob_in_an_assoc_arg_value_allowed(self):
+        """Bash can only expand it into more `--search=` words, so the allowlisted key holds."""
+        self.assertAllows('wp option list --search=dmv_page_import* --fields=option_name')
+        self.assertAllows('localwp cli dmv -- option list --search=dmv_page_import_pending_*')
+        self.assertAllows('vip @app.staging wp option list --search=foo_?')
+
+    def test_glob_that_can_change_the_key_or_subcommand_asks(self):
+        self.assertAsks('wp option list --sea*=foo')
+        self.assertAsks('wp option list --Path=*')
+        self.assertAsks('wp option list "--search"=foo*')
+        self.assertAsks('wp option get foo*')
+        self.assertAsks('wp opt* list')
+        self.assertAsks('wp option list --search={a,b}*')
+        self.assertAsks('wp option list --search=$PREFIX*')
+
+    def test_glob_in_an_assoc_arg_does_not_rescue_a_gated_command(self):
+        self.assertAsks('wp db query --execute=foo* "SELECT 1"')
+        self.assertAsks('wp --require=foo* option list')
+        self.assertAsks('vip @app.production wp option list --search=foo*')
+        self.assertAsks('vip @app.staging wp option list --yes=*')
+        self.assertAsks('vip @app.staging wp option list --yes=1')
+
+    def test_glob_in_a_native_vip_or_localwp_option_asks(self):
+        """Their own option parsers aren't WP-CLI's, so the assoc arg reasoning doesn't hold."""
+        self.assertAsks('vip @app.staging logs --type=*')
+        self.assertAsks('vip --debug=* @app.staging wp option list')
+        self.assertAsks('localwp list --x=*')
+
+    def test_glob_in_an_assoc_arg_still_asks_for_forge_clis(self):
+        self.assertAllows("gh pr list '--search=foo*'")
+        self.assertAsks('gh pr list --search=foo*')
+
     def test_ansi_c_quoting_is_read_exactly(self):
         """`$'...'` expands nothing at run time; the parser resolves it to the exact argument."""
         self.assertAllows("wp option update blogname $'literal'")
