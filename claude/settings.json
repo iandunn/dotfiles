@@ -437,6 +437,7 @@
       "mcp__blocked-site-browser__hover",
       "mcp__blocked-site-browser__drag",
       "mcp__blocked-site-browser__take_screenshot",
+      "mcp__blocked-site-browser__take_snapshot",
       "mcp__blocked-site-browser__get_network_request"
     ],
     "defaultMode": "auto",
@@ -608,6 +609,10 @@
             "type": "command",
             "command": "node ~/.claude/hooks/name-session.js",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/inject-keyword-rules.py"
           }
         ]
       }

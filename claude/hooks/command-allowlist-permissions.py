@@ -20,8 +20,8 @@ subcommand decide whether it's safe, which a prefix can't express.
 
 This hook is the SOLE permission authority for the commands it covers, because a `settings.json`
 `ask` rule would override its `allow`. See the "Command allowlist hooks" section of
-`claude/CLAUDE.md` for which rules were removed to make that true, and what to restore if this
-hook is ever dropped.
+`claude/hooks/README.md` for which rules were removed to make that true, and what to restore if
+this hook is ever dropped.
 
 Won't work for WP-CLI if `mcp__local-wp__wp_cli` is in `permissions.allow`. Keep it out of there.
 

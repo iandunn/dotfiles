@@ -24,7 +24,7 @@ Public repo, but some files are intentionally `.gitignore`d because they're priv
 ## Claude hooks
 Live in `claude/hooks/` (Python + a few shell/JS), symlinked into `~/.claude/hooks`. They gate
 tool permissions (Chrome MCP, WP-CLI, worktrees, curl, textutil, dangerous command shapes). Create new
-hooks here, then symlink. Tests are in `claude/hooks/tests/`.
+hooks here, then symlink. Tests are in `claude/hooks/tests/`. Read `claude/hooks/README.md` before changing a hook or a permission rule in `claude/settings.json`; it documents how each hook decides and which settings rules it replaced.
 
 
 ## Parking lot
