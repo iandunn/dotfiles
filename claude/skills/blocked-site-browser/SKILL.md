@@ -5,6 +5,26 @@ description: Rules for the `blocked-site-browser` MCP server, which reads web pa
 
 # Blocked site browser
 
+<!-- The server is registered under `mcpServers` in `~/.claude.json`, which isn't tracked, so this is a copy of its definition:
+
+```json
+"blocked-site-browser": {
+	"type": "stdio",
+	"command": "npx",
+	"args": [
+		"chrome-devtools-mcp@latest",
+		"--headless",
+		"--javascriptEvaluation=false",
+		"--user-data-dir=/Users/example-username/Library/Application Support/Blocked-Site-Browser",
+		"--ignore-default-chrome-arg=--enable-automation",
+		"--chrome-arg=--disable-blink-features=AutomationControlled",
+		"--chrome-arg=--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36"
+	],
+	"env": {}
+}
+```
+-->
+
 Some sites block curl and WebFetch, so the `blocked-site-browser` MCP server drives a headless Chrome with its own profile. It starts Chrome on first use. Every session shares that one profile, so a session that leaves its Chrome open locks every other session out with "The browser is already running". Close it as soon as you finish a batch of reads, without waiting for the session to end, by running `bash ~/dotfiles/claude/bin/close-isolated-chrome.sh` with the sandbox off. That closes only this session's Chrome, and the next `blocked-site-browser` call starts a fresh one. When you're the one locked out, report which session holds it, so it can be closed there. Its user agent is overridden to a normal Chrome 156 one, because Lowe's, White Cap, and Crescent Electric blocked headless Chrome's default. When Chrome moves to a new major version, report that the user agent in the server's config needs updating, since a mismatch is itself a bot signal. The server also strips `--enable-automation` and sets `--disable-blink-features=AutomationControlled`. Both stay in place whether Chrome runs headless or not, because Lowe's blocked it without the second one. If a site starts blocking it, report it; dropping `--headless` is the fallback.
 
 The sites it may open are the `blockedSiteBrowser.sites` lists in `~/.claude/settings.json`, which holds the defaults for every project, and in the project's own `.claude/settings.json`, which adds to them once the project's trust dialog has been accepted. Only the committed version of the project's file counts, so a site added there prompts until the change is committed, and `.claude/settings.local.json` never counts. `~/.claude/hooks/chrome-mcp-permissions.py` allows the union of those lists and prompts for every other host. Only sites that block curl go on a list. Use WebFetch for every other site. When a site you need isn't on a list, ask for it to be added rather than editing the settings yourself. Never use `blocked-site-browser` for anything except reading a site's product, search, review, delivery, or shipping pages for product and pricing research. Never use the default `chrome-devtools` server for a listed site, and never open a site that isn't on a list, even when a page links to it.
