@@ -20,10 +20,12 @@ Currently implemented:
     The `blocked-site-browser` server is one exception: hosts named in the
     `blockedSiteBrowser.sites` list of ~/.claude/settings.json, or of a trusted
     project's committed .claude/settings.json, are allowed silently for that
-    server only. The global list is the default for every project, and a
-    project's list adds to it. For that server the hook is an
+    server only. A listed host also covers its `www.` twin, so `homedepot.com`
+    and `www.homedepot.com` are the same site. The global list is the default for
+    every project, and a project's list adds to it. For that server the hook is an
     allowlist that fails closed: it allows only the read-only calls and arguments
-    in BLOCKED_SITE_ALLOWED_ARGUMENTS and prompts for every other call, and a
+    in BLOCKED_SITE_ALLOWED_ARGUMENTS, plus a `take_snapshot` file written into
+    the working directory's `.claude/tmp/`, and prompts for every other call, and a
     crash prompts too. Its settings also deny evaluate_script, fill, and the
     other input and file-writing tools, as a second layer.
 
@@ -74,6 +76,7 @@ Currently implemented:
     command fails, times out, or its output doesn't parse, fails open
     (allow) rather than blocking on absent data.
 """
+import importlib.util
 import json
 import os
 import re
@@ -103,6 +106,8 @@ GIT_TIMEOUT_SECONDS = 5
 # The only `blocked-site-browser` calls this hook allows, and the only arguments each
 # may carry. Every other tool or argument prompts, so a new tool or argument in a later
 # `@latest` release, like a file path to save to or an `initScript`, can't slip through.
+# The one exception is `take_snapshot`'s `filePath`, which passes only when it points into
+# scratch (see is_scratch_file_path).
 BLOCKED_SITE_ALLOWED_ARGUMENTS = {
     'navigate_page': {'url', 'type', 'timeout', 'pageId', 'ignoreCache', 'handleBeforeUnload'},
     'new_page': {'url', 'timeout', 'background'},
@@ -265,30 +270,77 @@ def trusted_project_dir():
     return None
 
 
+def same_site_hosts(host):
+    """Returns host and its `www.` twin, because search results often link the bare apex of a
+    listed `www.` site, which then redirects. No other subdomain counts as the same site."""
+    if host.startswith('www.'):
+        apex = host[len('www.'):]
+        return {host, apex} if '.' in apex and not apex.startswith('www.') else {host}
+
+    return {host, 'www.' + host}
+
+
 def is_listed_host(host):
     """Returns True when `blocked-site-browser` may open host without a prompt: it's on
     the global list or the trusted project's committed list, read fresh on every call."""
-    if host in listed_sites_in(os.path.expanduser('~/.claude/settings.json')):
+    hosts = same_site_hosts(host)
+
+    if hosts & listed_sites_in(os.path.expanduser('~/.claude/settings.json')):
         return True
 
     project_dir = trusted_project_dir()
 
-    return bool(project_dir) and host in committed_sites_in(project_dir)
+    return bool(project_dir) and bool(hosts & committed_sites_in(project_dir))
 
 
 def uncommitted_listing(host):
-    """Returns the trusted project's settings file that lists host without it counting,
-    because the listing isn't committed, or None."""
+    """Returns the listed host and the trusted project's settings file that lists it without
+    it counting, because the listing isn't committed, or None."""
     project_dir = trusted_project_dir()
 
     if not project_dir:
         return None
 
     for name in (PROJECT_SETTINGS_FILE, PROJECT_LOCAL_SETTINGS_FILE):
-        if host in listed_sites_in(os.path.join(project_dir, name)):
-            return name
+        listed = same_site_hosts(host) & listed_sites_in(os.path.join(project_dir, name))
+        if listed:
+            return min(listed), name
 
     return None
+
+
+def file_command_permissions():
+    hooks_dir = os.path.dirname(os.path.realpath(__file__))
+    module_path = os.path.join(hooks_dir, 'file-command-permissions.py')
+    spec = importlib.util.spec_from_file_location('file_command_permissions', module_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def is_scratch_file_path(file_path, cwd):
+    """Returns True when a `take_snapshot` file can only land in the working directory's own
+    `.claude/tmp/`, judged by the rule `file-command-permissions.py` applies to a `>` redirect.
+
+    The checks before that rule close the gaps between how it reads a path and how the MCP
+    server writes one. The server resolves a relative path against its own directory, collapses
+    `..` as text where the rule follows symlinks, and swaps any extension for `.txt` before it
+    writes, so a path that doesn't already end in `.txt` would have its links checked on a name
+    that never gets written. The session scratchpad isn't accepted, because the server only
+    writes inside its client roots and its own temp directory.
+
+    A link planted between this check and the server's write still redirects the file, the same
+    race the redirect rule accepts, because no hook can see what happens after it decides."""
+    if not isinstance(file_path, str) or not os.path.isabs(file_path):
+        return False
+
+    if any(component in ('.', '..') for component in file_path.split(os.sep)):
+        return False
+
+    if os.path.splitext(os.path.basename(file_path))[1] != '.txt':
+        return False
+
+    return file_command_permissions().is_scratch_destination(file_path, cwd, include_agent_temp=False)
 
 
 def emit(decision, reason):
@@ -357,10 +409,11 @@ def gate_navigation(tool_input, session_id, cwd, tool_name):
     )
 
     if host and tool_name.startswith(BLOCKED_SITE_TOOL_PREFIX):
-        uncommitted_file = uncommitted_listing(host)
-        if uncommitted_file:
+        uncommitted = uncommitted_listing(host)
+        if uncommitted:
+            listed_host, uncommitted_file = uncommitted
             reason = (
-                f'{host} is listed in {uncommitted_file}, but only the list in the committed '
+                f'{listed_host} is listed in {uncommitted_file}, but only the list in the committed '
                 f'{PROJECT_SETTINGS_FILE} counts, so commit it there to stop this prompt. '
                 + reason
             )
@@ -456,6 +509,10 @@ def gate_blocked_site_tool(tool_name, tool_input, session_id, cwd):
         return
 
     extra_arguments = set(tool_input) - allowed_arguments
+    if (tool == 'take_snapshot' and 'filePath' in extra_arguments
+            and is_scratch_file_path(tool_input['filePath'], cwd)):
+        extra_arguments.discard('filePath')
+
     if extra_arguments:
         emit('ask', f"{tool_name} with {', '.join(sorted(extra_arguments))} isn't on this hook's read-only allowlist.")
         return

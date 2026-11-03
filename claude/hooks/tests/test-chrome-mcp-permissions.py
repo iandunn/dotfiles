@@ -127,6 +127,7 @@ class PreAuthorizedSiteMatrixTest(GateTestCase):
 
 
 BLOCKED_SITE_TOOL = 'mcp__blocked-site-browser__new_page'
+SNAPSHOT_TOOL = 'mcp__blocked-site-browser__take_snapshot'
 
 
 def write_settings(path, sites):
@@ -310,6 +311,74 @@ class BlockedSiteListTest(GateTestCase):
 
     def test_snapshot_with_file_path_asks(self):
         self.assertListed(ASK, None, self.project, 'mcp__blocked-site-browser__take_snapshot', {'filePath': '/tmp/x.txt'})
+
+    def test_snapshot_into_working_directory_scratch_allowed(self):
+        self.assertListed(ALLOW, None, self.project, SNAPSHOT_TOOL, {'pageId': 1, 'filePath': str(self.home / '.claude/tmp/page.txt')})
+
+    def test_snapshot_into_session_scratchpad_asks(self):
+        """The MCP server only writes inside its client roots and its own temp directory."""
+        scratchpad = Path(tempfile.gettempdir()).resolve() / f'claude-{os.getuid()}' / 'project' / 'session' / 'scratchpad'
+        self.assertListed(ASK, None, self.project, SNAPSHOT_TOOL, {'filePath': str(scratchpad / 'page.txt')})
+
+    def test_snapshot_without_a_txt_name_asks(self):
+        """The server swaps any extension for `.txt`, so a link at the `.txt` name would be written through."""
+        scratch = self.home / '.claude/tmp'
+        scratch.mkdir(parents=True)
+        (scratch / 'page.txt').symlink_to(self.home / '.claude/settings.json')
+        self.assertListed(ASK, None, self.project, SNAPSHOT_TOOL, {'filePath': str(scratch / 'page.html')})
+        self.assertListed(ASK, None, self.project, SNAPSHOT_TOOL, {'filePath': str(scratch / 'page')})
+        self.assertListed(ASK, None, self.project, SNAPSHOT_TOOL, {'filePath': str(scratch / '.txt')})
+
+    def test_snapshot_at_the_scratch_root_asks(self):
+        """The server would write `.claude/tmp.txt`, beside scratch rather than in it."""
+        self.assertListed(ASK, None, self.project, SNAPSHOT_TOOL, {'filePath': str(self.home / '.claude/tmp')})
+        self.assertListed(ASK, None, self.project, SNAPSHOT_TOOL, {'filePath': str(self.home / '.claude/tmp') + '/'})
+
+    def test_snapshot_dot_dot_through_a_scratch_symlink_asks(self):
+        """Node collapses `..` as text, so this writes `notes.txt` beside `.claude`, not in scratch."""
+        deep = self.home / '.claude/tmp/a/b/c'
+        deep.mkdir(parents=True)
+        (self.home / '.claude/tmp/deep').symlink_to(deep)
+        self.assertListed(ASK, None, self.project, SNAPSHOT_TOOL, {'filePath': str(self.home / '.claude/tmp/deep/../../../notes.txt')})
+
+    def test_snapshot_outside_scratch_asks(self):
+        self.assertListed(ASK, None, self.project, SNAPSHOT_TOOL, {'filePath': str(self.home / '.claude/settings.json')})
+        self.assertListed(ASK, None, self.project, SNAPSHOT_TOOL, {'filePath': str(self.home / '.claude/tmp/../settings.json')})
+
+    def test_snapshot_relative_file_path_asks(self):
+        """The MCP server resolves a relative path against its own directory, not the session's."""
+        self.assertListed(ASK, None, self.project, SNAPSHOT_TOOL, {'filePath': '.claude/tmp/page.txt'})
+
+    def test_snapshot_through_a_scratch_symlink_asks(self):
+        scratch = self.home / '.claude/tmp'
+        scratch.mkdir(parents=True)
+        (scratch / 'link.txt').symlink_to(self.home / '.claude/settings.json')
+        self.assertListed(ASK, None, self.project, SNAPSHOT_TOOL, {'filePath': str(scratch / 'link.txt')})
+
+    def test_apex_and_www_hosts_are_the_same_site(self):
+        self.assertListed(ALLOW, 'https://homedepot.com/p/123')
+        write_settings(self.home / '.claude/settings.json', ['homedepot.com'])
+        self.assertListed(ALLOW, 'https://www.homedepot.com/p/123')
+
+    def test_project_list_covers_the_www_twin(self):
+        self.assertListed(ALLOW, 'https://crescentelectric.com/', self.project)
+
+    def test_uncommitted_warning_names_the_listed_twin(self):
+        out, code = run('https://acehardware.com/', self.home, tool_name=BLOCKED_SITE_TOOL, home=self.home, project_dir=self.project)
+        self.assertEqual(decision(out), ASK)
+        self.assertIn('www.acehardware.com is listed in .claude/settings.local.json', reason(out))
+
+    def test_snapshot_onto_a_hard_link_asks(self):
+        scratch = self.home / '.claude/tmp'
+        scratch.mkdir(parents=True)
+        target = self.home / 'notes.txt'
+        target.write_text('mine')
+        os.link(target, scratch / 'page.txt')
+        self.assertListed(ASK, None, self.project, SNAPSHOT_TOOL, {'filePath': str(scratch / 'page.txt')})
+
+    def test_other_subdomains_are_not_the_same_site(self):
+        self.assertListed(ASK, 'https://evil.homedepot.com/')
+        self.assertListed(ASK, 'https://www.www.homedepot.com/')
 
     def test_snapshot_without_file_path_allowed(self):
         self.assertListed(ALLOW, None, self.project, 'mcp__blocked-site-browser__take_snapshot', {'pageId': 1})
