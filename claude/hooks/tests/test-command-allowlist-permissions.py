@@ -452,6 +452,12 @@ class LocalWpCliTest(DecisionTest):
     def test_proxied_reads_allowed(self):
         self.assertAllows('localwp cli dmv -- option pluck wpseo_titles title-page')
         self.assertAllows('localwp cli dmv -- db prefix')
+        self.assertAllows(
+            'localwp cli dmv -- user meta list 2650 --keys=_two_factor_provider --format=json'
+        )
+        self.assertAllows('wp user meta list 1')
+        # It dumps usermeta secrets in one call, so it stays local.
+        self.assertAsks('vip @app.staging wp user meta list 1')
 
     def test_native_reads_allowed(self):
         self.assertAllows('localwp list')

@@ -244,6 +244,13 @@ WP_READ_ALLOWED = [
     'widget list',
 ]
 
+# WP-CLI reads that are allowed only against a local site. `user meta list` dumps every meta row at
+# once, including session tokens, application password hashes, and 2FA secrets, so on a VIP
+# environment it prompts.
+WP_LOCAL_READ_ALLOWED = [
+    'user meta list',
+]
+
 # WP-CLI subcommands that change the site. They're allowed only against a local site, through
 # `wp` or `localwp`, because a local database is disposable. Against any VIP environment, staging
 # and preprod included, they prompt.
@@ -268,7 +275,7 @@ WP_LOCAL_WRITE_ALLOWED = [
     'vip-search index',
 ]
 
-WP_LOCAL_ALLOWED = WP_READ_ALLOWED + WP_LOCAL_WRITE_ALLOWED
+WP_LOCAL_ALLOWED = WP_READ_ALLOWED + WP_LOCAL_READ_ALLOWED + WP_LOCAL_WRITE_ALLOWED
 
 # VIP-CLI's own subcommands, as opposed to the WP-CLI it proxies. Reads only -- `db`, `backup`,
 # `export`, `import`, and `sync` move real data around and belong behind a prompt.
