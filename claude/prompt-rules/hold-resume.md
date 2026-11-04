@@ -1,3 +1,5 @@
+<!-- `claude/hooks/inject-keyword-rules.py` adds this file to the context when a prompt says "hold" or "resume". -->
+
 ## Hold / Resume
 When I say "hold" or "hold replies" that means that I want to tell you something, and I want you to act on it, but I don't want you to reply yet.
 
