@@ -370,7 +370,7 @@ GIT_GLOBAL_FLAGS_TAKING_A_VALUE = {
 # settings.json says.
 GIT_READ_ONLY_SUBCOMMANDS = frozenset({
     ('diff',), ('fetch',), ('grep',), ('log',), ('ls-tree',), ('remote', 'get-url'), ('show',),
-    ('stash', 'list'), ('stash', 'show'), ('status',), ('symbolic-ref',),
+    ('stash', 'list'), ('stash', 'show'), ('status',), ('symbolic-ref',), ('worktree', 'list'),
 })
 
 # A `git fetch` operand that is only a remote name. Anything else -- a URL, a filesystem path, or a
@@ -399,6 +399,13 @@ GIT_GREP_PAGER_CLUSTER = re.compile(r'-[^-]*O')
 # the ref, and pointing HEAD at another branch changes what every reader of HEAD sees without a
 # commit.
 GIT_SYMBOLIC_REF_READ_OPTIONS = frozenset({'-q', '--quiet', '--short', '--no-short', '--recurse', '--no-recurse'})
+
+# Every option `git worktree list` takes. `--expire` only changes which worktrees the listing marks
+# as prunable; it doesn't prune them.
+GIT_WORKTREE_LIST_OPTIONS = {
+    'flags': frozenset({'-v', '-z', '--verbose', '--porcelain'}),
+    'takes_a_value': frozenset({'--expire'}),
+}
 
 # The options that keep `git branch` and `git tag` listing refs rather than creating, deleting, or
 # moving one. Long options must be spelled in full, since an abbreviation like `--cop` is `--copy`.
@@ -929,6 +936,8 @@ def git_read_only_option_reason(subcommand, arguments, cwd, git_cwd):
         if len(operands) > 1:
             return 'a second operand makes git symbolic-ref point the ref somewhere else'
         return None
+    if subcommand == 'worktree':
+        return git_worktree_list_option_reason(arguments[1:])
     if subcommand == 'fetch':
         # An option's separate value isn't an operand, and one that isn't recognized could shift the
         # operands: `--server origin sibling` fetches from the directory `sibling`. So every option
@@ -955,6 +964,37 @@ def git_read_only_option_reason(subcommand, arguments, cwd, git_cwd):
                 return (f'`{operand}` is not a plain name, and a URL, path, or `ext::` helper can '
                         'make git fetch run a program')
         return git_remote_operands_hazard(git_cwd, 'fetch', operands)
+    return None
+
+
+def git_worktree_list_option_reason(arguments):
+    """Why the arguments after `git worktree list` aren't a plain listing, or None.
+
+    Every one has to be on GIT_WORKTREE_LIST_OPTIONS, because `worktree` is otherwise gated by
+    settings.json prefix rules that a `-C` hides, and an operand has no meaning to `list`.
+    """
+    expecting_value = False
+    for argument in arguments:
+        if expecting_value:
+            if argument.startswith('-'):
+                return f'`{argument}` follows an option that takes a value'
+            expecting_value = False
+            continue
+        if argument in GIT_WORKTREE_LIST_OPTIONS['flags']:
+            continue
+        long_flag = argument.startswith('--') and '=' not in argument and any(
+            is_long_option(argument, flag)
+            for flag in GIT_WORKTREE_LIST_OPTIONS['flags'] if flag.startswith('--')
+        )
+        if long_flag:
+            continue
+        value_options = GIT_WORKTREE_LIST_OPTIONS['takes_a_value']
+        if any(is_long_option(argument, option) for option in value_options):
+            expecting_value = '=' not in argument
+            continue
+        return f'`{argument}` is not an option this hook can vouch for on git worktree list'
+    if expecting_value:
+        return 'an option that takes a value has none'
     return None
 
 

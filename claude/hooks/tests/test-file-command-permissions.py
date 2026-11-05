@@ -86,10 +86,10 @@ class WorktreeRemoveTest(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIsNone(decision(out))
 
-    def test_worktree_list_not_gated(self):
+    def test_worktree_list_allowed(self):
         out, code = run('git worktree list')
         self.assertEqual(code, 0)
-        self.assertIsNone(decision(out))
+        self.assertEqual(decision(out), ALLOW)
 
 
 class CpTest(unittest.TestCase):
@@ -1118,6 +1118,31 @@ class GitReadOnlySubcommandTest(DecisionTest):
         self.assertDecision(ASK, 'git symbolic-ref -m reason HEAD refs/heads/worktree-x')
         self.assertDecision(ASK, 'git symbolic-ref -d HEAD')
         self.assertDecision(ASK, 'git symbolic-ref --delete HEAD')
+
+
+class GitWorktreeListTest(DecisionTest):
+    """`git worktree list` only reads, but every other `worktree` subcommand stays gated."""
+
+    def test_listing_with_dash_c_allowed(self):
+        self.assertDecision(ALLOW, 'git -C /some/repo worktree list')
+        self.assertDecision(ALLOW, 'git -C /some/repo worktree list --porcelain -z')
+        self.assertDecision(ALLOW, 'git -C /some/repo worktree list -v')
+        self.assertDecision(ALLOW, 'git -C /some/repo worktree list --expire 2.weeks.ago')
+        self.assertDecision(ALLOW, 'git -C /some/repo worktree list --expire=now')
+        self.assertDecision(ALLOW, 'git -C /some/repo worktree list --porc')
+
+    def test_other_worktree_subcommands_with_dash_c_ask(self):
+        self.assertDecision(ASK, 'git -C /some/repo worktree remove --force /some/repo/x')
+        self.assertDecision(ASK, 'git -C /some/repo worktree prune')
+        self.assertDecision(ASK, 'git -C /some/repo worktree move /some/repo/x /some/repo/y')
+        self.assertDecision(ASK, 'git -C /some/repo worktree add /tmp/x')
+
+    def test_unknown_option_or_operand_asks(self):
+        self.assertDecision(ASK, 'git -C /some/repo worktree list --bogus')
+        self.assertDecision(ASK, 'git -C /some/repo worktree list extra')
+        self.assertDecision(ASK, 'git -C /some/repo worktree list --expire')
+        self.assertDecision(ASK, 'git -C /some/repo worktree list --expire --porcelain')
+        self.assertDecision(ASK, 'git -C /some/repo worktree list --output=.claude/tmp/x')
 
 
 class GitRefListingTest(DecisionTest):
