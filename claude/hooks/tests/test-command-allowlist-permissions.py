@@ -536,11 +536,41 @@ class ForgeReadTest(DecisionTest):
                         'glab mr list -R https://evil.example/g/r',
                         'glab mr list -R git@evil.example:g/r', 'gh pr list --repo=x.test/a/b',
                         'gh repo view evil.example/a/b', 'glab repo view evil.example/g/r',
-                        'gh pr view https://evil.example/a/b/pull/1'):
+                        'gh pr view https://evil.example/a/b/pull/1',
+                        'gh repo view git@evil.example:a/b', 'glab mr list -R a/b/c/d',
+                        'glab repo view a/b/c/d', 'gh pr view //evil.example/a/b/pull/1',
+                        'gh issue view git@evil.example:a/b',
+                        'glab mr view //evil.example/a/-/merge_requests/1'):
             with self.subTest(command=command):
                 self.assertAsks(command)
         self.assertAllows('gh repo view a/b')
         self.assertAllows('glab repo view group/sub/repo')
+
+    def test_repo_view_flag_values_are_not_repositories(self):
+        """A field list, jq expression, or branch after its flag isn't a repository operand."""
+        for command in ('gh repo view --json name,url', 'gh repo view a/b --json name,description',
+                        "gh repo view --jq '.name | ascii_downcase'",
+                        "gh repo view -t '{{.name}}'", 'gh repo view -b feature/a/b',
+                        'gh repo view -b feature/x+y', 'glab repo view -F json group/repo'):
+            with self.subTest(command=command):
+                self.assertAllows(command)
+        self.assertAllows('gh repo view a/b -b -b')
+        self.assertAllows('gh repo view -b feature/x+y --json name,url')
+        self.assertAsks('gh repo view --json name evil.example/a/b')
+        self.assertAsks('gh repo view -b https://evil.example/a')
+
+    def test_flag_shaped_value_cannot_hide_a_repository(self):
+        """pflag reads `-b -b evil/a/b` as a branch named `-b` and a positional repository."""
+        for command in ('gh repo view -b -b evil.example/a/b',
+                        'gh repo view --branch --branch evil.example/a/b',
+                        'gh repo view --json -b evil.example/a/b',
+                        'gh repo view -q -q evil.example/a/b',
+                        'glab repo view -F -F evil.example/a/b',
+                        'gh repo view -b -Ra/b evil.example/c/d',
+                        'gh repo view -b --repo=a/b evil.example/c/d',
+                        'glab repo view -b -Rg/r evil.example/a/b'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
 
     def test_repo_flag_as_another_flags_value_cannot_hide_a_flag(self):
         """pflag reads `--branch -R --web` as a branch named `-R`, leaving `--web` live."""

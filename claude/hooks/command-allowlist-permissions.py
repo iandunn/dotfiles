@@ -415,17 +415,25 @@ FORGE_REPO_FLAGS = frozenset({'-R', '--repo'})
 
 # What `-R`/`--repo` may name. gh reads `HOST/OWNER/REPO` and glab reads a URL or `git@host:`, so
 # anything beyond a bare path could send the request, and the token for that host, elsewhere.
+# glab is held to `GROUP/NAMESPACE/REPO`, since a longer path may be read with a host in front.
 FORGE_REPOSITORY = {
     'gh': re.compile(r'[\w.-]+/[\w.-]+'),
-    'glab': re.compile(r'[\w-]+(?:/[\w.-]+)+'),
+    'glab': re.compile(r'[\w-]+(?:/[\w.-]+){1,2}'),
 }
 
-# A `repo view` operand that starts with a host: a third path segment for gh, or a dotted first
-# segment for glab.
-FORGE_HOST_PREFIX = {
-    'gh': re.compile(r'[^/]*/[^/]*/'),
-    'glab': re.compile(r'[^/]*\.[^/]*/'),
-}
+# A `repo view` operand with no slash, like a repository in the default owner. Anything else there
+# has to pass `FORGE_REPOSITORY`.
+FORGE_BARE_NAME = re.compile(r'[\w.-]+')
+
+# An operand that starts like a protocol-relative URL or a `git@host:` remote. Both CLIs are
+# expected to ignore those, but the hook shouldn't depend on it.
+FORGE_REMOTE_OPERAND = re.compile(r'//|[\w.-]+@[\w.-]+:')
+
+# The `repo view` flags that take a value, so the token after one isn't held to the repository
+# check above.
+FORGE_REPO_VIEW_VALUE_FLAGS = frozenset(
+    {'-b', '-F', '-q', '-t', '--branch', '--jq', '--json', '--output', '--template'}
+)
 
 # Where Local's "Install Local CLI" preference puts its launcher. It resolves here only so that
 # `LOCALWP_CANONICAL_SPELLING` can deny it with a reason that names the fix.
@@ -1056,7 +1064,9 @@ def strip_repo_flags(name, tokens):
     Returns (kept_tokens, problem). The value has to be a plain repository path, because gh takes
     `HOST/OWNER/REPO` and glab takes a URL, either of which sends the request to another host.
     It also can't start with a dash: when `-R` is itself the value of an earlier flag, as in
-    `--branch -R --web`, the word after it is a live flag that has to be checked.
+    `--branch -R --web`, the word after it is a live flag that has to be checked. For the same
+    reason, a repository flag straight after a bare flag asks, since dropping it would pair that
+    flag with the next word instead.
     """
     kept = []
     index = 0
@@ -1065,6 +1075,10 @@ def strip_repo_flags(name, tokens):
         if token == '--':
             kept.extend(tokens[index:])
             break
+        is_repo_flag = token in FORGE_REPO_FLAGS or token.startswith(('--repo=', '-R'))
+        previous = tokens[index - 1] if index else ''
+        if is_repo_flag and previous.startswith('-') and '=' not in previous:
+            return None, f'"{token}" may be the value of "{previous}"'
         if token in FORGE_REPO_FLAGS:
             value = tokens[index + 1] if index + 1 < len(tokens) else ''
             index += 2
@@ -1169,7 +1183,17 @@ def decide_forge(name, tokens, config):
         # pflag reads a `--` straight after a bare flag as that flag's value, as in
         # `--search -- --web`, so it only ends the flags when no flag might be waiting for one.
         might_be_a_value = previous.startswith('-') and '=' not in previous
+        is_repo_view_value = (
+            path == 'repo view' and not operands_only and previous in FORGE_REPO_VIEW_VALUE_FLAGS
+        )
         previous = token
+        if is_repo_view_value:
+            # pflag takes the next word as the value even when it looks like a flag, so the word
+            # after this one is checked as an operand again.
+            previous = ''
+            if '://' in token or FORGE_REMOTE_OPERAND.match(token):
+                return ASK, f'"{token}" may name another host'
+            continue
         if token == '--' and not operands_only and not might_be_a_value:
             operands_only = True
             continue
@@ -1177,8 +1201,12 @@ def decide_forge(name, tokens, config):
             flag = token.partition('=')[0] if token.startswith('--') else token
             if flag not in allowed_flags:
                 return ASK, f'"{flag}" is not on the read-only flag list for "{name} {path}"'
-        elif '://' in token or (path == 'repo view' and FORGE_HOST_PREFIX[name].match(token)):
-            # A URL operand, or a repository with a host in front, points the read elsewhere.
+        elif '://' in token or FORGE_REMOTE_OPERAND.match(token) or (
+            path == 'repo view'
+            and not (FORGE_BARE_NAME.fullmatch(token) or FORGE_REPOSITORY[name].fullmatch(token))
+        ):
+            # A URL operand, or a `repo view` repository with a host or `git@host:` in front,
+            # points the read elsewhere.
             return ASK, f'"{token}" may name another host'
     return ALLOW, f'"{name} {path}" is allowlisted'
 
