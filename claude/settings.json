@@ -1,7 +1,8 @@
 {
   "cleanupPeriodDays": 1095,
   "env": {
-    "ENABLE_CLAUDEAI_MCP_SERVERS": "true"
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "true",
+    "XDEBUG_MODE": "off"
   },
   "attribution": {
     "commit": "",
@@ -38,7 +39,20 @@
       "Bash(composer outdated *)",
       "Bash(composer validate *)",
       "Bash(composer run lint *)",
+      "Bash(composer run test)",
       "Bash(composer run test *)",
+      "Bash(composer run test-functional)",
+      "Bash(composer run test-functional *)",
+      "Bash(composer run test-integration)",
+      "Bash(composer run test-integration *)",
+      "Bash(composer run test-rerun)",
+      "Bash(composer run test-rerun *)",
+      "Bash(composer run test-serial)",
+      "Bash(composer run test-serial *)",
+      "Bash(composer run test-unit)",
+      "Bash(composer run test-unit *)",
+      "Bash(composer run test-wpacceptance)",
+      "Bash(composer run test-wpacceptance *)",
       "Bash(composer show *)",
       "Bash(composer update *)",
       "Bash(command rm -f .claude/tmp/*)",

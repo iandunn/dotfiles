@@ -300,7 +300,10 @@ class VipProxiedWpTest(DecisionTest):
         """Writes are only automatic on a local site; staging and preprod are still remote."""
         for command in ('vip @wpvip-publix.preprod wp option update blogname x',
                         'vip @co-williams.staging wp post update 1 --post_title=x',
-                        'vip @co-williams.develop wp cache flush'):
+                        'vip @co-williams.develop wp cache flush',
+                        'vip @co-williams.staging wp cron event run --due-now',
+                        'vip @wpvip-publix.preprod wp cron event run --all',
+                        'vip @co-williams.develop wp cron event run gravityforms_cron'):
             with self.subTest(command=command):
                 self.assertAsks(command)
 
@@ -445,6 +448,8 @@ class LocalWpCliTest(DecisionTest):
         for command in ('localwp cli publix -- post update 674 /tmp/content.html',
                         'localwp cli publix -- post meta update 1 key value',
                         'localwp cli publix -- option patch update opt key 1',
+                        'localwp cli dmv -- cron event run gravityforms_cron',
+                        'wp cron event run --due-now',
                         'wp option update blogname x'):
             with self.subTest(command=command):
                 self.assertAllows(command)
@@ -452,6 +457,9 @@ class LocalWpCliTest(DecisionTest):
     def test_proxied_reads_allowed(self):
         self.assertAllows('localwp cli dmv -- option pluck wpseo_titles title-page')
         self.assertAllows('localwp cli dmv -- db prefix')
+        self.assertAllows('localwp cli dmv -- plugin verify-checksums --all')
+        self.assertAllows('vip @co-williams.staging wp plugin verify-checksums --all')
+        self.assertAsks('vip @co-williams.production wp plugin verify-checksums --all')
         self.assertAllows(
             'localwp cli dmv -- user meta list 2650 --keys=_two_factor_provider --format=json'
         )

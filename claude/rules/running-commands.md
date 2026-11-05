@@ -20,6 +20,8 @@
 
 - Don't run things like `npx jest` when you can run `npm run test` instead.
 
+- `settings.json` already sets `XDEBUG_MODE=off` for every command, so don't prefix one with `XDEBUG_MODE=off`, either bare or through `env`; both forms prompt. Override it only when you need coverage or step debugging.
+
 - `cr` and `nr` are my aliases for `composer run` and `npm run`
 
 - Name VIP-CLI targets with a single leading `@org.env` token: `vip @foo.staging wp post list`. That's the only spelling `hooks/command-allowlist-permissions.py` accepts -- it hard-denies `-e`/`--env`/`-a`/`--app` flags, a second `@` token, or an `@` token after the subcommand, because two target spellings on one line would leave it guessing which one VIP honors. It also denies `wp`/`vip` binaries at paths outside its `BINARY_ALLOWED_PATHS`; if you hit that deny legitimately, tell me instead of rewording the command.
