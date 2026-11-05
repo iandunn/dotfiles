@@ -256,7 +256,10 @@ through, each observed running or writing with no prompt:
                                  locally, and an `ext::<command>` helper IS one
     diff --no-index, or diff with two operands and either outside the working
                                  tree: git prints both files from disk, wherever
-                                 they are, with no repository involved
+                                 they are, with no repository involved (a
+                                 --no-index whose operands are both regular files
+                                 inside the session cwd, or /dev/null, still
+                                 auto-approves)
 
 `git fetch` therefore auto-approves only against a configured remote (or none,
 for `--all`), and only with options on GIT_FETCH_OPTIONS. A name that merely
@@ -1260,11 +1263,15 @@ def git_effective_cwd(tokens, subcommand_index, cwd):
     """The directory git runs in: the hook's cwd, moved by a `-C <path>` ahead of the subcommand.
 
     The path is resolved rather than normalized, because git's chdir follows `link/..` to the link
-    target's parent, where `normpath` would collapse it as text.
+    target's parent, where `normpath` would collapse it as text. None means the shell rewrites the
+    path before git sees it, so the directory can't be known here.
     """
     for index in range(1, subcommand_index):
         if tokens[index] == '-C' and index + 1 < subcommand_index:
-            return os.path.realpath(os.path.join(cwd, tokens[index + 1]))
+            directory = tokens[index + 1]
+            if expands_after_this_hook(directory) or has_glob(directory):
+                return None
+            return os.path.realpath(os.path.join(cwd, directory))
     return cwd
 
 
@@ -1282,7 +1289,7 @@ def git_toplevel(directory):
     return os.path.realpath(result.stdout.strip())
 
 
-def git_diff_no_index_reason(tokens, subcommand_index, cwd):
+def git_diff_no_index_reason(tokens, subcommand_index, cwd, git_cwd):
     """Why this `git diff` would compare files on disk rather than repository content, or None.
 
     `--no-index` says so outright, but git also switches to that mode on its own whenever exactly
@@ -1292,8 +1299,12 @@ def git_diff_no_index_reason(tokens, subcommand_index, cwd):
     allow; the prompt puts it on the same footing as any other command that reads an arbitrary
     path. Revisions and pathspecs both resolve inside the working tree, which is what keeps
     `git diff HEAD~1 HEAD` on the allow side.
+
+    An explicit `--no-index` passes only when both operands are regular files inside the session's
+    cwd or are `/dev/null`, since those are files the Read tool opens without a prompt anyway.
     """
     operands = []
+    no_index_flag = None
     end_of_options = False
     for argument in tokens[subcommand_index + 1:]:
         if end_of_options:
@@ -1301,14 +1312,16 @@ def git_diff_no_index_reason(tokens, subcommand_index, cwd):
         elif argument == '--':
             end_of_options = True
         elif is_long_option(argument, '--no-index'):
-            return f'`{argument}` makes git diff compare files on disk rather than the repository'
-        elif not argument.startswith('-'):
+            no_index_flag = argument
+        elif argument == '-' or not argument.startswith('-'):
             operands.append(argument)
+
+    if no_index_flag:
+        return no_index_outside_reason(no_index_flag, operands, git_cwd, cwd)
 
     if len(operands) != 2:
         return None
 
-    git_cwd = git_effective_cwd(tokens, subcommand_index, cwd)
     toplevel = git_toplevel(git_cwd)
     for operand in operands:
         if expands_after_this_hook(operand):
@@ -1322,6 +1335,34 @@ def git_diff_no_index_reason(tokens, subcommand_index, cwd):
             outside = not is_inside(operand, toplevel, git_cwd)
         if outside:
             return f'`{operand}` is outside the repository, so git diff would read it from disk'
+    return None
+
+
+def no_index_outside_reason(no_index_flag, operands, git_cwd, session_cwd):
+    """Why a `--no-index` diff could read a file outside the session's cwd, or None.
+
+    The bound is the session's cwd, where the Read tool opens files without a prompt, not the `-C`
+    directory, so a `-C` can't widen it. A glob asks here but not in an implicit no-index diff,
+    where a quoted one is a pathspec that git matches inside the repository. A link to a file
+    passes on where it sits, because git prints the link's text rather than its target. Anything
+    that isn't a regular file asks: git prints every file under a directory, follows a link to a
+    directory to the file named like the other operand, and blocks reading a FIFO.
+    """
+    flag_reason = f'`{no_index_flag}` makes git diff compare files on disk rather than the repository'
+    if len(operands) != 2:
+        return flag_reason
+    root = os.path.realpath(session_cwd)
+    for operand in operands:
+        if operand == '/dev/null':
+            continue
+        if operand == '-':
+            return f'{flag_reason}, and `-` reads standard input'
+        if expands_after_this_hook(operand) or has_glob(operand):
+            return f'`{operand}` expands after this hook reads it, so its target cannot be checked'
+        if not is_inside(operand, root, git_cwd):
+            return f'{flag_reason}, and `{operand}` is outside the working directory'
+        if not os.path.isfile(resolve_all_but_final(operand, git_cwd)):
+            return f'{flag_reason}, and `{operand}` is not a regular file'
     return None
 
 
@@ -1359,9 +1400,13 @@ def expands_after_this_hook(operand):
 GLOB_CHARS = ('*', '?', '[')
 
 
+def has_glob(operand):
+    return any(char in operand for char in GLOB_CHARS)
+
+
 def expand_globs(operand, cwd):
     """Expand a glob operand the way bash would by default; a literal operand passes through."""
-    if not any(char in operand for char in GLOB_CHARS):
+    if not has_glob(operand):
         return [operand]
     return glob.glob(os.path.join(glob.escape(cwd), operand))
 
@@ -1888,7 +1933,13 @@ def decide_tokens(tokens, command, command_line, cwd):
         extra = [flag for flag in git_globals if flag != '-C'] or ['-C']
         return 'ask', (f'`{extra[0]}` ahead of the subcommand can aim git elsewhere or change '
                        f'what git {subcommand} runs; confirm it')
+    # Every check below resolves paths and looks up aliases against the `-C` directory, so one the
+    # shell rewrites (`-C ~` becomes the home directory, not `<cwd>/~`) would be judged against
+    # the wrong place. The tokens are already unquoted, so a `~` can't be expanded here either.
     git_cwd = git_effective_cwd(tokens, subcommand_index, cwd)
+    if git_cwd is None:
+        return 'ask', (f'the `-C` directory expands after this hook reads it, so the directory '
+                       f'git {subcommand} runs in cannot be checked; confirm it')
 
     if is_worktree_remove(tokens, subcommand_index):
         if has_force_flag(tokens[subcommand_index + 2:]):
@@ -1906,7 +1957,7 @@ def decide_tokens(tokens, command, command_line, cwd):
             subcommand, tokens[subcommand_index + 1:], cwd, git_cwd,
         )
         if not option_reason and subcommand == 'diff':
-            option_reason = git_diff_no_index_reason(tokens, subcommand_index, cwd)
+            option_reason = git_diff_no_index_reason(tokens, subcommand_index, cwd, git_cwd)
         if option_reason:
             return 'ask', f'{option_reason}; confirm it'
         return 'allow', (f'git {subcommand} with no program-running or file-writing option; '

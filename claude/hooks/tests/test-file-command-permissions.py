@@ -1067,7 +1067,6 @@ class GitReadOnlySubcommandTest(DecisionTest):
     def test_diff_no_index_asks(self):
         """`--no-index` reads two arbitrary files off disk with no repository involved."""
         self.assertDecision(ASK, 'git diff --no-index /etc/hosts /dev/null')
-        self.assertDecision(ASK, 'git diff --no-index -- a b')
         self.assertDecision(ASK, 'git -C /some/repo diff --no-index x y')
 
     def test_diff_with_an_operand_outside_the_repo_asks(self):
@@ -1654,6 +1653,71 @@ class WorktreeSymlinkTest(unittest.TestCase):
         """Edit writes through a directory link without a prompt, so creating one always asks."""
         self.assertFrom(self.main_tree, None, f'ln -s {self.main_tree}/node_modules '
                                               f'{self.worktree_path("node_modules")}')
+
+
+class GitDiffNoIndexTest(unittest.TestCase):
+    """`--no-index` passes only for files inside the tree holding the session's cwd."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.temp = os.path.realpath(tempfile.mkdtemp())
+        cls.repo = os.path.join(cls.temp, 'repo')
+        cls.other_repo = os.path.join(cls.temp, 'other')
+        for repo in (cls.repo, cls.other_repo):
+            os.makedirs(os.path.join(repo, 'sub'))
+            git(repo, 'init', '-q')
+            for name in ('a.md', 'b.md', 'sub/c.md'):
+                Path(repo, name).write_text(name)
+        os.symlink('/etc/hosts', os.path.join(cls.repo, 'hosts-link'))
+        os.symlink(cls.other_repo, os.path.join(cls.repo, 'dir-link'))
+        os.mkfifo(os.path.join(cls.repo, 'fifo'))
+        os.mkdir(os.path.join(cls.repo, '~'))
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.temp)
+
+    def assertDecision(self, expected, command, cwd=None):
+        out, code = run(command, cwd=cwd or self.repo)
+        self.assertEqual(code, 0, f'non-zero exit for: {command}')
+        self.assertEqual(decision(out), expected, f'wrong decision for: {command}')
+
+    def test_files_inside_the_tree_allowed(self):
+        """Files inside the tree are ones the Read tool opens without a prompt anyway."""
+        self.assertDecision(ALLOW, 'git diff --no-index a.md b.md')
+        self.assertDecision(ALLOW, 'git diff --no-index -w --word-diff=plain -U0 -- a.md sub/c.md')
+        self.assertDecision(ALLOW, f'git -C {self.repo} diff --no-index --stat {self.repo}/a.md b.md')
+        self.assertDecision(ALLOW, 'git diff --no-index -- /dev/null /dev/null')
+        self.assertDecision(ALLOW, 'git diff --no-index /dev/null a.md')
+
+    def test_link_inside_the_tree_allowed(self):
+        """Git prints a link's text rather than its target, so the target's location is moot."""
+        self.assertDecision(ALLOW, 'git diff --no-index hosts-link a.md')
+
+    def test_files_that_can_leave_the_tree_ask(self):
+        self.assertDecision(ASK, 'git diff --no-index sub a.md')
+        self.assertDecision(ASK, 'git diff --no-index dir-link a.md')
+        self.assertDecision(ASK, 'git diff --no-index fifo a.md')
+        self.assertDecision(ASK, 'git diff --no-index ../a.md c.md',
+                            cwd=os.path.join(self.repo, 'sub'))
+        self.assertDecision(ASK, 'git diff --no-index -- ../outside a.md')
+        self.assertDecision(ASK, 'git diff --no-index a.md - b.md')
+        self.assertDecision(ASK, 'git diff --no-index a.md $HOME/x')
+        self.assertDecision(ASK, 'git diff --no-index a.md sub/*.md')
+        self.assertDecision(ASK, 'git diff --no-index -- - a.md')
+        self.assertDecision(ASK, 'git diff --no-index a.md')
+        self.assertDecision(ASK, 'git diff --no-index a.md b.md sub/c.md')
+
+    def test_dash_c_to_another_repository_asks(self):
+        """A `-C` moves git, but not the tree the session's Read tool is scoped to."""
+        self.assertDecision(ASK, f'git -C {self.other_repo} diff --no-index a.md /dev/null')
+
+    def test_dash_c_that_the_shell_expands_asks(self):
+        """A `~` directory in the cwd must not stand in for the home directory bash goes to."""
+        self.assertDecision(ASK, 'git -C ~ diff --no-index a.md /dev/null')
+        self.assertDecision(ASK, 'git -C ~/ diff a.md b.md')
+        self.assertDecision(ASK, 'git -C $HOME log')
+        self.assertDecision(ASK, 'git -C su* status')
 
 
 if __name__ == '__main__':
