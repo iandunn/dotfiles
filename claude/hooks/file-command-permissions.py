@@ -1152,7 +1152,8 @@ GIT_STAGING_SAFE_OPTIONS = {
             '--no-signoff', '--quiet', '--verbose', '--gpg-sign', '--no-gpg-sign',
         }),
         'long_taking_a_value': frozenset({
-            '--message', '--file', '--author', '--date', '--cleanup', '--trailer',
+            '--message', '--file', '--author', '--date', '--cleanup', '--trailer', '--fixup',
+            '--squash',
         }),
     },
 }

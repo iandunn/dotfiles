@@ -202,6 +202,20 @@ class LinkedWorktreeTest(unittest.TestCase):
         """`--amend` starts with `--a` but is not `--all`."""
         self.assertInMainTree(None, 'git commit --amend -m "wip"')
 
+    def test_git_commit_fixup_of_named_files_in_main_tree_left_to_classifier(self):
+        """The commit a fixup or squash targets is its value, not a pathspec."""
+        for command in ('git commit --fixup=abc123 tracked.txt',
+                        'git commit --fixup abc123 tracked.txt',
+                        'git commit --squash=abc123 -m x tracked.txt',
+                        'git commit --squash abc123 -m x tracked.txt',
+                        'git commit --fixup=amend:abc123 tracked.txt'):
+            self.assertInMainTree(None, command)
+
+    def test_git_commit_fixup_of_whole_tree_in_main_tree_asks(self):
+        for command in ('git commit --fixup=abc123 .', 'git commit --fixup abc123 .',
+                        'git commit --squash abc123 .'):
+            self.assertInMainTree(ASK, command)
+
     def test_git_commit_message_containing_a_left_to_classifier(self):
         """Letters after `-m` in a cluster are its value, not more flags."""
         self.assertInMainTree(None, 'git commit -mall')
