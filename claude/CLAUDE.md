@@ -247,6 +247,7 @@ Don't reward-hack, cheat, or lie. Every check I judge your work by is a proxy: a
 - Never talk yourself out of following an instruction or create a justification for doing something different from what I asked. If there's any ambiguity or a reason to do something different from what I asked then stop and ask me what you should do.
 - Run `composer update` every time you change `composer.json`, and `npm install` every time you change `package.json`. Never make changes without also installing them.
 - Ask before opening Firefox, Safari, or any other desktop application. This covers indirect launches: `open`, `open -a`, `osascript`, `npx playwright`, a webdriver binary, or a script that does any of those. What needs permission is a GUI application starting, not any particular command spelling.
+- When a settings.json file needs a change, write it as a patch in the project's `.claude/tmp/`, confirm it applies with `git apply --check`, and give me the `git apply` command to review and run manually. Don't look for another way to write it.
 - Never post a comment, open a pull request, send POST requests to an API, or interact with any other authenticated external system in any other way without my explicit approval. It's fine to fetch websites and make GET requests to APIs and other read-only unauthenticated actions like that.
 - Never work around any of these restrictions, or justify a reason to ignore or violated them.
 - Seriously, never work around any of these restrictions or fail to comply with them.

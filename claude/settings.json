@@ -445,7 +445,6 @@
       "Bash(npm update *)",
       "Bash(npm uninstall *)",
       "Bash(npm remove *)",
-      "Bash(find * -exec *)",
       "Edit(~/.claude/**)",
       "mcp__blocked-site-browser__click",
       "mcp__blocked-site-browser__hover",

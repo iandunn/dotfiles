@@ -5,7 +5,7 @@ match from the start of the line, so a destructive git command wearing a `-C <pa
 assignment, a wrapper like `env` or `sh -c`, or a quoted program name matches nothing. This hook
 reads the line with `bash_ast` instead, so it sees every command the line runs, wherever it sits.
 
-It decides five things, and the strongest verdict wins (deny, then ask, then silence):
+It decides six things, and the strongest verdict wins (deny, then ask, then silence):
 
   - A line that chains more than one command is denied, because splitting it into one tool call
     per command is a fix the caller can always make, and it's what lets every other hook and rule
@@ -18,6 +18,10 @@ It decides five things, and the strongest verdict wins (deny, then ask, then sil
     `--exec-path`) are asked about.
   - A destructive git subcommand, mirroring the `Bash(git ...)` entries in `permissions.deny`, is
     denied wherever it appears.
+  - A program that `find -exec`, `-execdir`, `-ok`, or `-okdir` runs is asked about unless it only
+    reads, because `settings.json` allows `Bash(find *)` and a prefix can't see what `-exec` runs.
+    `rm` and `mv` there are denied, as is `-delete` however it's quoted, and `find`'s own
+    `-fprint`-style writes are asked about.
   - Everything else is left to `settings.json` and the other hooks.
 
 Runs unfiltered on every Bash call, because a chain or a nested git command can begin with any
@@ -129,6 +133,31 @@ GIT_CONFIG_WRITE_FLAGS = frozenset({
 DESTRUCTIVE_LONG_OPTIONS = PUSH_DESTRUCTIVE_LONG | GIT_CONFIG_WRITE_FLAGS | frozenset({
     '--hard', '--pathspec-from-file', '--worktree',
 })
+
+
+# Programs `find -exec` may run without a prompt, because they only read the files `find` hands
+# them. Keep this an allowlist: anything else `-exec` runs could write, delete, or run a program.
+FIND_EXEC_READERS = frozenset({
+    'cat', 'grep', 'head', 'ls', 'md5', 'rg', 'shasum', 'stat', 'tail', 'wc',
+})
+
+# Options that make a reader above run a program of the caller's choosing, or never exit.
+FIND_EXEC_READER_RUNNING_OPTIONS = {
+    'rg': ('--pre', '--hostname-bin'),
+    'tail': ('--follow', '--retry'),
+}
+
+# Short option letters with the same effect, counted anywhere in a cluster like `-fn`.
+FIND_EXEC_READER_RUNNING_LETTERS = {
+    'tail': frozenset({'f', 'F'}),
+}
+
+# Programs refused under any `find` action, mirroring the `Bash(find * -exec rm*)` and
+# `Bash(find * -exec mv*)` deny rules, which can't see `-execdir`, `-ok`, or a wrapper.
+FIND_EXEC_DENIED = frozenset({'rm', 'mv'})
+
+# `find`'s own actions that create or truncate the file they name.
+FIND_WRITING_ACTIONS = frozenset({'-fprint', '-fprint0', '-fprintf', '-fls'})
 
 
 def expand_abbreviations(long_options):
@@ -395,6 +424,79 @@ def judge_git(command):
     return verdicts
 
 
+def reader_runs_something(program, words):
+    """True when a reader's arguments make it run a program or never exit, like `tail -f`."""
+    running_options = FIND_EXEC_READER_RUNNING_OPTIONS.get(program, ())
+    running_letters = FIND_EXEC_READER_RUNNING_LETTERS.get(program, frozenset())
+    for word in words:
+        value = word.value
+        if value == '--':
+            return False
+        if value.startswith('--'):
+            if value.split('=', 1)[0] in running_options:
+                return True
+        elif value.startswith('-') and running_letters & set(value[1:]):
+            return True
+    return False
+
+
+def judge_find_action(command):
+    """Judge a program a `find -exec`-style action runs. Returns (decision, reason) or None.
+
+    Only a reader that `find` runs directly by its bare name, with literal arguments and no
+    environment assignments, passes. `PATH=` could swap in another `grep`, and a variable could
+    hold `rg --pre`.
+    """
+    find_wrappers = [
+        index for index, wrapper in enumerate(command.wrappers) if wrapper.startswith('find -')
+    ]
+    if not find_wrappers or command.opaque:
+        return None
+    action = command.wrappers[find_wrappers[-1]]
+    program = command.words[0].value if command.words else None
+    if command.name in FIND_EXEC_DENIED:
+        return DENY, (
+            f'`find {action.split()[-1]} {command.name}` is denied, the same as `find -exec '
+            f'{command.name}` in `permissions.deny`. If the task genuinely needs it, stop and say '
+            f'so rather than rewording the command.'
+        )
+    reads_only = (
+        program in FIND_EXEC_READERS
+        and command.name == program
+        and len(command.wrappers) == find_wrappers[-1] + 1
+        and not command.assigns
+        and all(word.literal for word in command.words)
+        and not reader_runs_something(program, command.words[1:])
+    )
+    if reads_only:
+        return None
+    return ASK, (
+        f'`{action}` runs `{program or "a program"}` on every file it finds, and only '
+        f'read-only programs like `grep` and `wc`, with literal arguments, pass without a prompt.'
+    )
+
+
+def find_writing_action(command):
+    """Judge `find`'s own writes: `-delete`, and `-fprint` and the like. Returns (decision, reason).
+
+    Words are compared after bash resolves their quoting, so `-dele''te` counts. The
+    `Bash(find * -delete*)` deny rule only sees the raw line, and misses `find -delete`, which
+    deletes everything under the working directory.
+    """
+    if command.name != 'find' or command.opaque:
+        return None
+    for word in command.words[1:]:
+        if word.value == '-delete':
+            return DENY, (
+                '`find -delete` is denied by `permissions.deny`, however it\'s spelled. If the '
+                'task genuinely needs it, stop and say so rather than rewording the command.'
+            )
+    for word in command.words[1:]:
+        if word.value in FIND_WRITING_ACTIONS:
+            return ASK, f'`find {word.value}` creates or truncates the file it names.'
+    return None
+
+
 def pipes_into_shell(command):
     """True for a shell or `eval` reading a script it was handed on stdin."""
     if command.opaque is None or command.name is None:
@@ -419,6 +521,12 @@ def decide(line):
     for command in parsed.commands:
         if command.opaque:
             asks.append(command.opaque)
+        find_action = judge_find_action(command)
+        if find_action:
+            (denials if find_action[0] == DENY else asks).append(find_action[1])
+        find_write = find_writing_action(command)
+        if find_write:
+            (denials if find_write[0] == DENY else asks).append(find_write[1])
         is_git = command.name == 'git'
         # A bare assignment can't run anything this call, but there's no honest reason to write
         # one for a git variable either, and it's what the old hook refused.

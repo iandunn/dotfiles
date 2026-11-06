@@ -224,6 +224,74 @@ class DestructiveGitTest(HookTestCase):
         self.assertDenies('Git clean -fdx')
 
 
+class FindExecTest(HookTestCase):
+    """`settings.json` allows `Bash(find *)`, so this hook decides what `-exec` may run."""
+
+    def test_readers_are_silent(self):
+        for command in (
+            "find /x -path '*dmv*' -name '*.jsonl' -mtime -45 -exec grep -l 'check-eligibility' {} +",
+            "find /x -type f -not -name '*.test.js' -size +0 -exec wc -l {} +",
+            'find . -name "*.php" -execdir head -5 {} \\;',
+            'find . -type f -exec rg -n foo {} +',
+        ):
+            with self.subTest(command=command):
+                self.assertSilent(command)
+
+    def test_other_programs_ask(self):
+        for command in (
+            'find . -exec chmod +x {} \\;',
+            'find . -execdir chmod +x {} \\;',
+            'find . -ok touch {} \\;',
+            'find . -okdir sed -i s/a/b/ {} \\;',
+            'find . -exec find . -name x \\;',
+            'find . -exec /usr/bin/grep foo {} +',
+            "find . -type f -exec sh -c 'echo \"$1: $(cat \"$1\")\"' _ {} \\;",
+        ):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_a_wrapper_or_assignment_around_a_reader_asks(self):
+        for command in ('find . -exec env grep foo {} \\;', 'PATH=/tmp/x find . -exec grep x {} +',
+                        'RIPGREP_CONFIG_PATH=./cfg find . -exec rg x {} +'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_rm_and_mv_are_denied_under_every_action_and_wrapper(self):
+        for command in ('find . -execdir rm {} \\;', 'find . -ok rm {} \\;',
+                        'find . -exec env rm {} \\;', 'find . -exec xargs rm \\;',
+                        'find . -exec /bin/rm {} \\;', 'find . -okdir mv {} /tmp \\;'):
+            with self.subTest(command=command):
+                self.assertDenies(command)
+
+    def test_a_reader_option_that_runs_a_program_or_never_exits_asks(self):
+        for command in ('find . -exec rg --pre ./x foo {} +', 'find . -exec rg --pre=./x foo {} +',
+                        'find . -exec rg --hostname-bin=./x foo {} +', 'find . -exec tail -f {} +',
+                        'find . -exec tail -nF 5 {} +', 'find . -exec tail --follow=name {} +'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_a_reader_argument_that_expands_at_run_time_asks(self):
+        for command in ('find . -exec rg $OPT foo {} +', 'find . -exec rg "$OPT" foo {} +',
+                        'find . -exec rg --pre${IFS}./x foo {} +'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_find_writing_a_file_itself_asks(self):
+        for command in ('find . -fprint /tmp/x', 'find . -fprintf ~/.bashrc x',
+                        'find . -fls out.txt', 'find . -fprint0 out'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_find_delete_is_denied_however_it_is_spelled(self):
+        for command in ('find -delete', "find . -dele''te", 'find . -delet\\e', "find . $'-delete'",
+                        "find . -exec grep foo {} + -dele''te", 'find . -exec find . -delete \\;'):
+            with self.subTest(command=command):
+                self.assertDenies(command)
+
+    def test_find_without_actions_is_silent(self):
+        self.assertSilent('find . -name "*.php" -print')
+
+
 class BypassTest(HookTestCase):
     """Shapes that slipped past the old regex hook."""
 
