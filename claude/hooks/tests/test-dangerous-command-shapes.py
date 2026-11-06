@@ -231,7 +231,8 @@ class FindExecTest(HookTestCase):
         for command in (
             "find /x -path '*dmv*' -name '*.jsonl' -mtime -45 -exec grep -l 'check-eligibility' {} +",
             "find /x -type f -not -name '*.test.js' -size +0 -exec wc -l {} +",
-            'find . -name "*.php" -execdir head -5 {} \\;',
+            'find . -name "*.php" -execdir head -5 -- {} \\;',
+            'find . -execdir rg PWNED -- {} +',
             'find . -type f -exec rg -n foo {} +',
         ):
             with self.subTest(command=command):
@@ -245,6 +246,10 @@ class FindExecTest(HookTestCase):
             'find . -okdir sed -i s/a/b/ {} \\;',
             'find . -exec find . -name x \\;',
             'find . -exec /usr/bin/grep foo {} +',
+            # A file named `--pre=sh` reaches `-execdir` as a bare option.
+            'find . -execdir rg PWNED {} +',
+            'find . -execdir tail {} \\;',
+            'find . -execdir rg -- x {} \\; -execdir rg PWNED {} +',
             "find . -type f -exec sh -c 'echo \"$1: $(cat \"$1\")\"' _ {} \\;",
         ):
             with self.subTest(command=command):
@@ -284,12 +289,22 @@ class FindExecTest(HookTestCase):
 
     def test_find_delete_is_denied_however_it_is_spelled(self):
         for command in ('find -delete', "find . -dele''te", 'find . -delet\\e', "find . $'-delete'",
-                        "find . -exec grep foo {} + -dele''te", 'find . -exec find . -delete \\;'):
+                        "find . -exec grep foo {} + -dele''te", 'find . -exec find . -delete \\;',
+                        'find $DIR -delete'):
             with self.subTest(command=command):
                 self.assertDenies(command)
 
+    def test_a_find_argument_that_expands_at_run_time_asks(self):
+        for command in ('find . $A rm {} \\;', 'find . "$ACTION"', 'find . -name *.php',
+                        'find . -{exec,ok} chmod +x {} \\;', 'xargs -a list.txt find .',
+                        'find . -exec grep foo {} "$T" -exec rm {} +'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
     def test_find_without_actions_is_silent(self):
-        self.assertSilent('find . -name "*.php" -print')
+        for command in ('find . -name "*.php" -print', 'find ~/dotfiles -name x'):
+            with self.subTest(command=command):
+                self.assertSilent(command)
 
 
 class BypassTest(HookTestCase):

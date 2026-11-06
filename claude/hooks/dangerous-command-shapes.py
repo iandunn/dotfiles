@@ -460,8 +460,17 @@ def judge_find_action(command):
             f'{command.name}` in `permissions.deny`. If the task genuinely needs it, stop and say '
             f'so rather than rewording the command.'
         )
+    # BSD `find -execdir` hands over a bare filename, so a file named `--pre=sh` becomes an rg
+    # option. A `--` before the `{}` makes the reader treat it as a path.
+    filename_is_option_safe = action in ('find -exec', 'find -ok') or any(
+        word.value == '--' for word in command.words[1:next(
+            (index for index, word in enumerate(command.words) if '{}' in (word.value or '')),
+            len(command.words),
+        )]
+    )
     reads_only = (
-        program in FIND_EXEC_READERS
+        filename_is_option_safe
+        and program in FIND_EXEC_READERS
         and command.name == program
         and len(command.wrappers) == find_wrappers[-1] + 1
         and not command.assigns
@@ -485,15 +494,34 @@ def find_writing_action(command):
     """
     if command.name != 'find' or command.opaque:
         return None
+    if any(word.value == '-delete' for word in command.words[1:]):
+        return DENY, (
+            '`find -delete` is denied by `permissions.deny`, however it\'s spelled. If the '
+            'task genuinely needs it, stop and say so rather than rewording the command.'
+        )
+
+    writing_action = None
+    expands = command.dynamic_args
+    inside_exec = False
     for word in command.words[1:]:
-        if word.value == '-delete':
-            return DENY, (
-                '`find -delete` is denied by `permissions.deny`, however it\'s spelled. If the '
-                'task genuinely needs it, stop and say so rather than rewording the command.'
-            )
-    for word in command.words[1:]:
-        if word.value in FIND_WRITING_ACTIONS:
-            return ASK, f'`find {word.value}` creates or truncates the file it names.'
+        if inside_exec:
+            # `judge_find_action` already judges the words an `-exec` action runs.
+            inside_exec = not (word.literal and word.value in (';', '+'))
+            continue
+        if word.literal and word.value in bash_ast.FIND_EXEC_ACTIONS:
+            inside_exec = True
+        elif not readable(word):
+            expands = True
+        elif word.value in FIND_WRITING_ACTIONS and writing_action is None:
+            writing_action = word.value
+
+    if writing_action:
+        return ASK, f'`find {writing_action}` creates or truncates the file it names.'
+    if expands:
+        return ASK, (
+            'A `find` argument is only known at run time, and it could become `-exec`, '
+            '`-delete`, or another action this hook can only judge when it can read it.'
+        )
     return None
 
 
