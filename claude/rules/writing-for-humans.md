@@ -7,7 +7,7 @@ These are the rules I want followed. For how I actually write -- sentence length
 
 ## Brevity
 
-Applies to: commit messages, PR descriptions, QA instructions, ticket comments, code comments, documentation files.
+Applies to: commit messages, PR descriptions, QA steps, ticket comments, code comments, documentation files. The rest of the rules for QA steps are in `qa-steps.md`.
 
 Interactive replies to me aren't covered here. Their rules live in the Response Style section of `CLAUDE.md`.
 

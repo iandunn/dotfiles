@@ -78,14 +78,13 @@ todo this may not be necessary now that using claude fullscreen TUI  -->
 
 - After creating a commit:
 	* Give a summary of what's left to do in this session, the same as if I had explicitly asked "what's left."
-	* If QA steps have already been added to the ticket, give me a draft for updates that are needed. Don't rewrite the whole thing, just draft a diff of the changes.
+	* If QA steps have already been added to the ticket, give me a draft for updates that are needed, following `qa-steps.md`. Don't rewrite the whole thing, just draft a diff of the changes.
 
 - Before opening a PR:
 	* If Relay is set up in this repo, then make sure the Relay process has been followed. If not then backfill the docs and commit them. Then run `relay-site pull`, resolve conflicts, commit, and run `relay-site publish`.
-	* Generate QA steps and run through them yourself to verify they're accurate. Make sure they follow the "write for humans" instructions. Give URLs that should be opened where that'd be helpful/relevant. Use the environment where QA happens, like staging or preprod, but never production. Show me a draft, and then ask me if they should be added to the ticket description. That's standing permission to open the project's QA environment in the browser to run the steps, even when the project's `CLAUDE.md` doesn't list it. Never touch production.
-	* Never cite mocks, fixtures, or stubbed data as evidence in the PR description or QA steps. Describe only verification against real endpoints or the running local site.
-	* Write QA steps for a tester who is only partly familiar with browser dev tools and doesn't know curl. When a step needs a raw API request, give a `fetch()` snippet to paste into the browser Console on a page of the same site, using a relative URL. Tell them how to open the Console, and that Chrome may ask them to type `allow pasting` first. Make each snippet do its own multi-step work, like holding something and then releasing it, instead of asking the tester to copy IDs between requests or hand-format values like dates.
+	* Write QA steps and verify them, following `qa-steps.md`. Show me the draft along with the list of anything you couldn't verify.
+	* Never cite mocks, fixtures, or stubbed data as evidence in the PR description. Describe only verification against real endpoints or the running local site.
 
 - After creating a PR:
-	* Show me the QA steps to review. Add them to the bottom of the ticket description after I approve them.
+	* Once the list of steps you couldn't verify from `qa-steps.md` is empty and nothing else about the steps is left to do, add them to the bottom of the ticket description and tell me you did. Read the description right before editing it, and append to what's there. This bullet is my standing approval for that one edit, and it doesn't cover any other change to the ticket. It covers swapping in IDs and hosts from the QA environment's run, but if any other wording changed since the last draft I saw, show me the new draft and wait. If the list has anything in it, or the ticket already has QA steps, show me the list or a draft diff and wait for me instead.
 	* Add the PR URL to bottom of the ticket description. This bullet is my standing approval for that one edit, and it doesn't cover any other change to the ticket.
