@@ -687,6 +687,10 @@ class McpInputTest(DecisionTest):
     def test_writes_still_ask_without_the_guard(self):
         self.assertEqual(self.outcome_from_args('db query "DELETE FROM wp_posts WHERE ID = 1"'), ASK)
         self.assertEqual(self.outcome_from_args('db query "SELECT 1; DROP TABLE wp_posts"'), ASK)
+        self.assertEqual(self.outcome_from_args('db query "SELECT 1 FROM wp_posts;"'), ASK)
+        self.assertEqual(
+            self.outcome_from_args('db query "SELECT 1 FROM wp_posts WHERE a LIKE \'\\%\'"'), ASK
+        )
 
 
 class WpDbQueryTest(DecisionTest):
@@ -740,6 +744,37 @@ class WpDbQueryTest(DecisionTest):
                     "SELECT \\`load_file\\`('/etc/passwd')"):
             with self.subTest(sql=sql):
                 self.assertAsks(f'wp db query "{sql}"')
+
+    def test_like_escapes_inside_a_literal_allowed(self):
+        """`\\%` and `\\_` can't close a literal whether or not the server honors backslashes."""
+        self.assertAllows(
+            "localwp cli dmv -- db query \"SELECT pm.meta_key FROM wp_postmeta pm "
+            "WHERE pm.meta_value LIKE '%\\%\\%%' AND pm.meta_key LIKE 'a\\_b'\""
+        )
+
+    def test_like_escapes_ask_on_vip(self):
+        """VIP-CLI's remote side parses the query again, which may consume the backslash."""
+        self.assertAsks("vip @app.staging wp db query \"SELECT 1 FROM wp_posts WHERE a LIKE 'x\\%'\"")
+        self.assertAllows("vip @app.staging wp db query \"SELECT 1 FROM wp_posts LIMIT 5;\"")
+
+    def test_other_backslashes_still_ask(self):
+        for sql in ("SELECT 'a\\\\\\\\%' FROM wp_posts",
+                    "SELECT 1 FROM wp_posts WHERE 1 \\\\% 2",
+                    "SELECT \\`a\\\\%\\` FROM wp_posts",
+                    "SELECT 'a\\\\n' FROM wp_posts"):
+            with self.subTest(sql=sql):
+                self.assertAsks(f'wp db query "{sql}"')
+
+    def test_one_trailing_semicolon_allowed(self):
+        self.assertAllows('wp db query "SELECT ID FROM wp_posts LIMIT 25;"')
+        self.assertAllows('wp db query "SELECT ID FROM wp_posts LIMIT 25 ; "')
+
+    def test_more_than_a_trailing_semicolon_asks(self):
+        self.assertAsks('wp db query "SELECT ID FROM wp_posts;;"')
+        self.assertAsks('wp db query "SELECT 1; DROP TABLE wp_posts;"')
+        self.assertAsks("wp db query \"SELECT 1 FROM wp_posts; 'DELETE FROM wp_posts'\"")
+        self.assertAsks("wp db query $'SELECT 1 FROM wp_posts;\\x1c'")
+        self.assertAsks("wp db query $'SELECT 1 FROM wp_posts;\\u00a0'")
 
     def test_unlisted_flag_asks(self):
         """WP-CLI passes flags it doesn't recognize to mysql, so `--execute` runs a real query."""

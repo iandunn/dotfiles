@@ -1696,6 +1696,24 @@ class GitDiffNoIndexTest(unittest.TestCase):
         os.symlink('/etc/hosts', os.path.join(cls.repo, 'hosts-link'))
         os.symlink(cls.other_repo, os.path.join(cls.repo, 'dir-link'))
         os.mkfifo(os.path.join(cls.repo, 'fifo'))
+        for name in ('auth.json', '.npmrc', '.env', 'private/key'):
+            os.makedirs(os.path.dirname(os.path.join(cls.repo, name)), exist_ok=True)
+            Path(cls.repo, name).write_text('secret')
+        # The hook reads Read deny rules from the user's and the project's settings, so both are
+        # fixtures here rather than the developer's real ones.
+        cls.home = os.path.join(cls.temp, 'home')
+        os.makedirs(os.path.join(cls.home, '.claude'))
+        Path(cls.home, '.claude', 'settings.json').write_text(json.dumps({'permissions': {'deny': [
+            'Read(**/.npmrc)', 'Read(**/auth.json)',
+        ]}}))
+        os.makedirs(os.path.join(cls.repo, '.claude'))
+        Path(cls.repo, '.claude', 'settings.json').write_text(json.dumps({'permissions': {'deny': [
+            'Read(./.env)', 'Read(private)',
+        ]}}))
+        cls.env = {**os.environ, 'HOME': cls.home}
+        os.mkdir(os.path.join(cls.temp, 'plain'))
+        for name in ('hosts', 'passwd'):
+            Path(cls.temp, 'plain', name).write_text(name)
         os.mkdir(os.path.join(cls.repo, '~'))
 
     @classmethod
@@ -1703,7 +1721,7 @@ class GitDiffNoIndexTest(unittest.TestCase):
         shutil.rmtree(cls.temp)
 
     def assertDecision(self, expected, command, cwd=None):
-        out, code = run(command, cwd=cwd or self.repo)
+        out, code = run(command, cwd=cwd or self.repo, env=self.env)
         self.assertEqual(code, 0, f'non-zero exit for: {command}')
         self.assertEqual(decision(out), expected, f'wrong decision for: {command}')
 
@@ -1732,6 +1750,35 @@ class GitDiffNoIndexTest(unittest.TestCase):
         self.assertDecision(ASK, 'git diff --no-index -- - a.md')
         self.assertDecision(ASK, 'git diff --no-index a.md')
         self.assertDecision(ASK, 'git diff --no-index a.md b.md sub/c.md')
+
+    def test_files_the_read_tool_is_denied_ask(self):
+        """settings.json denies the Read tool these, so git mustn't print them either."""
+        self.assertDecision(ASK, 'git diff --no-index auth.json /dev/null')
+        self.assertDecision(ASK, 'git diff --no-index a.md .npmrc')
+        self.assertDecision(ASK, 'git diff --no-index .env /dev/null')
+        self.assertDecision(ASK, 'git diff --no-index private/key /dev/null')
+        self.assertDecision(ASK, 'git diff --no-index ../.env /dev/null',
+                            cwd=os.path.join(self.repo, 'sub'))
+
+    def test_unreadable_user_settings_ask(self):
+        out, _ = run('git diff --no-index a.md b.md', cwd=self.repo,
+                     env={**os.environ, 'HOME': os.path.join(self.temp, 'missing')})
+        self.assertEqual(decision(out), ASK)
+
+    def test_files_outside_any_repository_ask(self):
+        """Outside a repository git diff and git grep both read whatever the operands name."""
+        plain = os.path.join(self.temp, 'plain')
+        self.assertDecision(ASK, f'git -C {plain} diff hosts passwd')
+        self.assertDecision(ASK, f'git -C {plain} diff --src-prefix x/ hosts passwd')
+        self.assertDecision(ASK, f'git -C {plain} grep secret')
+
+    def test_grep_beyond_the_index_asks(self):
+        self.assertDecision(ASK, f'git grep --no-index secret {self.temp}')
+        self.assertDecision(ASK, 'git grep --no-i -h secret .')
+        self.assertDecision(ASK, 'git grep --untracked --no-exclude-standard secret')
+        self.assertDecision(ASK, f'git grep -f {self.home}/.claude/settings.json')
+        self.assertDecision(ASK, 'git grep -nf patterns.txt')
+        self.assertDecision(ALLOW, 'git grep -n secret')
 
     def test_dash_c_to_another_repository_asks(self):
         """A `-C` moves git, but not the tree the session's Read tool is scoped to."""

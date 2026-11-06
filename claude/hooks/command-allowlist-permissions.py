@@ -788,18 +788,20 @@ def strip_sql_literals(sql):
     identifiers are skipped over so a quote inside one opens nothing, but their text is kept,
     since an identifier like `` `load_file` `` still names something the check looks for.
 
-    Any backslash returns None. Inside a literal, whether it escapes the next character depends
-    on the server's `NO_BACKSLASH_ESCAPES` mode, so `'a\\''; DELETE ...'` has two readings. Outside
-    one, the mysql client treats `\\g` as the end of a statement, `\\.` as sourcing a file, and
-    `\\!` as a shell command. A comment returns None too, because a quote inside a comment
+    A backslash returns None unless it sits inside a literal and is followed by `%` or `_`. Inside
+    a literal, whether a backslash escapes the next character depends on the server's
+    `NO_BACKSLASH_ESCAPES` mode, so `'a\\''; DELETE ...'` has two readings; `\\%` and `\\_` end the
+    literal under neither reading, which is what lets a `LIKE` match a literal `%` or `_`. Outside
+    a literal, the mysql client treats `\\g` as the end of a statement, `\\.` as sourcing a file,
+    and `\\!` as a shell command. A comment returns None too, because a quote inside a comment
     doesn't open a literal.
     """
-    if '\\' in sql:
-        return None
     out = []
     index = 0
     while index < len(sql):
         character = sql[index]
+        if character == '\\':
+            return None
         if character == '#' or sql.startswith(('--', '/*'), index):
             # A quote inside a comment opens nothing, so stripping past one would read a real
             # `;` after it as part of a literal. Comments have no place in a quick read anyway.
@@ -814,6 +816,11 @@ def strip_sql_literals(sql):
         while True:
             if index >= len(sql):
                 return None
+            if sql[index] == '\\':
+                if quote == '`' or sql[index + 1:index + 2] not in ('%', '_'):
+                    return None
+                index += 2
+                continue
             if sql[index] == quote:
                 if sql[index + 1:index + 2] == quote:
                     index += 2
@@ -825,12 +832,12 @@ def strip_sql_literals(sql):
     return ''.join(out)
 
 
-def validate_db_query(tokens, raw):
+def validate_db_query(tokens, raw, remote=False):
     """Decide a `wp db query` invocation, where the SQL and the flags are what make it safe.
 
-    `tokens` starts at `db`; `raw` is the source text. Exactly one positional argument is
-    required: with no SQL at all, `wp db query` reads a statement from stdin, and with more than
-    one there's no single thing to check.
+    `tokens` starts at `db`; `raw` is the source text; `remote` is true on a VIP environment.
+    Exactly one positional argument is required: with no SQL at all, `wp db query` reads a
+    statement from stdin, and with more than one there's no single thing to check.
     """
     arguments = tokens[2:]
     flags = [argument for argument in arguments if argument.startswith('-')]
@@ -846,10 +853,22 @@ def validate_db_query(tokens, raw):
     if not READ_ONLY_SQL_START.match(statements[0]):
         return ASK, 'wp db query SQL does not start with a read-only statement'
 
+    # One `;` closing the only statement adds nothing, so it's dropped before the `;` pattern
+    # looks for a second statement. It's dropped before literals are blanked, so a second
+    # statement made only of a literal, like `; 'x'`, still leaves its `;` behind. Only the
+    # whitespace MySQL itself skips is stripped, since `str.rstrip()` would also take characters
+    # mysql reads as a second statement.
+    sql = statements[0].rstrip(' \t\r\n')
+    if sql.endswith(';'):
+        sql = sql[:-1]
+
     # String literals can't end a statement or name a keyword, so they're blanked out first,
     # which keeps `LIKE '%a;b%'` or `'&#039;'` from reading as a second statement.
-    code = strip_sql_literals(statements[0])
-    if code is None:
+    code = strip_sql_literals(sql)
+    # VIP-CLI joins the arguments into one string that's parsed again on the remote side, which
+    # may consume a backslash and turn `\%` back into a wildcard, so VIP gets no backslash at all.
+    has_unsafe_backslash = (raw is not None and '\\' in raw) or (remote and '\\' in sql)
+    if code is None or has_unsafe_backslash:
         return ASK, (
             'wp db query SQL has a comment, an unterminated string literal, or a backslash, any '
             'of which can make the SQL run differently than it reads'
@@ -875,11 +894,14 @@ WP_VALIDATED = {
 }
 
 
-def match_wp_allowlist(subcommand_tokens, allowed, raw):
-    """Return a (decision, reason) pair for WP-CLI subcommand tokens, or None if nothing matched."""
+def match_wp_allowlist(subcommand_tokens, allowed, raw, remote=False):
+    """Return a (decision, reason) pair for WP-CLI subcommand tokens, or None if nothing matched.
+
+    `remote` is true when the command runs on a VIP environment rather than a local site.
+    """
     validated = matched_prefix(subcommand_tokens, WP_VALIDATED)
     if validated:
-        return WP_VALIDATED[validated](subcommand_tokens, raw)
+        return WP_VALIDATED[validated](subcommand_tokens, raw, remote)
 
     prefix = matched_prefix(subcommand_tokens, allowed)
     if prefix:
@@ -1016,7 +1038,7 @@ def decide_vip(tokens, config, raw):
         if disqualifying_flag:
             return ASK, f'"{disqualifying_flag}" can run arbitrary code or retarget the command'
 
-        outcome = match_wp_allowlist(proxied_tokens, delegate, raw)
+        outcome = match_wp_allowlist(proxied_tokens, delegate, raw, remote=True)
         if outcome:
             decision, reason = outcome
             if decision == ALLOW:

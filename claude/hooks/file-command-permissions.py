@@ -318,6 +318,7 @@ The hook runs on every Bash line, with no `if` filter in settings.json, because
 a filter only matches the literal prefixes it lists, and `env git`, `\\git`, or
 a git nested in `$(...)` would never reach the hook.
 """
+import fnmatch
 import functools
 import glob
 import json
@@ -1359,22 +1360,49 @@ def git_diff_no_index_reason(tokens, subcommand_index, cwd, git_cwd):
     if no_index_flag:
         return no_index_outside_reason(no_index_flag, operands, git_cwd, cwd)
 
+    # Outside any repository every diff is a no-index one, so even a bare name like `hosts` under
+    # `-C /etc` is a file git reads from disk. That's checked before the operand count, because
+    # an option's separate value (`--src-prefix x/`) makes two paths look like three here.
+    toplevel = git_toplevel(git_cwd)
+    if toplevel is None and os.path.isdir(git_cwd):
+        return 'git diff runs outside any repository, so it would read its operands from disk'
+
     if len(operands) != 2:
         return None
 
-    toplevel = git_toplevel(git_cwd)
     for operand in operands:
         if expands_after_this_hook(operand):
             return f'`{operand}` expands after this hook reads it, so its target cannot be checked'
         if toplevel is None:
-            # Outside any repository every two-operand diff is a no-index one, but a
-            # revision-looking operand here is most likely a `-C` aimed at a path this machine
-            # doesn't have, so only an operand that plainly names a filesystem location counts.
-            outside = os.path.isabs(operand) or os.path.normpath(operand).startswith('..')
-        else:
-            outside = not is_inside(operand, toplevel, git_cwd)
-        if outside:
+            # A `-C` to a directory that doesn't exist makes git exit before it reads anything,
+            # but an operand that plainly names a filesystem location still asks.
+            if os.path.isabs(operand) or os.path.normpath(operand).startswith('..'):
+                return f'`{operand}` is outside the repository, so git diff would read it from disk'
+            continue
+        if not is_inside(operand, toplevel, git_cwd):
             return f'`{operand}` is outside the repository, so git diff would read it from disk'
+    return None
+
+
+def git_grep_no_index_reason(arguments, git_cwd):
+    """Why this `git grep` would search files on disk rather than the repository, or None.
+
+    `--no-index` turns it into a recursive grep of any directory, which prints matching lines of
+    files the Read tool would prompt for, and outside a repository `grep.fallbackToNoIndex` can
+    do the same without the flag. `--untracked` searches untracked files, gitignored ones too
+    with `--no-exclude-standard`, and `-f` reads its patterns from any file on disk. A short
+    cluster holding `f` asks as well, even when the `f` is really another option's value.
+    """
+    for argument in arguments:
+        if argument == '--':
+            break
+        if is_long_option(argument, '--no-index') or is_long_option(argument, '--untracked'):
+            return f'`{argument}` makes git grep search files on disk rather than the repository'
+        if is_long_option(argument, '--file') or (
+                re.match(r'^-[^-]', argument) and 'f' in argument):
+            return f'`{argument}` makes git grep read its patterns from a file on disk'
+    if os.path.isdir(git_cwd) and git_toplevel(git_cwd) is None:
+        return 'git grep runs outside any repository, so it may search files on disk'
     return None
 
 
@@ -1392,6 +1420,7 @@ def no_index_outside_reason(no_index_flag, operands, git_cwd, session_cwd):
     if len(operands) != 2:
         return flag_reason
     root = os.path.realpath(session_cwd)
+    denied = read_deny_patterns(session_cwd)
     for operand in operands:
         if operand == '/dev/null':
             continue
@@ -1401,9 +1430,79 @@ def no_index_outside_reason(no_index_flag, operands, git_cwd, session_cwd):
             return f'`{operand}` expands after this hook reads it, so its target cannot be checked'
         if not is_inside(operand, root, git_cwd):
             return f'{flag_reason}, and `{operand}` is outside the working directory'
-        if not os.path.isfile(resolve_all_but_final(operand, git_cwd)):
+        path = resolve_all_but_final(operand, git_cwd)
+        if not os.path.isfile(path):
             return f'{flag_reason}, and `{operand}` is not a regular file'
+        if denied is None or any(is_read_denied(candidate, denied)
+                                 for candidate in (path, os.path.realpath(path))):
+            return f'{flag_reason}, and settings.json denies the Read tool `{operand}`'
     return None
+
+
+def read_deny_patterns(session_cwd):
+    """Absolute `fnmatch` globs for the `Read(...)` deny rules in every settings file, or None.
+
+    None means the user's own settings couldn't be read, so the caller can't tell what's denied.
+    A missing project or managed file just contributes nothing. The project's settings are
+    looked for in the session's cwd and at its repository root, since a session can start in a
+    subdirectory.
+    """
+    home = os.path.realpath(os.path.expanduser('~'))
+    cwd = os.path.realpath(session_cwd)
+    project_roots = {cwd, git_toplevel(session_cwd) or cwd}
+    sources = [
+        (os.path.join(home, '.claude', 'settings.json'), os.path.join(home, '.claude'), True),
+        ('/Library/Application Support/ClaudeCode/managed-settings.json', '/', False),
+    ]
+    for project_root in project_roots:
+        for name in ('settings.json', 'settings.local.json'):
+            sources.append((os.path.join(project_root, '.claude', name), project_root, False))
+    globs = []
+    for settings_path, settings_root, required in sources:
+        try:
+            with open(settings_path) as settings_file:
+                rules = json.load(settings_file).get('permissions', {}).get('deny', [])
+        except (OSError, ValueError, AttributeError):
+            if required:
+                return None
+            continue
+        for rule in rules:
+            if isinstance(rule, str) and rule.startswith('Read(') and rule.endswith(')'):
+                globs += read_deny_globs(rule[5:-1], home, settings_root, project_roots)
+    return globs
+
+
+def read_deny_globs(pattern, home, settings_root, project_roots):
+    """The absolute globs one `Read(...)` pattern covers, under Claude Code's anchoring rules.
+
+    `//x` is absolute, `~/x` is under home, `/x` is under the settings file's root, `**/x` is
+    anywhere, and a bare or `./` pattern is under the cwd. Where that's ambiguous, every reading
+    is kept, and each glob also covers what's under it, as gitignore-style rules do for a
+    directory, so this can only deny more than Claude Code does, never less. `fnmatch`'s `*`
+    crosses `/`, so `**` needs no special handling.
+    """
+    if pattern.startswith('//'):
+        globs = [pattern[1:]]
+    elif pattern.startswith('~/'):
+        globs = [home + pattern[1:]]
+    elif pattern.startswith('**/'):
+        globs = ['*/' + pattern[3:]]
+    elif pattern.startswith('/'):
+        globs = [settings_root.rstrip('/') + pattern, pattern]
+    else:
+        relative = pattern
+        while relative.startswith('./'):
+            relative = relative[2:]
+        globs = [os.path.join(root, relative) for root in project_roots]
+    return [glob_pattern.lower() for glob_pattern in globs] + [
+        glob_pattern.rstrip('/').lower() + '/*' for glob_pattern in globs
+    ]
+
+
+def is_read_denied(path, globs):
+    """True if any of the `read_deny_patterns()` globs matches the absolute path."""
+    path = path.lower()
+    return any(fnmatch.fnmatchcase(path, glob_pattern) for glob_pattern in globs)
 
 
 def is_worktree_remove(tokens, subcommand_index):
@@ -1998,6 +2097,8 @@ def decide_tokens(tokens, command, command_line, cwd):
         )
         if not option_reason and subcommand == 'diff':
             option_reason = git_diff_no_index_reason(tokens, subcommand_index, cwd, git_cwd)
+        if not option_reason and subcommand == 'grep':
+            option_reason = git_grep_no_index_reason(tokens[subcommand_index + 1:], git_cwd)
         if option_reason:
             return 'ask', f'{option_reason}; confirm it'
         return 'allow', (f'git {subcommand} with no program-running or file-writing option; '
