@@ -7,7 +7,8 @@ Every run writes the session usage-gate marker first, so the hook short-circuits
 that gate instead of shelling out to `claude -p "/usage"` for several seconds.
 The pre-authorization cases read the real project matrix rather than a fixture,
 since the point is that the shipped PRE_AUTHORIZED_SITE_MATRICES entry resolves.
-The `blockedSiteBrowser.sites` cases use fixture settings files under a throwaway HOME.
+The `blockedSiteBrowser.sites` and `chromeDevtools.sites` cases use fixture settings files
+under a throwaway HOME.
 """
 import json
 import os
@@ -82,6 +83,18 @@ class GateTestCase(unittest.TestCase):
 
 
 class NavigationGateTest(GateTestCase):
+    """Uses a throwaway HOME, so a host on the real global `chromeDevtools.sites` list can't
+    change the results."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.home = Path(self.temp_dir.name).resolve()
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def assertDecision(self, expected, url, cwd, **run_options):
+        super().assertDecision(expected, url, cwd, home=self.home, **run_options)
 
     def test_local_host_allowed(self):
         self.assertDecision(ALLOW, 'http://misc.localwp.test/', Path.home())
@@ -130,41 +143,24 @@ BLOCKED_SITE_TOOL = 'mcp__blocked-site-browser__new_page'
 SNAPSHOT_TOOL = 'mcp__blocked-site-browser__take_snapshot'
 
 
-def write_settings(path, sites):
+def write_settings(path, sites, key='blockedSiteBrowser'):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({'blockedSiteBrowser': {'sites': sites}}))
+    path.write_text(json.dumps({key: {'sites': sites}}))
 
 
-class BlockedSiteListTest(GateTestCase):
-    """Uses a throwaway HOME, so the real global list, git config, and trust config
-    can't change the results."""
+class ListTestCase(GateTestCase):
+    """Uses a throwaway HOME, so the real global list and trust config can't change the
+    results."""
 
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.home = Path(self.temp_dir.name).resolve()
         self.project = self.home / 'project'
         self.untrusted = self.home / 'untrusted'
-        write_settings(self.home / '.claude/settings.json', ['https://www.homedepot.com/'])
-        write_settings(self.project / '.claude/settings.json', ['https://www.crescentelectric.com/', 'www.lowes.com', {'url': 'https://www.ebay.com/'}, 42])
-        self.git('init', '--quiet')
-        self.commit()
-        write_settings(self.project / '.claude/settings.local.json', ['https://www.acehardware.com/'])
-        write_settings(self.untrusted / '.claude/settings.json', ['https://www.crescentelectric.com/'])
         self.trust(self.project)
 
     def tearDown(self):
         self.temp_dir.cleanup()
-
-    def git(self, *arguments):
-        subprocess.run(
-            ['git', '-C', str(self.project), *arguments],
-            check=True, capture_output=True,
-            env={**os.environ, 'HOME': str(self.home), 'GIT_CONFIG_NOSYSTEM': '1'},
-        )
-
-    def commit(self):
-        self.git('add', '.claude/settings.json')
-        self.git('-c', 'user.name=test', '-c', 'user.email=test@example.test', 'commit', '--quiet', '-m', 'Settings')
 
     def trust(self, *directories):
         (self.home / '.claude.json').write_text(json.dumps({
@@ -176,6 +172,16 @@ class BlockedSiteListTest(GateTestCase):
             expected, url, self.home,
             tool_name=tool_name, home=self.home, project_dir=project_dir, extra_input=extra_input,
         )
+
+
+class BlockedSiteListTest(ListTestCase):
+
+    def setUp(self):
+        super().setUp()
+        write_settings(self.home / '.claude/settings.json', ['https://www.homedepot.com/'])
+        write_settings(self.project / '.claude/settings.json', ['https://www.crescentelectric.com/', 'www.lowes.com', {'url': 'https://www.ebay.com/'}, 42])
+        write_settings(self.project / '.claude/settings.local.json', ['https://www.acehardware.com/'])
+        write_settings(self.untrusted / '.claude/settings.json', ['https://www.crescentelectric.com/'])
 
     def test_global_site_allowed_outside_any_project(self):
         self.assertListed(ALLOW, 'https://www.homedepot.com/p/123')
@@ -200,50 +206,12 @@ class BlockedSiteListTest(GateTestCase):
         self.assertListed(ALLOW, 'https://www.lowes.com/', self.project)
         self.assertListed(ALLOW, 'https://www.ebay.com/', self.project)
 
-    def test_local_settings_site_asks_with_a_warning(self):
-        """settings.local.json is never committed, so its list never counts."""
-        self.assertUncommittedWarning('https://www.acehardware.com/', '.claude/settings.local.json')
+    def test_local_settings_site_allowed(self):
+        self.assertListed(ALLOW, 'https://www.acehardware.com/', self.project)
 
-    def test_uncommitted_project_site_asks_with_a_warning(self):
-        """A rename of `.claude` or an unsandboxed git command can change the working
-        tree without the Edit tool, so only HEAD counts."""
-        write_settings(self.project / '.claude/settings.json', ['https://evil.com/'])
-        self.assertUncommittedWarning('https://evil.com/', '.claude/settings.json')
-
-    def test_project_site_counts_once_committed(self):
-        write_settings(self.project / '.claude/settings.json', ['https://evil.com/'])
-        self.commit()
-        self.assertListed(ALLOW, 'https://evil.com/', self.project)
-
-    def test_git_file_or_symlink_asks(self):
-        """A `.git` file or symlink can point git at a repository the session controls."""
-        elsewhere = self.home / 'elsewhere'
-        write_settings(elsewhere / '.claude/settings.json', ['https://www.crescentelectric.com/'])
-        (elsewhere / '.git').symlink_to(self.project / '.git')
-        self.trust(elsewhere)
-        self.assertListed(ASK, 'https://www.crescentelectric.com/', elsewhere)
-
-        (elsewhere / '.git').unlink()
-        (elsewhere / '.git').write_text(f'gitdir: {self.project / ".git"}\n')
-        self.assertListed(ASK, 'https://www.crescentelectric.com/', elsewhere)
-
-    def test_folder_without_its_own_git_does_not_use_a_parent_repository(self):
-        nested = self.project / 'nested'
-        write_settings(nested / '.claude/settings.json', ['https://www.crescentelectric.com/'])
-        self.git('add', 'nested/.claude/settings.json')
-        self.commit()
-        self.trust(nested)
-        self.assertListed(ASK, 'https://www.crescentelectric.com/', nested)
-
-    def test_project_that_is_not_a_git_repository_asks(self):
+    def test_project_that_is_not_a_git_repository_allowed(self):
         self.trust(self.untrusted)
-        self.assertListed(ASK, 'https://www.crescentelectric.com/', self.untrusted)
-
-    def assertUncommittedWarning(self, url, settings_file):
-        out, code = run(url, self.home, tool_name=BLOCKED_SITE_TOOL, home=self.home, project_dir=self.project)
-        self.assertEqual(code, 0)
-        self.assertEqual(decision(out), ASK)
-        self.assertIn(f'is listed in {settings_file}, but only', reason(out))
+        self.assertListed(ALLOW, 'https://www.crescentelectric.com/', self.untrusted)
 
     def test_project_site_asks_outside_project(self):
         self.assertListed(ASK, 'https://www.crescentelectric.com/')
@@ -363,10 +331,8 @@ class BlockedSiteListTest(GateTestCase):
     def test_project_list_covers_the_www_twin(self):
         self.assertListed(ALLOW, 'https://crescentelectric.com/', self.project)
 
-    def test_uncommitted_warning_names_the_listed_twin(self):
-        out, code = run('https://acehardware.com/', self.home, tool_name=BLOCKED_SITE_TOOL, home=self.home, project_dir=self.project)
-        self.assertEqual(decision(out), ASK)
-        self.assertIn('www.acehardware.com is listed in .claude/settings.local.json', reason(out))
+    def test_local_list_covers_the_www_twin(self):
+        self.assertListed(ALLOW, 'https://acehardware.com/', self.project)
 
     def test_snapshot_onto_a_hard_link_asks(self):
         scratch = self.home / '.claude/tmp'
@@ -389,9 +355,53 @@ class BlockedSiteListTest(GateTestCase):
 
     def test_broken_project_settings_keep_global_list(self):
         (self.project / '.claude/settings.json').write_text('{ not json')
-        self.commit()
         self.assertListed(ALLOW, 'https://www.homedepot.com/', self.project)
         self.assertListed(ASK, 'https://www.crescentelectric.com/', self.project)
+
+
+CHROME_TOOL = 'mcp__chrome-devtools__new_page'
+PLUGIN_CHROME_TOOL = 'mcp__plugin_chrome-devtools-mcp_chrome-devtools__navigate_page'
+
+
+class ChromeDevtoolsListTest(ListTestCase):
+
+    def setUp(self):
+        super().setUp()
+        write_settings(self.home / '.claude/settings.json', ['https://qa.example.com/'], 'chromeDevtools')
+        write_settings(self.project / '.claude/settings.json', ['staging.example.com'], 'chromeDevtools')
+        write_settings(self.project / '.claude/settings.local.json', ['https://www.preprod.example.com/'], 'chromeDevtools')
+        write_settings(self.untrusted / '.claude/settings.local.json', ['https://evil.com/'], 'chromeDevtools')
+
+    def test_global_site_allowed_outside_any_project(self):
+        self.assertListed(ALLOW, 'https://qa.example.com/page', tool_name=CHROME_TOOL)
+
+    def test_project_sites_allowed(self):
+        self.assertListed(ALLOW, 'https://staging.example.com/', self.project, CHROME_TOOL)
+        self.assertListed(ALLOW, 'https://www.preprod.example.com/', self.project, CHROME_TOOL)
+
+    def test_plugin_server_uses_the_same_list(self):
+        self.assertListed(ALLOW, 'https://staging.example.com/', self.project, PLUGIN_CHROME_TOOL, {'type': 'url'})
+
+    def test_www_twin_allowed(self):
+        self.assertListed(ALLOW, 'https://www.staging.example.com/', self.project, CHROME_TOOL)
+        self.assertListed(ALLOW, 'https://preprod.example.com/', self.project, CHROME_TOOL)
+
+    def test_other_subdomains_ask(self):
+        self.assertListed(ASK, 'https://evil.staging.example.com/', self.project, CHROME_TOOL)
+        self.assertListed(ASK, 'https://example.com/', self.project, CHROME_TOOL)
+
+    def test_project_sites_ask_outside_project(self):
+        self.assertListed(ASK, 'https://staging.example.com/', tool_name=CHROME_TOOL)
+
+    def test_untrusted_project_sites_ask(self):
+        self.assertListed(ASK, 'https://evil.com/', self.untrusted, CHROME_TOOL)
+
+    def test_list_does_not_grant_a_lookalike_server(self):
+        self.assertListed(ASK, 'https://qa.example.com/', self.project, 'mcp__other-chrome-devtools__new_page')
+
+    def test_list_does_not_grant_blocked_site_browser(self):
+        self.assertListed(ASK, 'https://qa.example.com/', self.project)
+        self.assertListed(ASK, 'https://staging.example.com/', self.project)
 
 
 if __name__ == '__main__':

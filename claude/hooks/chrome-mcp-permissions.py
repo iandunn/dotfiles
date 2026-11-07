@@ -17,19 +17,28 @@ Currently implemented:
     is not written) so it fires on the next safe opportunity instead of being
     silently dropped.
 
-    The `blocked-site-browser` server is one exception: hosts named in the
-    `blockedSiteBrowser.sites` list of ~/.claude/settings.json, or of a trusted
-    project's committed .claude/settings.json, are allowed silently for that
-    server only. A listed host also covers its `www.` twin, so `homedepot.com`
-    and `www.homedepot.com` are the same site. The global list is the default for
-    every project, and a project's list adds to it. For that server the hook is an
-    allowlist that fails closed: it allows only the read-only calls and arguments
-    in BLOCKED_SITE_ALLOWED_ARGUMENTS, plus a `take_snapshot` file written into
-    the working directory's `.claude/tmp/`, and prompts for every other call, and a
+    Two settings lists let a host through silently, each for its own server
+    only. `chromeDevtools.sites` covers the `chrome-devtools` server, including
+    the plugin's copy of it, and `blockedSiteBrowser.sites` covers the
+    `blocked-site-browser` server. Each is read from ~/.claude/settings.json and
+    from a trusted project's .claude/settings.json and .claude/settings.local.json,
+    committed or not. The global list applies to every project, and a project's
+    lists add to it. A listed host also covers its `www.` twin, so `homedepot.com`
+    and `www.homedepot.com` are the same site.
+
+    Reading uncommitted project files adds no exposure: anything that can write
+    them can already grant itself any permission or hook through them. A host on `chromeDevtools.sites` gets
+    evaluate_script, fill, and the rest, so it belongs there only when that's
+    acceptable, like a QA environment the project tests against.
+
+    For `blocked-site-browser` the hook is an allowlist that fails closed: it
+    allows only the read-only calls and arguments in
+    BLOCKED_SITE_ALLOWED_ARGUMENTS, plus a `take_snapshot` file written into the
+    working directory's `.claude/tmp/`, and prompts for every other call, and a
     crash prompts too. Its settings also deny evaluate_script, fill, and the
     other input and file-writing tools, as a second layer.
 
-    The other exception is a project listed in PRE_AUTHORIZED_SITE_MATRICES:
+    The last exception is a project listed in PRE_AUTHORIZED_SITE_MATRICES:
     while cwd is inside one, the hosts named by that project's own site matrix
     are allowed silently. That exists for repos whose test loop IS driving live
     external sites -- a browser extension exercised against a fixed list of
@@ -80,7 +89,6 @@ import importlib.util
 import json
 import os
 import re
-import stat
 import subprocess
 import sys
 import tempfile
@@ -99,9 +107,13 @@ PRE_AUTHORIZED_SITE_MATRICES = {
 
 BLOCKED_SITE_TOOL_PREFIX = 'mcp__blocked-site-browser__'
 BLOCKED_SITE_SETTINGS_KEY = 'blockedSiteBrowser'
+CHROME_DEVTOOLS_SETTINGS_KEY = 'chromeDevtools'
+
+# Named exactly, so another server whose name happens to end in `chrome-devtools` doesn't get
+# the list.
+CHROME_DEVTOOLS_TOOL_PREFIXES = ('mcp__chrome-devtools__', 'mcp__plugin_chrome-devtools-mcp_chrome-devtools__')
 PROJECT_SETTINGS_FILE = '.claude/settings.json'
 PROJECT_LOCAL_SETTINGS_FILE = '.claude/settings.local.json'
-GIT_TIMEOUT_SECONDS = 5
 
 # The only `blocked-site-browser` calls this hook allows, and the only arguments each
 # may carry. Every other tool or argument prompts, so a new tool or argument in a later
@@ -165,7 +177,7 @@ def pre_authorized_hosts(cwd, tool_name):
 
 
 def site_host(site):
-    """Returns the host of one `blockedSiteBrowser.sites` entry, which can be a URL, a bare
+    """Returns the host of one `sites` entry, which can be a URL, a bare
     host like `www.lowes.com`, or a `{"url": ...}` object. None for anything else."""
     if isinstance(site, dict):
         site = site.get('url')
@@ -179,12 +191,12 @@ def site_host(site):
         return None
 
 
-def listed_sites(settings_text):
-    """Returns the hosts in a settings file's `blockedSiteBrowser.sites` list. Empty if
+def listed_sites(settings_text, settings_key):
+    """Returns the hosts in a settings file's `<settings_key>.sites` list. Empty if
     the text is unparseable or has no list, so a broken file adds no hosts rather
     than blocking the others. A bad entry skips only itself."""
     try:
-        sites = json.loads(settings_text)[BLOCKED_SITE_SETTINGS_KEY]['sites']
+        sites = json.loads(settings_text)[settings_key]['sites']
     except (ValueError, KeyError, TypeError):
         return set()
 
@@ -194,45 +206,12 @@ def listed_sites(settings_text):
     return {host for host in map(site_host, sites) if host}
 
 
-def listed_sites_in(settings_path):
+def listed_sites_in(settings_path, settings_key):
     try:
         with open(settings_path) as settings_file:
-            return listed_sites(settings_file.read())
+            return listed_sites(settings_file.read(), settings_key)
     except OSError:
         return set()
-
-
-def committed_sites_in(project_dir):
-    """Returns the hosts listed in the project's settings file as of HEAD. A rename of
-    `.claude` or an unsandboxed git command can change the working tree without the
-    Edit tool, while the sandbox denies writes under `.git`, so moving HEAD takes a
-    commit or a command that runs outside the sandbox."""
-    git_dir = os.path.join(project_dir, '.git')
-
-    # A `.git` file or symlink can point git at any repository, and without a `.git` git would
-    # search the parent folders for one. A worktree's `.git` is a file, so its list never counts.
-    try:
-        if not stat.S_ISDIR(os.lstat(git_dir).st_mode):
-            return set()
-    except OSError:
-        return set()
-
-    # Inherited variables like `GIT_OBJECT_DIRECTORY` would also change which objects git reads.
-    environment = {name: value for name, value in os.environ.items() if not name.startswith('GIT_')}
-
-    try:
-        result = subprocess.run(
-            # A replace ref is a plain file under `.git`, so it could swap the blob without a commit.
-            ['git', '--no-replace-objects', f'--git-dir={git_dir}', 'cat-file', 'blob', f'HEAD:{PROJECT_SETTINGS_FILE}'],
-            capture_output=True, text=True, timeout=GIT_TIMEOUT_SECONDS, env=environment,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return set()
-
-    if result.returncode != 0:
-        return set()
-
-    return listed_sites(result.stdout)
 
 
 def is_trusted_project(project_dir):
@@ -280,31 +259,33 @@ def same_site_hosts(host):
     return {host, 'www.' + host}
 
 
-def is_listed_host(host):
-    """Returns True when `blocked-site-browser` may open host without a prompt: it's on
-    the global list or the trusted project's committed list, read fresh on every call."""
+def is_listed_host(host, settings_key):
+    """Returns True when host is on the global `<settings_key>.sites` list or on either of
+    the trusted project's, read fresh on every call."""
     hosts = same_site_hosts(host)
 
-    if hosts & listed_sites_in(os.path.expanduser('~/.claude/settings.json')):
+    if hosts & listed_sites_in(os.path.expanduser('~/.claude/settings.json'), settings_key):
         return True
 
     project_dir = trusted_project_dir()
 
-    return bool(project_dir) and bool(hosts & committed_sites_in(project_dir))
-
-
-def uncommitted_listing(host):
-    """Returns the listed host and the trusted project's settings file that lists it without
-    it counting, because the listing isn't committed, or None."""
-    project_dir = trusted_project_dir()
-
     if not project_dir:
-        return None
+        return False
 
-    for name in (PROJECT_SETTINGS_FILE, PROJECT_LOCAL_SETTINGS_FILE):
-        listed = same_site_hosts(host) & listed_sites_in(os.path.join(project_dir, name))
-        if listed:
-            return min(listed), name
+    return any(
+        hosts & listed_sites_in(os.path.join(project_dir, name), settings_key)
+        for name in (PROJECT_SETTINGS_FILE, PROJECT_LOCAL_SETTINGS_FILE)
+    )
+
+
+def settings_key_for(tool_name):
+    """Returns the settings key whose `sites` list pre-authorizes hosts for tool_name's
+    server, so a host listed for one server never opens in the other."""
+    if tool_name.startswith(BLOCKED_SITE_TOOL_PREFIX):
+        return BLOCKED_SITE_SETTINGS_KEY
+
+    if tool_name.startswith(CHROME_DEVTOOLS_TOOL_PREFIXES):
+        return CHROME_DEVTOOLS_SETTINGS_KEY
 
     return None
 
@@ -393,9 +374,11 @@ def gate_navigation(tool_input, session_id, cwd, tool_name):
             emit('allow', f"{host} is in this project's pre-authorized site matrix")
         return
 
-    if host and tool_name.startswith(BLOCKED_SITE_TOOL_PREFIX) and is_listed_host(host):
+    settings_key = settings_key_for(tool_name)
+
+    if host and settings_key and is_listed_host(host, settings_key):
         if not gate_session_usage(session_id):
-            emit('allow', f'{host} is in a blockedSiteBrowser.sites list')
+            emit('allow', f'{host} is in a {settings_key}.sites list')
         return
 
     reason = (
@@ -407,16 +390,6 @@ def gate_navigation(tool_input, session_id, cwd, tool_name):
         're-prompt if an approved page later redirects or a link leads to another '
         'external host.'
     )
-
-    if host and tool_name.startswith(BLOCKED_SITE_TOOL_PREFIX):
-        uncommitted = uncommitted_listing(host)
-        if uncommitted:
-            listed_host, uncommitted_file = uncommitted
-            reason = (
-                f'{listed_host} is listed in {uncommitted_file}, but only the list in the committed '
-                f'{PROJECT_SETTINGS_FILE} counts, so commit it there to stop this prompt. '
-                + reason
-            )
 
     emit('ask', reason)
 
