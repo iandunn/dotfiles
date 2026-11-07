@@ -18,10 +18,9 @@ It decides six things, and the strongest verdict wins (deny, then ask, then sile
     `--exec-path`) are asked about.
   - A destructive git subcommand, mirroring the `Bash(git ...)` entries in `permissions.deny`, is
     denied wherever it appears.
-  - A program that `find -exec`, `-execdir`, `-ok`, or `-okdir` runs is asked about unless it only
-    reads, because `settings.json` allows `Bash(find *)` and a prefix can't see what `-exec` runs.
-    `rm` and `mv` there are denied, as is `-delete` however it's quoted, and `find`'s own
-    `-fprint`-style writes are asked about.
+  - `find` is denied wherever it runs, in favor of `fd`. A program that `fd -x` or `-X` runs is
+    asked about unless it only reads, because `settings.json` allows `Bash(fd *)` and a prefix
+    can't see what `-x` runs. `rm` and `mv` there are denied.
   - Everything else is left to `settings.json` and the other hooks.
 
 Runs unfiltered on every Bash call, because a chain or a nested git command can begin with any
@@ -34,7 +33,9 @@ a settings `deny` is the one layer that keeps working if this hook is ever disab
 """
 import json
 import os
+import string
 import sys
+from collections import namedtuple
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -135,29 +136,53 @@ DESTRUCTIVE_LONG_OPTIONS = PUSH_DESTRUCTIVE_LONG | GIT_CONFIG_WRITE_FLAGS | froz
 })
 
 
-# Programs `find -exec` may run without a prompt, because they only read the files `find` hands
-# them. Keep this an allowlist: anything else `-exec` runs could write, delete, or run a program.
-FIND_EXEC_READERS = frozenset({
-    'cat', 'grep', 'head', 'ls', 'md5', 'rg', 'shasum', 'stat', 'tail', 'wc',
-})
+ReaderOptions = namedtuple(
+    'ReaderOptions', 'flag_letters value_letters flag_longs value_longs', defaults=((), ()),
+)
 
-# Options that make a reader above run a program of the caller's choosing, or never exit.
-FIND_EXEC_READER_RUNNING_OPTIONS = {
-    'rg': ('--pre', '--hostname-bin'),
-    'tail': ('--follow', '--retry'),
+# Programs `fd -x` and `-X` may run without a prompt, because they only read the files `fd` hands
+# them, and the options each may get. Keep both allowlists: anything else `-x` runs could write
+# or delete, and an option like `rg --pre` or `tail -f` runs a program or never exits.
+FD_EXEC_READER_OPTIONS = {
+    'cat': ReaderOptions('benstuv', ''),
+    'grep': ReaderOptions(
+        'abcEFGHhIiLlnoqRrsUvwxZz', 'ABCefm',
+        ('--count', '--extended-regexp', '--fixed-strings', '--files-with-matches',
+         '--files-without-match', '--ignore-case', '--invert-match', '--line-number',
+         '--no-filename', '--with-filename', '--only-matching', '--quiet', '--silent',
+         '--recursive', '--word-regexp', '--line-regexp'),
+        ('--regexp', '--file', '--max-count', '--context', '--after-context', '--before-context',
+         '--include', '--exclude'),
+    ),
+    'head': ReaderOptions('0123456789', 'nc'),
+    'ls': ReaderOptions(string.ascii_letters + string.digits + '@%,', ''),
+    'md5': ReaderOptions('nqr', ''),
+    'rg': ReaderOptions(
+        '.0aFHhiIlLnNopPqsSuUvwxc', 'ABCdeEfgjmMrtT',
+        ('--ignore-case', '--smart-case', '--case-sensitive', '--fixed-strings', '--line-number',
+         '--no-line-number', '--files-with-matches', '--files-without-match', '--count',
+         '--count-matches', '--word-regexp', '--line-regexp', '--invert-match', '--hidden',
+         '--no-ignore', '--follow', '--json', '--vimgrep', '--no-heading', '--heading',
+         '--with-filename', '--no-filename', '--only-matching', '--quiet', '--files',
+         '--multiline', '--pcre2', '--text', '--null', '--unrestricted', '--no-messages',
+         '--trim', '--column', '--stats'),
+        ('--regexp', '--file', '--glob', '--iglob', '--type', '--type-not', '--max-count',
+         '--max-depth', '--context', '--after-context', '--before-context', '--max-columns',
+         '--replace', '--sort', '--sortr', '--threads', '--encoding', '--color',
+         '--max-filesize'),
+    ),
+    'shasum': ReaderOptions(
+        'bcstU0', 'a',
+        ('--binary', '--text', '--check', '--status', '--quiet', '--warn', '--strict'),
+        ('--algorithm',),
+    ),
+    'stat': ReaderOptions('FLlnqrsx', 'ft'),
+    'tail': ReaderOptions('qr0123456789', 'bcn'),
+    'wc': ReaderOptions('clmwL', ''),
 }
 
-# Short option letters with the same effect, counted anywhere in a cluster like `-fn`.
-FIND_EXEC_READER_RUNNING_LETTERS = {
-    'tail': frozenset({'f', 'F'}),
-}
-
-# Programs refused under any `find` action, mirroring the `Bash(find * -exec rm*)` and
-# `Bash(find * -exec mv*)` deny rules, which can't see `-execdir`, `-ok`, or a wrapper.
-FIND_EXEC_DENIED = frozenset({'rm', 'mv'})
-
-# `find`'s own actions that create or truncate the file they name.
-FIND_WRITING_ACTIONS = frozenset({'-fprint', '-fprint0', '-fprintf', '-fls'})
+# Programs refused under `fd -x` and `-X`, however they're wrapped.
+FD_EXEC_DENIED = frozenset({'rm', 'mv'})
 
 
 def expand_abbreviations(long_options):
@@ -424,104 +449,136 @@ def judge_git(command):
     return verdicts
 
 
-def reader_runs_something(program, words):
-    """True when a reader's arguments make it run a program or never exit, like `tail -f`."""
-    running_options = FIND_EXEC_READER_RUNNING_OPTIONS.get(program, ())
-    running_letters = FIND_EXEC_READER_RUNNING_LETTERS.get(program, frozenset())
-    for word in words:
-        value = word.value
-        if value == '--':
-            return False
-        if value.startswith('--'):
-            if value.split('=', 1)[0] in running_options:
-                return True
-        elif value.startswith('-') and running_letters & set(value[1:]):
-            return True
-    return False
+def reader_options_allowed(program, words):
+    """True when every option a reader gets is one `FD_EXEC_READER_OPTIONS` lists for it.
 
-
-def judge_find_action(command):
-    """Judge a program a `find -exec`-style action runs. Returns (decision, reason) or None.
-
-    Only a reader that `find` runs directly by its bare name, with literal arguments and no
-    environment assignments, passes. `PATH=` could swap in another `grep`, and a variable could
-    hold `rg --pre`.
+    An option that takes a value consumes the next word, so in `rg -e -- --pre=sh` the `--` is a
+    pattern and `--pre=sh` is still an option.
     """
-    find_wrappers = [
-        index for index, wrapper in enumerate(command.wrappers) if wrapper.startswith('find -')
+    options = FD_EXEC_READER_OPTIONS[program]
+    index = 0
+    while index < len(words):
+        value = words[index].value
+        index += 1
+        if value == '--':
+            return True
+        if not value.startswith('-') or value == '-':
+            continue
+        if value.startswith('--'):
+            name, has_value, _attached = value.partition('=')
+            if name in options.value_longs:
+                index += 0 if has_value else 1
+            elif has_value or name not in options.flag_longs:
+                return False
+            continue
+        for position, letter in enumerate(value[1:], start=1):
+            if letter in options.value_letters:
+                index += 0 if value[position + 1:] else 1
+                break
+            if letter not in options.flag_letters:
+                return False
+    return True
+
+
+def judge_fd_command(command):
+    """Judge a program `fd -x` or `-X` runs. Returns (decision, reason) or None.
+
+    Only a reader that `fd` runs directly by its bare name, with literal arguments, listed options,
+    and no environment assignments, passes. `PATH=` could swap in another `grep`, and a variable
+    could hold `rg --pre`.
+    """
+    fd_wrappers = [
+        index for index, wrapper in enumerate(command.wrappers) if wrapper.startswith('fd -')
     ]
-    if not find_wrappers or command.opaque:
+    if not fd_wrappers or command.opaque:
         return None
-    action = command.wrappers[find_wrappers[-1]]
+    action = command.wrappers[fd_wrappers[-1]]
     program = command.words[0].value if command.words else None
-    if command.name in FIND_EXEC_DENIED:
+    if command.name in FD_EXEC_DENIED:
         return DENY, (
-            f'`find {action.split()[-1]} {command.name}` is denied, the same as `find -exec '
-            f'{command.name}` in `permissions.deny`. If the task genuinely needs it, stop and say '
-            f'so rather than rewording the command.'
+            f'`{action} {command.name}` is denied, the same as `{command.name}` itself. If the '
+            f'task genuinely needs it, stop and say so rather than rewording the command.'
         )
-    # BSD `find -execdir` hands over a bare filename, so a file named `--pre=sh` becomes an rg
-    # option. A `--` before the `{}` makes the reader treat it as a path.
-    filename_is_option_safe = action in ('find -exec', 'find -ok') or any(
-        word.value == '--' for word in command.words[1:next(
-            (index for index, word in enumerate(command.words) if '{}' in (word.value or '')),
-            len(command.words),
-        )]
+    # `fd`'s `{/}`, `{/.}`, and `{.}` hand over a bare filename, so a file named `--pre=sh`
+    # becomes an rg option. A `--` right after the program makes the reader treat it as a path. A
+    # later `--` doesn't count, because it can be an option's value, like `rg -e --`.
+    hands_over_bare_name = any(
+        placeholder in (word.value or '')
+        for word in command.words for placeholder in ('{/}', '{/.}', '{.}')
+    )
+    filename_is_option_safe = not hands_over_bare_name or (
+        len(command.words) > 1 and command.words[1].value == '--'
     )
     reads_only = (
         filename_is_option_safe
-        and program in FIND_EXEC_READERS
+        and program in FD_EXEC_READER_OPTIONS
         and command.name == program
-        and len(command.wrappers) == find_wrappers[-1] + 1
+        and len(command.wrappers) == fd_wrappers[-1] + 1
         and not command.assigns
         and all(word.literal for word in command.words)
-        and not reader_runs_something(program, command.words[1:])
+        and reader_options_allowed(program, command.words[1:])
     )
     if reads_only:
         return None
     return ASK, (
         f'`{action}` runs `{program or "a program"}` on every file it finds, and only '
-        f'read-only programs like `grep` and `wc`, with literal arguments, pass without a prompt.'
+        f'read-only programs like `grep` and `wc`, with literal arguments and common read-only '
+        f'options, pass without a prompt.'
     )
 
 
-def find_writing_action(command):
-    """Judge `find`'s own writes: `-delete`, and `-fprint` and the like. Returns (decision, reason).
-
-    Words are compared after bash resolves their quoting, so `-dele''te` counts. The
-    `Bash(find * -delete*)` deny rule only sees the raw line, and misses `find -delete`, which
-    deletes everything under the working directory.
-    """
-    if command.name != 'find' or command.opaque:
+def find_denied(command):
+    """Deny `find` wherever it runs, since `fd` does the same job in a shape this hook can read."""
+    if command.name != 'find':
         return None
-    if any(word.value == '-delete' for word in command.words[1:]):
-        return DENY, (
-            '`find -delete` is denied by `permissions.deny`, however it\'s spelled. If the '
-            'task genuinely needs it, stop and say so rather than rewording the command.'
-        )
+    return DENY, (
+        '`find` is denied. Use `fd` instead, following the `find`/`fd` bullet in '
+        '`running-commands.md`. If the task genuinely needs something only `find` can do, stop '
+        'and say so rather than rewording the command.'
+    )
 
-    writing_action = None
-    expands = command.dynamic_args
-    inside_exec = False
-    for word in command.words[1:]:
-        if inside_exec:
-            # `judge_find_action` already judges the words an `-exec` action runs.
-            inside_exec = not (word.literal and word.value in (';', '+'))
-            continue
-        if word.literal and word.value in bash_ast.FIND_EXEC_ACTIONS:
-            inside_exec = True
-        elif not readable(word):
-            expands = True
-        elif word.value in FIND_WRITING_ACTIONS and writing_action is None:
-            writing_action = word.value
 
-    if writing_action:
-        return ASK, f'`find {writing_action}` creates or truncates the file it names.'
-    if expands:
+def fd_own_risks(command):
+    """Judge `fd`'s own arguments when it runs a command. Returns (decision, reason) or None.
+
+    `fd` prefixes relative paths with `./` for `-x` and `-X`, which keeps a file named `--pre=sh`
+    from reaching `rg` as an option. `--strip-cwd-prefix` drops that prefix, a `--path-separator`
+    that starts with `-` starts every absolute path with it, and a search path that starts with
+    `-` starts every result with it.
+    """
+    if command.name != 'fd' or command.opaque:
+        return None
+    # Any word bash expands could become `-x`, an option's value, or a `;` that ends an `-x`
+    # command, so `fd` only passes when every word it gets can be read from the line.
+    if command.dynamic_args or any(
+        bash_ast.could_become_option(word) for word in command.words[1:]
+    ):
         return ASK, (
-            'A `find` argument is only known at run time, and it could become `-exec`, '
-            '`-delete`, or another action this hook can only judge when it can read it.'
+            'An `fd` argument is only known at run time, and it could become `-x` or an option '
+            'this hook can only judge when it can read it.'
         )
+    parsed = bash_ast.parse_fd(command.words)
+    if not parsed.execs:
+        return None
+
+    own = [command.words[index].value or '' for index in parsed.own]
+    after_double_dash = False
+    for position, value in enumerate(own):
+        name, has_value, attached = value.partition('=')
+        following = own[position + 1] if position + 1 < len(own) else ''
+        if name == '--strip-cwd-prefix' and attached not in ('never', 'auto'):
+            return ASK, '`fd --strip-cwd-prefix` passes bare filenames, which can read as options.'
+        if name == '--path-separator' and (attached if has_value else following).startswith('-'):
+            return ASK, '`fd --path-separator` starting with `-` makes paths read as options.'
+        search_path = attached if name == '--search-path' and attached else (
+            following if value == '--search-path' else None
+        )
+        if (search_path or '').startswith('-') or (after_double_dash and value.startswith('-')):
+            return ASK, (
+                f'`fd` searching `{search_path or value}` passes paths that read as options.'
+            )
+        if value == '--':
+            after_double_dash = True
     return None
 
 
@@ -549,12 +606,9 @@ def decide(line):
     for command in parsed.commands:
         if command.opaque:
             asks.append(command.opaque)
-        find_action = judge_find_action(command)
-        if find_action:
-            (denials if find_action[0] == DENY else asks).append(find_action[1])
-        find_write = find_writing_action(command)
-        if find_write:
-            (denials if find_write[0] == DENY else asks).append(find_write[1])
+        for verdict in (find_denied(command), judge_fd_command(command), fd_own_risks(command)):
+            if verdict:
+                (denials if verdict[0] == DENY else asks).append(verdict[1])
         is_git = command.name == 'git'
         # A bare assignment can't run anything this call, but there's no honest reason to write
         # one for a git variable either, and it's what the old hook refused.

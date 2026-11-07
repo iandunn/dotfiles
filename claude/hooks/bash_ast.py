@@ -195,6 +195,140 @@ SHELL_LONG_FLAGS = frozenset({
 # `find` actions that run a command, which ends at a `;` or `+` argument.
 FIND_EXEC_ACTIONS = frozenset({'-exec', '-execdir', '-ok', '-okdir'})
 
+
+# `fd` options that run a command, each mapped to the short form the hooks report it as.
+FD_EXEC_OPTIONS = {'-x': '-x', '--exec': '-x', '-X': '-X', '--exec-batch': '-X'}
+
+# Every option `fd --help` documents, as of fd 10.3. Keep these allowlists: an option missing from
+# them makes `parse_fd` report it as unknown, which prompts, rather than guessing whether it
+# takes a value that could hide `-x`.
+FD_FLAG_LETTERS = frozenset('HIusigFalLp0qhV1')
+FD_VALUE_LETTERS = frozenset('dEteSocj')
+FD_FLAG_OPTIONS = frozenset({
+    '--hidden', '--no-hidden', '--no-ignore', '--ignore', '--no-ignore-vcs', '--ignore-vcs',
+    '--no-require-git', '--require-git', '--no-ignore-parent', '--unrestricted',
+    '--case-sensitive', '--ignore-case', '--glob', '--regex', '--fixed-strings',
+    '--absolute-path', '--relative-path', '--list-details', '--follow', '--no-follow',
+    '--full-path', '--print0', '--prune', '--quiet', '--has-results', '--show-errors',
+    '--one-file-system', '--help', '--version',
+})
+FD_OPTIONAL_VALUE_OPTIONS = frozenset({'--hyperlink', '--strip-cwd-prefix'})
+FD_VALUE_OPTIONS = frozenset({
+    '--and', '--max-depth', '--min-depth', '--exact-depth', '--exclude', '--type', '--extension',
+    '--size', '--changed-within', '--changed-before', '--change-newer-than', '--newer',
+    '--changed-after', '--change-older-than', '--older', '--owner', '--format', '--batch-size',
+    '--ignore-file', '--color', '--threads', '--max-results', '--base-directory',
+    '--path-separator', '--search-path',
+})
+
+
+@dataclass
+class FdArgs:
+    """How `fd` reads its arguments, by index into its words.
+
+    `own` holds the words `fd` reads itself, including option values. `execs` holds an
+    (action, first word, start, end) span for each `-x` or `-X` command. `first word` is the
+    program glued to its option, like the `rm` in `--exec=rm`, which is then the whole command,
+    or None when the program is `words[start]`. `unknown` holds options `fd` doesn't document,
+    and words before `--` that could become an option at run time.
+    """
+    own: list = field(default_factory=list)
+    execs: list = field(default_factory=list)
+    unknown: list = field(default_factory=list)
+
+
+def could_become_option(word):
+    """True when bash could turn this word into something that starts with `-`.
+
+    A glob that starts with a literal character other than `-`, like `src/*`, can't, and neither
+    can a leading `~`, which only becomes a home directory.
+    """
+    if word.literal:
+        return False
+    value = word.value
+    if not value or word.brace:
+        return True
+    if word.tilde and not word.glob:
+        return False
+    return not (word.glob and value[0] not in '-*?[')
+
+
+def parse_fd(words):
+    """Sort `fd`'s words the way its option parser would. `words[0]` is `fd` itself."""
+    parsed = FdArgs()
+    index = 1
+    after_double_dash = False
+    while index < len(words):
+        word = words[index]
+        value = word.value
+        parsed.own.append(index)
+        index += 1
+        if after_double_dash:
+            continue
+        if not word.literal:
+            if could_become_option(word):
+                parsed.unknown.append(index - 1)
+            continue
+        if not value.startswith('-') or value == '-':
+            continue
+        if value == '--':
+            after_double_dash = True
+            continue
+        action = None
+        first_word = None
+        if value.startswith('--'):
+            name, has_value, attached = value.partition('=')
+            if name in FD_EXEC_OPTIONS:
+                action = FD_EXEC_OPTIONS[name]
+                if has_value:
+                    first_word = Word(value=attached, raw=word.raw)
+            elif name in FD_VALUE_OPTIONS:
+                if not has_value and index < len(words):
+                    parsed.own.append(index)
+                    if not words[index].literal:
+                        parsed.unknown.append(index)
+                    index += 1
+                continue
+            elif name in FD_FLAG_OPTIONS and not has_value or name in FD_OPTIONAL_VALUE_OPTIONS:
+                continue
+            else:
+                parsed.unknown.append(index - 1)
+                continue
+        else:
+            for position, letter in enumerate(value[1:], start=1):
+                rest = value[position + 1:]
+                if letter in 'xX':
+                    action = f'-{letter}'
+                    # Like any short option's value, an attached program drops a leading `=`, so
+                    # `-x=rm` runs `rm`.
+                    if rest:
+                        first_word = Word(value=rest.removeprefix('='), raw=word.raw)
+                    break
+                if letter in FD_VALUE_LETTERS:
+                    if not rest and index < len(words):
+                        parsed.own.append(index)
+                        if not words[index].literal:
+                            parsed.unknown.append(index)
+                        index += 1
+                    break
+                if letter not in FD_FLAG_LETTERS:
+                    parsed.unknown.append(index - 1)
+                    break
+        if action is None:
+            continue
+        if first_word is not None:
+            # An attached program is the option's only value, so `fd` reads the words after it
+            # as its own, like the second `-x` in `fd -xls -x rm`.
+            parsed.execs.append((action, first_word, index, index))
+            continue
+        end = index
+        while end < len(words) and not (words[end].literal and words[end].value == ';'):
+            end += 1
+        parsed.execs.append((action, first_word, index, end))
+        index = end + 1
+    return parsed
+
+
 # git global options that take the next word as their value.
 GIT_GLOBAL_VALUE_OPTIONS = frozenset({
     '-C', '-c', '--git-dir', '--work-tree', '--namespace', '--config-env', '--super-prefix',
@@ -981,6 +1115,10 @@ class LineParser:
                 self.unwrap_find(command)
                 return
 
+            if name == 'fd':
+                self.unwrap_fd(command)
+                return
+
             if name == 'eval':
                 self.unwrap_string(command, command.words[1:], 'eval')
                 return
@@ -1432,6 +1570,40 @@ class LineParser:
                 index = end + 1
                 continue
             index += 1
+        self.emit(command)
+
+    def unwrap_fd(self, command):
+        """Emit `fd` itself, plus each command its `-x`/`-X` options run.
+
+        An option `fd` doesn't document, and a word that could become an option at run time, are
+        emitted as opaque, since this parser can't be sure what they run.
+        """
+        parsed = parse_fd(command.words)
+        for index in parsed.unknown:
+            word = command.words[index]
+            if word.literal:
+                reason = (
+                    f'`fd {word.raw}` is an option this hook doesn\'t know, so it cannot tell '
+                    f'whether it takes a value or runs a program.'
+                )
+            else:
+                reason = (
+                    f'`fd {word.raw}` is only known at run time, and it could become `-x` or an '
+                    f'option this hook can only judge when it can read it.'
+                )
+            self.emit(self.detached(command, 'fd', opaque=reason))
+        for action, first_word, start, end in parsed.execs:
+            inner_words = ([] if first_word is None else [first_word]) + command.words[start:end]
+            inner = Command(
+                words=inner_words, raw=command.raw, assigns=list(command.assigns),
+                wrappers=command.wrappers + [f'fd {action}'], nested=command.nested,
+                dynamic_args=True,
+                replaces_text=any(
+                    inner_word.value is not None and '{' in inner_word.value
+                    for inner_word in inner_words
+                ),
+            )
+            self.unwrap(inner)
         self.emit(command)
 
     def unwrap_string(self, command, words, wrapper, quote=False):

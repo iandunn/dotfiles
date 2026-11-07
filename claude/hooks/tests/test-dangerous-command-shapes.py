@@ -213,7 +213,7 @@ class DestructiveGitTest(HookTestCase):
     def test_run_time_arguments_to_flag_sensitive_subcommands_ask(self):
         self.assertAsks('git push origin "$branch"')
         self.assertAsks('git $subcommand -fdx')
-        self.assertAsks('find . -name x -exec git push \\;')
+        self.assertAsks('fd x -x git push')
 
     def test_a_visible_destructive_form_wins_over_run_time_arguments(self):
         self.assertDenies('git checkout -- *.js')
@@ -224,87 +224,144 @@ class DestructiveGitTest(HookTestCase):
         self.assertDenies('Git clean -fdx')
 
 
-class FindExecTest(HookTestCase):
-    """`settings.json` allows `Bash(find *)`, so this hook decides what `-exec` may run."""
+class FindTest(HookTestCase):
+    """`find` is denied in favor of `fd`, however it's spelled or wrapped."""
 
-    def test_readers_are_silent(self):
-        for command in (
-            "find /x -path '*dmv*' -name '*.jsonl' -mtime -45 -exec grep -l 'check-eligibility' {} +",
-            "find /x -type f -not -name '*.test.js' -size +0 -exec wc -l {} +",
-            'find . -name "*.php" -execdir head -5 -- {} \\;',
-            'find . -execdir rg PWNED -- {} +',
-            'find . -type f -exec rg -n foo {} +',
-        ):
-            with self.subTest(command=command):
-                self.assertSilent(command)
-
-    def test_other_programs_ask(self):
-        for command in (
-            'find . -exec chmod +x {} \\;',
-            'find . -execdir chmod +x {} \\;',
-            'find . -ok touch {} \\;',
-            'find . -okdir sed -i s/a/b/ {} \\;',
-            'find . -exec find . -name x \\;',
-            'find . -exec /usr/bin/grep foo {} +',
-            # A file named `--pre=sh` reaches `-execdir` as a bare option.
-            'find . -execdir rg PWNED {} +',
-            'find . -execdir tail {} \\;',
-            'find . -execdir rg -- x {} \\; -execdir rg PWNED {} +',
-            "find . -type f -exec sh -c 'echo \"$1: $(cat \"$1\")\"' _ {} \\;",
-        ):
-            with self.subTest(command=command):
-                self.assertAsks(command)
-
-    def test_a_wrapper_or_assignment_around_a_reader_asks(self):
-        for command in ('find . -exec env grep foo {} \\;', 'PATH=/tmp/x find . -exec grep x {} +',
-                        'RIPGREP_CONFIG_PATH=./cfg find . -exec rg x {} +'):
-            with self.subTest(command=command):
-                self.assertAsks(command)
-
-    def test_rm_and_mv_are_denied_under_every_action_and_wrapper(self):
-        for command in ('find . -execdir rm {} \\;', 'find . -ok rm {} \\;',
-                        'find . -exec env rm {} \\;', 'find . -exec xargs rm \\;',
-                        'find . -exec /bin/rm {} \\;', 'find . -okdir mv {} /tmp \\;'):
+    def test_find_is_denied_everywhere(self):
+        for command in ('find . -name x', 'find', '/usr/bin/find .', '"find" .', 'FIND .',
+                        'env find .', 'xargs -a list.txt find .', 'fd -x find', 'fd -X find .',
+                        "bash -c 'find . -exec grep x {} +'"):
             with self.subTest(command=command):
                 self.assertDenies(command)
 
+    def test_find_in_an_argument_is_silent(self):
+        for command in ('rg find', 'fd find', "git log --grep 'find'"):
+            with self.subTest(command=command):
+                self.assertSilent(command)
+
+
+class FdReaderTest(HookTestCase):
+    """Which reader options `fd -x` and `-X` may pass without a prompt."""
+
     def test_a_reader_option_that_runs_a_program_or_never_exits_asks(self):
-        for command in ('find . -exec rg --pre ./x foo {} +', 'find . -exec rg --pre=./x foo {} +',
-                        'find . -exec rg --hostname-bin=./x foo {} +', 'find . -exec tail -f {} +',
-                        'find . -exec tail -nF 5 {} +', 'find . -exec tail --follow=name {} +'):
+        for command in ('fd -X rg --pre ./x foo', 'fd -X rg --pre=./x foo',
+                        'fd -X rg --hostname-bin=./x foo', 'fd -x tail -f', 'fd -X tail -qF',
+                        'fd -x tail --follow=name',
+                        # `rg` takes this `--` as the `-e` pattern, so `--pre` is still an option.
+                        'fd -x rg -e -- --pre=./x', 'fd -X rg --regexp -- --pre=sh',
+                        'fd -X rg -z foo'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_listed_reader_options_are_silent(self):
+        for command in ('fd -e php -X grep -n -e foo', 'fd -x tail -n 5', 'fd -x head -n5',
+                        "fd -X rg -i --glob '*.php' foo", 'fd -x tail -nF 5'):
+            with self.subTest(command=command):
+                self.assertSilent(command)
+
+    def test_a_wrapper_or_assignment_around_a_reader_asks(self):
+        for command in ('fd -x env grep foo', 'PATH=/tmp/x fd -X grep x',
+                        'RIPGREP_CONFIG_PATH=./cfg fd -X rg x', 'fd -X /usr/bin/grep foo'):
             with self.subTest(command=command):
                 self.assertAsks(command)
 
     def test_a_reader_argument_that_expands_at_run_time_asks(self):
-        for command in ('find . -exec rg $OPT foo {} +', 'find . -exec rg "$OPT" foo {} +',
-                        'find . -exec rg --pre${IFS}./x foo {} +'):
+        for command in ('fd -X rg $OPT foo', 'fd -X rg "$OPT" foo', 'fd -X rg --pre${IFS}./x foo'):
             with self.subTest(command=command):
                 self.assertAsks(command)
 
-    def test_find_writing_a_file_itself_asks(self):
-        for command in ('find . -fprint /tmp/x', 'find . -fprintf ~/.bashrc x',
-                        'find . -fls out.txt', 'find . -fprint0 out'):
-            with self.subTest(command=command):
-                self.assertAsks(command)
 
-    def test_find_delete_is_denied_however_it_is_spelled(self):
-        for command in ('find -delete', "find . -dele''te", 'find . -delet\\e', "find . $'-delete'",
-                        "find . -exec grep foo {} + -dele''te", 'find . -exec find . -delete \\;',
-                        'find $DIR -delete'):
+class FdExecTest(HookTestCase):
+    """`settings.json` allows `Bash(fd *)`, so this hook decides what `fd -x` and `-X` may run."""
+
+    def test_readers_and_plain_searches_are_silent(self):
+        for command in (
+            'fd -e php',
+            'fd -e rs -X wc -l',
+            'fd -tf -x grep -l foo',
+            'fd --type file --exec rg -n foo {}',
+            'fd -H -x head -- {/}',
+            'fd -x rg -- x {.}',
+            'fd -x grep foo {} \\; -e php',
+            'fd -e php ~/dotfiles -x grep foo',
+        ):
+            with self.subTest(command=command):
+                self.assertSilent(command)
+
+    def test_rm_and_mv_are_denied(self):
+        for command in ('fd . -x rm', 'fd -X rm -rf', 'fd --exec-batch rm {}', 'fd -Hx rm',
+                        'fd -e log --exec mv {} /tmp', 'fd -x env rm {}'):
             with self.subTest(command=command):
                 self.assertDenies(command)
 
-    def test_a_find_argument_that_expands_at_run_time_asks(self):
-        for command in ('find . $A rm {} \\;', 'find . "$ACTION"', 'find . -name *.php',
-                        'find . -{exec,ok} chmod +x {} \\;', 'xargs -a list.txt find .',
-                        'find . -exec grep foo {} "$T" -exec rm {} +'):
+    def test_other_programs_ask(self):
+        for command in ('fd script tree -X sh', "fd --exec sh -c 'echo {}'", 'fd -x chmod +x',
+                        'fd -x grep foo \\; -x touch {}'):
             with self.subTest(command=command):
                 self.assertAsks(command)
 
-    def test_find_without_actions_is_silent(self):
-        for command in ('find . -name "*.php" -print', 'find ~/dotfiles -name x'):
+    def test_attached_commands_are_judged_like_detached_ones(self):
+        for command in ('fd --exec-batch=grep foo', 'fd -Hxgrep foo'):
             with self.subTest(command=command):
                 self.assertSilent(command)
+        self.assertAsks('fd --exec=touch')
+        # An attached program is the option's only value, so `fd` reads what follows as its own.
+        self.assertAsks('fd -xecho -x touch')
+        self.assertAsks('fd -x= grep -x touch')
+        for command in ('fd --exec=rm', 'fd -Hxrm', 'fd --exec-batch=/bin/rm', 'fd -x=rm',
+                        'fd -Hx=rm', 'fd -xls -X rm -rf', 'fd --exec=grep -x rm {}'):
+            with self.subTest(command=command):
+                self.assertDenies(command)
+
+    def test_a_run_time_option_value_asks(self):
+        for command in ('fd -E {a,-xrm}', 'fd --exclude {a,--exec=rm}', 'fd -E $X',
+                        'fd -E "$X"', 'fd --search-path "$D" -X rg foo',
+                        'fd --path-separator "$S" -a -X rg foo', 'fd -x grep foo {\\;,-xrm}'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_a_value_option_is_not_mistaken_for_exec(self):
+        for command in ('fd -tx -X wc -l', 'fd -E -x', 'fd --and -x rg foo'):
+            with self.subTest(command=command):
+                self.assertSilent(command)
+
+    def test_unknown_options_ask(self):
+        for command in ('fd --max-buffer-time 5 -x grep foo', 'fd -Z foo'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_options_that_only_matter_with_exec_are_silent_without_it(self):
+        for command in ('fd --strip-cwd-prefix -e php', 'fd -- -foo', 'fd -e php src/*',
+                        'fd foo ~/dotfiles',
+                        'fd -a --path-separator=- foo'):
+            with self.subTest(command=command):
+                self.assertSilent(command)
+
+    def test_reader_words_are_not_judged_as_fd_options(self):
+        for command in ('fd -x grep -- -v', 'fd -x rg -e --strip-cwd-prefix foo'):
+            with self.subTest(command=command):
+                self.assertSilent(command)
+
+    def test_bare_filenames_reaching_a_reader_ask(self):
+        for command in ('fd -X rg foo {/}', 'fd -x tail {/.}', 'fd -x rg x {.}',
+                        # `rg` takes this `--` as the `-e` pattern, not as the end of options.
+                        'fd -x rg -e -- {/}', 'fd -x rg -g -- x {/}',
+                        'fd -x rg x {//} \\; -- . "$DIR"', 'fd -x rg x {} \\; -- . *',
+                        'fd -x rg x {} \\; -- . {a,-dir}',
+                        'fd --strip-cwd-prefix -X rg foo',
+                        'fd --strip-cwd-prefix=always -x rg foo',
+                        'fd -X rg foo \\; -- . --pre=dir', 'fd --search-path=--pre=dir -X rg foo',
+                        'fd --search-path --pre=dir -X rg foo',
+                        'fd -a --path-separator=-- -X rg foo',
+                        'fd . /tmp --path-separator - -x rg foo',
+                        'fd a.txt -x rg -e -- --pre=./x', 'fd -X rg -g -- --pre=sh foo'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
+
+    def test_run_time_arguments_ask(self):
+        for command in ('fd . $A rm', 'fd "$OPTS"', 'xargs fd', 'fd foo *'):
+            with self.subTest(command=command):
+                self.assertAsks(command)
 
 
 class BypassTest(HookTestCase):

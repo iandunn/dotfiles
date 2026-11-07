@@ -482,7 +482,7 @@ OPAQUE_LAUNCHERS = frozenset({
 # it, so the hook asks rather than assuming it won't. `command` reaches this list only as
 # `command -v`/`-V`, because `bash_ast` peels every other form.
 DATA_CONSUMERS = frozenset({
-    'cat', 'cd', 'command', 'echo', 'find', 'git', 'grep', 'head', 'ls', 'man', 'printf', 'rg',
+    'cat', 'cd', 'command', 'echo', 'fd', 'find', 'git', 'grep', 'head', 'ls', 'man', 'printf', 'rg',
     'tail',
     'type', 'wc', 'whereis', 'which',
 })
