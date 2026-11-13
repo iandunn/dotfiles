@@ -14,7 +14,7 @@ Write extracted files to `.claude/tmp/` inside the project, or `$TMPDIR` when th
 pdftotext -layout in.pdf .claude/tmp/out.txt
 ```
 
-Then read or grep the result. For a page range straight to stdout:
+Then read or `rg` the result. For a page range straight to stdout:
 
 ```bash
 pdftotext -layout -f N -l M in.pdf -

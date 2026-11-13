@@ -18,7 +18,7 @@ When the session root isn't a git repo -- a site root like `~/local-sites/10up/d
 
 ## Working in it
 
-Until the `go` patch applies, run all verification (`tsc`, `lint`, `test`) from inside the worktree, and confirm the files under test actually contain the change -- `grep` for a distinctive string. A green run against the wrong tree is worse than no run.
+Until the `go` patch applies, run all verification (`tsc`, `lint`, `test`) from inside the worktree, and confirm the files under test actually contain the change -- `rg` for a distinctive string. A green run against the wrong tree is worse than no run.
 
 When you commit to the work tree, make sure the same code review and security review passes run, and then iterate based on them. That catches issues early so that they don't delay attaching to the main tree.
 

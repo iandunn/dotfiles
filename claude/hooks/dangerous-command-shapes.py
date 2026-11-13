@@ -18,7 +18,8 @@ It decides six things, and the strongest verdict wins (deny, then ask, then sile
     `--exec-path`) are asked about.
   - A destructive git subcommand, mirroring the `Bash(git ...)` entries in `permissions.deny`, is
     denied wherever it appears.
-  - `find` is denied wherever it runs, in favor of `fd`. A program that `fd -x` or `-X` runs is
+  - `find` is denied wherever it runs, in favor of `fd`, and `grep` in favor of `rg`, whose config
+    keeps a recursive search out of denied files. A program that `fd -x` or `-X` runs is
     asked about unless it only reads, because `settings.json` allows `Bash(fd *)` and a prefix
     can't see what `-x` runs. `rm` and `mv` there are denied.
   - Everything else is left to `settings.json` and the other hooks.
@@ -145,15 +146,6 @@ ReaderOptions = namedtuple(
 # or delete, and an option like `rg --pre` or `tail -f` runs a program or never exits.
 FD_EXEC_READER_OPTIONS = {
     'cat': ReaderOptions('benstuv', ''),
-    'grep': ReaderOptions(
-        'abcEFGHhIiLlnoqRrsUvwxZz', 'ABCefm',
-        ('--count', '--extended-regexp', '--fixed-strings', '--files-with-matches',
-         '--files-without-match', '--ignore-case', '--invert-match', '--line-number',
-         '--no-filename', '--with-filename', '--only-matching', '--quiet', '--silent',
-         '--recursive', '--word-regexp', '--line-regexp'),
-        ('--regexp', '--file', '--max-count', '--context', '--after-context', '--before-context',
-         '--include', '--exclude'),
-    ),
     'head': ReaderOptions('0123456789', 'nc'),
     'ls': ReaderOptions(string.ascii_letters + string.digits + '@%,', ''),
     'md5': ReaderOptions('nqr', ''),
@@ -183,6 +175,14 @@ FD_EXEC_READER_OPTIONS = {
 
 # Programs refused under `fd -x` and `-X`, however they're wrapped.
 FD_EXEC_DENIED = frozenset({'rm', 'mv'})
+
+# Every program whose name ends in `grep` is denied wherever it runs, like `pcre2grep`, `zegrep`,
+# and `xzgrep`, in favor of `rg`, whose config keeps a recursive search out of the paths the
+# `Read(...)` deny rules cover.
+GREP_SUFFIX = 'grep'
+
+# Programs named like `grep` that search something other than files.
+GREP_EXCEPTIONS = frozenset({'pgrep', 'ngrep'})
 
 
 def expand_abbreviations(long_options):
@@ -484,7 +484,7 @@ def judge_fd_command(command):
     """Judge a program `fd -x` or `-X` runs. Returns (decision, reason) or None.
 
     Only a reader that `fd` runs directly by its bare name, with literal arguments, listed options,
-    and no environment assignments, passes. `PATH=` could swap in another `grep`, and a variable
+    and no environment assignments, passes. `PATH=` could swap in another `rg`, and a variable
     could hold `rg --pre`.
     """
     fd_wrappers = [
@@ -522,7 +522,7 @@ def judge_fd_command(command):
         return None
     return ASK, (
         f'`{action}` runs `{program or "a program"}` on every file it finds, and only '
-        f'read-only programs like `grep` and `wc`, with literal arguments and common read-only '
+        f'read-only programs like `rg` and `wc`, with literal arguments and common read-only '
         f'options, pass without a prompt.'
     )
 
@@ -535,6 +535,18 @@ def find_denied(command):
         '`find` is denied. Use `fd` instead, following the `find`/`fd` bullet in '
         '`running-commands.md`. If the task genuinely needs something only `find` can do, stop '
         'and say so rather than rewording the command.'
+    )
+
+
+def grep_denied(command):
+    """Deny `grep` wherever it runs, since `rg` does the same job and skips denied files."""
+    name = command.name or ''
+    if not name.endswith(GREP_SUFFIX) or name in GREP_EXCEPTIONS:
+        return None
+    return DENY, (
+        f'`{command.name}` is denied. Use `rg` instead, following the `rg`/`grep` bullet in '
+        f'`running-commands.md`. If the task genuinely needs something only `{command.name}` can '
+        f'do, stop and say so rather than rewording the command.'
     )
 
 
@@ -606,7 +618,11 @@ def decide(line):
     for command in parsed.commands:
         if command.opaque:
             asks.append(command.opaque)
-        for verdict in (find_denied(command), judge_fd_command(command), fd_own_risks(command)):
+        verdicts = (
+            find_denied(command), grep_denied(command), judge_fd_command(command),
+            fd_own_risks(command),
+        )
+        for verdict in verdicts:
             if verdict:
                 (denials if verdict[0] == DENY else asks).append(verdict[1])
         is_git = command.name == 'git'

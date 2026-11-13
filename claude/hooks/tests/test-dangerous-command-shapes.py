@@ -240,6 +240,24 @@ class FindTest(HookTestCase):
                 self.assertSilent(command)
 
 
+class GrepTest(HookTestCase):
+    """`grep` is denied in favor of `rg`, however it's spelled or wrapped."""
+
+    def test_grep_is_denied_everywhere(self):
+        for command in ('grep -rn x .', 'grep', 'egrep x a.md', 'command grep x a.md',
+                        '/usr/bin/grep x a.md', 'fd -x grep x', "bash -c 'grep x a.md'",
+                        'pcre2grep -r x ~', 'zegrep -r x ~', 'xzgrep x a.xz', 'GREP -r x ~',
+                        'fd -Hxgrep foo', 'fd --exec=grep foo',
+                        'fd --exec-batch=/usr/bin/grep x'):
+            with self.subTest(command=command):
+                self.assertDenies(command)
+
+    def test_grep_in_an_argument_is_silent(self):
+        for command in ('rg grep', 'git grep x', "git log --grep 'x'", 'pgrep node'):
+            with self.subTest(command=command):
+                self.assertSilent(command)
+
+
 class FdReaderTest(HookTestCase):
     """Which reader options `fd -x` and `-X` may pass without a prompt."""
 
@@ -254,14 +272,14 @@ class FdReaderTest(HookTestCase):
                 self.assertAsks(command)
 
     def test_listed_reader_options_are_silent(self):
-        for command in ('fd -e php -X grep -n -e foo', 'fd -x tail -n 5', 'fd -x head -n5',
+        for command in ('fd -e php -X rg -n -e foo', 'fd -x tail -n 5', 'fd -x head -n5',
                         "fd -X rg -i --glob '*.php' foo", 'fd -x tail -nF 5'):
             with self.subTest(command=command):
                 self.assertSilent(command)
 
     def test_a_wrapper_or_assignment_around_a_reader_asks(self):
-        for command in ('fd -x env grep foo', 'PATH=/tmp/x fd -X grep x',
-                        'RIPGREP_CONFIG_PATH=./cfg fd -X rg x', 'fd -X /usr/bin/grep foo'):
+        for command in ('fd -x env rg foo', 'PATH=/tmp/x fd -X rg x',
+                        'RIPGREP_CONFIG_PATH=./cfg fd -X rg x', 'fd -X /usr/bin/rg foo'):
             with self.subTest(command=command):
                 self.assertAsks(command)
 
@@ -278,12 +296,12 @@ class FdExecTest(HookTestCase):
         for command in (
             'fd -e php',
             'fd -e rs -X wc -l',
-            'fd -tf -x grep -l foo',
+            'fd -tf -x rg -l foo',
             'fd --type file --exec rg -n foo {}',
             'fd -H -x head -- {/}',
             'fd -x rg -- x {.}',
-            'fd -x grep foo {} \\; -e php',
-            'fd -e php ~/dotfiles -x grep foo',
+            'fd -x rg foo {} \\; -e php',
+            'fd -e php ~/dotfiles -x rg foo',
         ):
             with self.subTest(command=command):
                 self.assertSilent(command)
@@ -296,27 +314,27 @@ class FdExecTest(HookTestCase):
 
     def test_other_programs_ask(self):
         for command in ('fd script tree -X sh', "fd --exec sh -c 'echo {}'", 'fd -x chmod +x',
-                        'fd -x grep foo \\; -x touch {}'):
+                        'fd -x rg foo \\; -x touch {}'):
             with self.subTest(command=command):
                 self.assertAsks(command)
 
     def test_attached_commands_are_judged_like_detached_ones(self):
-        for command in ('fd --exec-batch=grep foo', 'fd -Hxgrep foo'):
+        for command in ('fd --exec-batch=rg foo', 'fd -Hxrg foo'):
             with self.subTest(command=command):
                 self.assertSilent(command)
         self.assertAsks('fd --exec=touch')
         # An attached program is the option's only value, so `fd` reads what follows as its own.
         self.assertAsks('fd -xecho -x touch')
-        self.assertAsks('fd -x= grep -x touch')
+        self.assertAsks('fd -x= rg -x touch')
         for command in ('fd --exec=rm', 'fd -Hxrm', 'fd --exec-batch=/bin/rm', 'fd -x=rm',
-                        'fd -Hx=rm', 'fd -xls -X rm -rf', 'fd --exec=grep -x rm {}'):
+                        'fd -Hx=rm', 'fd -xls -X rm -rf', 'fd --exec=rg -x rm {}'):
             with self.subTest(command=command):
                 self.assertDenies(command)
 
     def test_a_run_time_option_value_asks(self):
         for command in ('fd -E {a,-xrm}', 'fd --exclude {a,--exec=rm}', 'fd -E $X',
                         'fd -E "$X"', 'fd --search-path "$D" -X rg foo',
-                        'fd --path-separator "$S" -a -X rg foo', 'fd -x grep foo {\\;,-xrm}'):
+                        'fd --path-separator "$S" -a -X rg foo', 'fd -x rg foo {\\;,-xrm}'):
             with self.subTest(command=command):
                 self.assertAsks(command)
 
@@ -326,7 +344,7 @@ class FdExecTest(HookTestCase):
                 self.assertSilent(command)
 
     def test_unknown_options_ask(self):
-        for command in ('fd --max-buffer-time 5 -x grep foo', 'fd -Z foo'):
+        for command in ('fd --max-buffer-time 5 -x rg foo', 'fd -Z foo'):
             with self.subTest(command=command):
                 self.assertAsks(command)
 
@@ -338,7 +356,7 @@ class FdExecTest(HookTestCase):
                 self.assertSilent(command)
 
     def test_reader_words_are_not_judged_as_fd_options(self):
-        for command in ('fd -x grep -- -v', 'fd -x rg -e --strip-cwd-prefix foo'):
+        for command in ('fd -x rg -- -v', 'fd -x rg -e --strip-cwd-prefix foo'):
             with self.subTest(command=command):
                 self.assertSilent(command)
 

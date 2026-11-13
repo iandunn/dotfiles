@@ -18,7 +18,7 @@ When you pose a question, include your recommended answer and the reason for it.
 
 ### 3. Prefer exploring the codebase over asking
 
-If a question can be answered by reading files, running `grep`, or following existing patterns, do that instead of asking. Only ask the user for information the codebase cannot provide.
+If a question can be answered by reading files, running `rg`, or following existing patterns, do that instead of asking. Only ask the user for information the codebase cannot provide.
 
 ### 4. Ask one question at a time
 

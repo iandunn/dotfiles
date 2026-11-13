@@ -318,7 +318,6 @@ The hook runs on every Bash line, with no `if` filter in settings.json, because
 a filter only matches the literal prefixes it lists, and `env git`, `\\git`, or
 a git nested in `$(...)` would never reach the hook.
 """
-import fnmatch
 import functools
 import glob
 import json
@@ -332,6 +331,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 try:
     import bash_ast
+    from read_deny import git_toplevel, is_read_denied, read_deny_patterns
 except ImportError as error:
     # Letting the traceback stand would exit non-zero, which Claude Code reads as "no opinion",
     # dropping every command this hook gates to the auto-mode classifier. Failing closed with a
@@ -341,7 +341,8 @@ except ImportError as error:
             'hookEventName': 'PreToolUse',
             'permissionDecision': 'ask',
             'permissionDecisionReason': (
-                f'bash_ast failed to load, so this hook cannot vouch for the command: {error}'
+                f'A helper module failed to load, so this hook cannot vouch for the command: '
+                f'{error}'
             ),
         }
     }))
@@ -1317,20 +1318,6 @@ def git_effective_cwd(tokens, subcommand_index, cwd):
     return cwd
 
 
-def git_toplevel(directory):
-    """The realpath of the working tree containing `directory`, or None outside any repository."""
-    try:
-        result = subprocess.run(
-            ['git', '-C', directory, 'rev-parse', '--show-toplevel'],
-            capture_output=True, text=True, timeout=5,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return None
-    if result.returncode != 0 or not result.stdout.strip():
-        return None
-    return os.path.realpath(result.stdout.strip())
-
-
 def git_diff_no_index_reason(tokens, subcommand_index, cwd, git_cwd):
     """Why this `git diff` would compare files on disk rather than repository content, or None.
 
@@ -1438,72 +1425,6 @@ def no_index_outside_reason(no_index_flag, operands, git_cwd, session_cwd):
                                  for candidate in (path, os.path.realpath(path))):
             return f'{flag_reason}, and settings.json denies the Read tool `{operand}`'
     return None
-
-
-def read_deny_patterns(session_cwd):
-    """Absolute `fnmatch` globs for the `Read(...)` deny rules in every settings file, or None.
-
-    None means the user's own settings couldn't be read, so the caller can't tell what's denied.
-    A missing project or managed file just contributes nothing. The project's settings are
-    looked for in the session's cwd and at its repository root, since a session can start in a
-    subdirectory.
-    """
-    home = os.path.realpath(os.path.expanduser('~'))
-    cwd = os.path.realpath(session_cwd)
-    project_roots = {cwd, git_toplevel(session_cwd) or cwd}
-    sources = [
-        (os.path.join(home, '.claude', 'settings.json'), os.path.join(home, '.claude'), True),
-        ('/Library/Application Support/ClaudeCode/managed-settings.json', '/', False),
-    ]
-    for project_root in project_roots:
-        for name in ('settings.json', 'settings.local.json'):
-            sources.append((os.path.join(project_root, '.claude', name), project_root, False))
-    globs = []
-    for settings_path, settings_root, required in sources:
-        try:
-            with open(settings_path) as settings_file:
-                rules = json.load(settings_file).get('permissions', {}).get('deny', [])
-        except (OSError, ValueError, AttributeError):
-            if required:
-                return None
-            continue
-        for rule in rules:
-            if isinstance(rule, str) and rule.startswith('Read(') and rule.endswith(')'):
-                globs += read_deny_globs(rule[5:-1], home, settings_root, project_roots)
-    return globs
-
-
-def read_deny_globs(pattern, home, settings_root, project_roots):
-    """The absolute globs one `Read(...)` pattern covers, under Claude Code's anchoring rules.
-
-    `//x` is absolute, `~/x` is under home, `/x` is under the settings file's root, `**/x` is
-    anywhere, and a bare or `./` pattern is under the cwd. Where that's ambiguous, every reading
-    is kept, and each glob also covers what's under it, as gitignore-style rules do for a
-    directory, so this can only deny more than Claude Code does, never less. `fnmatch`'s `*`
-    crosses `/`, so `**` needs no special handling.
-    """
-    if pattern.startswith('//'):
-        globs = [pattern[1:]]
-    elif pattern.startswith('~/'):
-        globs = [home + pattern[1:]]
-    elif pattern.startswith('**/'):
-        globs = ['*/' + pattern[3:]]
-    elif pattern.startswith('/'):
-        globs = [settings_root.rstrip('/') + pattern, pattern]
-    else:
-        relative = pattern
-        while relative.startswith('./'):
-            relative = relative[2:]
-        globs = [os.path.join(root, relative) for root in project_roots]
-    return [glob_pattern.lower() for glob_pattern in globs] + [
-        glob_pattern.rstrip('/').lower() + '/*' for glob_pattern in globs
-    ]
-
-
-def is_read_denied(path, globs):
-    """True if any of the `read_deny_patterns()` globs matches the absolute path."""
-    path = path.lower()
-    return any(fnmatch.fnmatchcase(path, glob_pattern) for glob_pattern in globs)
 
 
 def is_worktree_remove(tokens, subcommand_index):
