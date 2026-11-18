@@ -699,7 +699,8 @@
     "claude-security@claude-plugins-official": true,
     "relay-eng@relay-plugins": true,
     "relay-pjm@relay-plugins": false,
-    "relay-core@relay-plugins": true
+    "relay-core@relay-plugins": true,
+    "superpowers@anthropic-plugin-directory": false
   },
   "extraKnownMarketplaces": {
     "docs-skills-marketplace": {
