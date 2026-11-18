@@ -62,3 +62,5 @@ _notes
 MERGE-TODO.md
 scratchpad.md
 CLAUDE.local.md
+
+**/.claude/settings.local.json
