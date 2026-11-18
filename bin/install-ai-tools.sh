@@ -6,29 +6,30 @@ section "Claude Code"
 npm update -g @anthropic-ai/claude-code
 
 
-section "LocalWP Agent Tools"
+# Disabled b/c local now ships an offiicla cli which is better than mcp
+# section "LocalWP Agent Tools"
 
-REPO_SLUG=localwp-agent-tools
-LOCALWP_AGENT_TOOLS_DIR="$HOME/vhosts/tools/$REPO_SLUG"
-LOCALWP_ADDONS_DIR="$HOME/Library/Application Support/Local/addons"
+# REPO_SLUG=localwp-agent-tools
+# LOCALWP_AGENT_TOOLS_DIR="$HOME/vhosts/tools/$REPO_SLUG"
+# LOCALWP_ADDONS_DIR="$HOME/Library/Application Support/Local/addons"
 
-if [ -d "$LOCALWP_AGENT_TOOLS_DIR" ]; then
-    cd $LOCALWP_AGENT_TOOLS_DIR
-	git reset --hard main
-	git -C "$LOCALWP_AGENT_TOOLS_DIR" pull
-else
-	gh repo clone 10up/$REPO_SLUG ~/vhosts/tools/$REPO_SLUG
-fi
+# if [ -d "$LOCALWP_AGENT_TOOLS_DIR" ]; then
+#     cd $LOCALWP_AGENT_TOOLS_DIR
+# 	git reset --hard main
+# 	git -C "$LOCALWP_AGENT_TOOLS_DIR" pull
+# else
+# 	gh repo clone 10up/$REPO_SLUG ~/vhosts/tools/$REPO_SLUG
+# fi
 
-cd ~/vhosts/tools/$REPO_SLUG
-npm install --legacy-peer-deps
-npm run build
+# cd ~/vhosts/tools/$REPO_SLUG
+# npm install --legacy-peer-deps
+# npm run build
 
-printf "\n"
+# printf "\n"
 
-cp -r . "$LOCALWP_ADDONS_DIR/$REPO_SLUG/"
-cd "$LOCALWP_ADDONS_DIR/$REPO_SLUG/"
-npm install --production --ignore-scripts
+# cp -r . "$LOCALWP_ADDONS_DIR/$REPO_SLUG/"
+# cd "$LOCALWP_ADDONS_DIR/$REPO_SLUG/"
+# npm install --production --ignore-scripts
 
 # then have to manually activate
 # then manually add to every site?
@@ -100,12 +101,15 @@ claude plugin install relay-eng@relay-plugins
 claude plugin install relay-pjm@relay-plugins
 claude plugin install relay-core@relay-plugins
 
-section "Daryll Doc Skills"
-claude plugin marketplace add darylldoyle/docs-skills
-claude plugin install docs-skills@docs-skills-marketplace
+# havent used
+# section "Daryll Doc Skills"
+# claude plugin marketplace add darylldoyle/docs-skills
+# claude plugin install docs-skills@docs-skills-marketplace
 
 # todo need to uninstall before updating?  https://github.com/chromeDevTools/chrome-devtools-mcp/ says
 # [!NOTE] If you already had Chrome DevTools MCP installed previously for Claude Code, make sure to remove it first from your installation and configuration files.
+#
+# is this different than the other chrome mcp? it seems like i have two installed and only use 1 - thats not counting the custom blocked-sites-browser
 section "Chrome Dev Tools MCP"
 claude plugin marketplace add ChromeDevTools/chrome-devtools-mcp
 claude plugin install chrome-devtools-mcp
@@ -152,6 +156,8 @@ claude plugin list --json | jq -r '.[] | "\(.id) \(.scope)"' |
 # The skills are linked as they come, so they still carry `superpowers:` prefixes and references to
 # skills that aren't linked here. The Process weight section of `claude/CLAUDE.md` says how to read
 # those, which beats rewriting them and having the rewrite break on the next release.
+#
+# todo i disabled some of these didn't i?
 section "Superpowers Skills"
 
 SUPERPOWERS_DIR="$HOME/vhosts/tools/superpowers"
