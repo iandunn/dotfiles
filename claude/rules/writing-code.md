@@ -18,6 +18,8 @@
 
 - Don't implement anti patterns, like creating pages that dont have deep links
 
+- Use an allowlist pattern if it's security related, rather than a denylist.
+
 - Anything that navigates to another page or view must be a real link (`<a href>`, or the router's `Link`), never a button with a click handler that changes the URL. That lets it be opened in a new tab, copied, and bookmarked. This applies even when the destination already has a deep link, and to icon-only controls too. Don't use an external-link icon unless the link actually opens a new tab.
 
 - If automated tests already exist, then write them for code you add as well. Only add meaningful tests, though, don't try to get 100% coverage. If automated tests don't exist, ask me if you should implement a framework and then add tests.
