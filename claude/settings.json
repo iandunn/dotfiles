@@ -10,15 +10,6 @@
     "pr": "",
     "sessionUrl": false
   },
-  "blockedSiteBrowser": {
-    "sites": [
-      "https://www.ebay.com/",
-      "https://www.homedepot.com/",
-      "https://www.lowes.com/",
-      "https://www.nytimes.com/",
-      "https://www.wirecutter.com/"
-    ]
-  },
   "permissions": {
     "allow": [
       "Bash(./vendor/bin/phpunit *)",
@@ -669,16 +660,16 @@
         ]
       }
     ],
-	"PermissionRequest": [
-		{
-			"hooks": [
-				{
-					"type": "command",
-					"command": "python3 ~/.claude/hooks/iterm-approval-dot.py"
-				}
-			]
-		}
-	]
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/iterm-approval-dot.py"
+          }
+        ]
+      }
+    ]
   },
   "worktree": {
     "baseRef": "head"
@@ -761,6 +752,7 @@
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
   "idleCompaction": false,
+  "terminalProgressBarEnabled": false,
   "autoMode": {
     "soft_deny": [
       "$defaults",
@@ -774,6 +766,14 @@
       "Creating persistence mechanisms: modifying shell startup files, launch agents or daemons, crontab, or login items"
     ]
   },
-  "omitClaudeMd": false,
-  "terminalProgressBarEnabled": false
+  "blockedSiteBrowser": {
+    "sites": [
+      "https://www.ebay.com/",
+      "https://www.homedepot.com/",
+      "https://www.lowes.com/",
+      "https://www.nytimes.com/",
+      "https://www.wirecutter.com/"
+    ]
+  },
+  "omitClaudeMd": false
 }
