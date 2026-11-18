@@ -79,6 +79,7 @@ ln -sf $DOTFILES_DIR/.config/micro/bindings.json	$HOME/.config/micro/bindings.js
 ln -sf $DOTFILES_DIR/.config/micro/settings.json	$HOME/.config/micro/settings.json
 
 ln -sf $DOTFILES_DIR/vscode/settings.json "$HOME/Library/Application Support/Code/User/settings.json"
+ln -sf $DOTFILES_DIR/vscode/keybindings.json "$HOME/Library/Application Support/Code/User/keybindings.json"
 
 ln -sf $DOTFILES_DIR/localwp/ssh-entry "$HOME/Library/Application Support/Local/ssh-entry"
 	# todo ^ is installing to localwp/ssh-entry/ssh-entry and keeps nesting
