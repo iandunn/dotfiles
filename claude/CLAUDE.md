@@ -65,6 +65,8 @@ Don't start writing a plan for a small or medium sized feature, that takes more 
 
 Ask your questions in chat rather than with the question interface, so I can answer in detail.
 
+Before you start executing on a plan, give me a high-level overview of the architecture that you're gonna use. For example, JavaScript versus server-side code, REST APIs, React Hooks, cron jobs, etc. Also give me a high-level overview of any user flows. Don't start writing code until I've reviewed and approved those overviews.
+
 <!--
 CANDIDATE WORKFLOW, UNDER EVALUATION. Not yet in force. Trialled on the 4015 Firewood Rack woodshed project, 2026-09-18.
 
