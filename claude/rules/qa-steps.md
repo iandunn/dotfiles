@@ -51,6 +51,6 @@ These rules cover QA steps wherever they go: a PR, a ticket description, or a dr
 
 - A placeholder names the kind of value that goes in it, like `<draft post ID>` rather than `<their draft>`.
 
-- Put backticks around commands, IDs, URLs, UI labels, and anything else data-shaped. Use inline backticks for a one-line command, and save fenced blocks for multi-line samples like a `fetch()` snippet.
+- Put backticks around commands, IDs, UI labels, and anything else data-shaped. Use inline backticks for a one-line command, and save fenced blocks for multi-line samples like a `fetch()` snippet. Don't put backticks around URLs.
 
 - Give the URL to open wherever a step starts on a new page.
