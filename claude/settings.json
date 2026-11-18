@@ -760,6 +760,7 @@
   "advisorModel": "fable",
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
+  "idleCompaction": false,
   "autoMode": {
     "soft_deny": [
       "$defaults",
