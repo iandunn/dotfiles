@@ -66,3 +66,12 @@ The hook also prompts on a few other ways to read a file the line never names: a
 
 ## Keyword rules
 `inject-keyword-rules.py` is a `UserPromptSubmit` hook. It adds a file from `claude/prompt-rules/` to the session's context when the prompt uses that file's keyword, such as "hold" or "pplan". Those rules are long and only matter in sessions that use the keyword, so keeping them out of `CLAUDE.md` saves space in every other session. `CLAUDE.md` keeps a short guardrail for each one, because compaction can summarize away the injected copy.
+
+
+## Permission prompt log
+`claude/bin/permission-prompt-report.py` lists the permission prompts Claude Code showed, grouped by reason and sorted by count. `log-permission-prompts.py`, a `PermissionRequest` hook, feeds it through `permission_log.py`, which appends to `~/.local/state/claude-permission-prompts/log.jsonl` with mode `600`, because commands can hold tokens.
+
+A `PermissionRequest` hook sees every prompt, whatever caused it, but its payload has no reason (verified in the 2.1.329 CLI bundle). So the logger re-runs this folder's PreToolUse hooks that `~/.claude/settings.json` lists for the tool, on the same tool input, and records each `ask` with its reason. That re-runs the hooks, never the command, and the Bash hooks only run read-only programs like `shfmt`, `fd`, and git queries. Only the hooks on the logger's `RERUN_HOOKS` allowlist are re-run, because they're verified to have no side effects. Any other hook that covers the tool is logged as "not re-run" rather than blamed on a settings rule. `chrome-mcp-permissions.py` is left off, because it writes a marker the first time a session uses Chrome. Add a new stateless hook to the list when it's created. A prompt where no hook asked came from a `settings.json` rule, an unsandboxed command, a project or plugin hook, or a tool with no rule.
+
+The PreToolUse hooks stay wired directly in `settings.json`, so the logger is never in their decision path. It also does the re-run in a detached process, so a prompt waits only for Python to start and hand off the payload, about 60ms. The tradeoff is that a prompt approved before the re-run finishes can change what a hook sees, like a file `rm` already deleted, so a reason is occasionally wrong. Removing the logger only stops the logging.
+
