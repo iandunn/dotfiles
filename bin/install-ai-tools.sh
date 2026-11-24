@@ -148,7 +148,8 @@ claude plugin list --json | jq -r '.[] | "\(.id) \(.scope)"' |
 # can't be disabled on its own, so only the skills worth keeping are linked, one at a time.
 #
 # Deliberately left out: `brainstorming` and `using-superpowers`, which together are what turned
-# every feature request into a long question-and-approval loop, and `test-driven-development`.
+# every feature request into a long question-and-approval loop, `test-driven-development`, and
+# `receiving-code-review`, which overlaps with `claude/skills/responding-to-code-review`.
 #
 # The clone sits on the newest release tag rather than `main`, so these only change when upstream
 # cuts a release. At v6.3.0 the tag's contents are identical to what the plugin shipped.
@@ -166,7 +167,6 @@ SUPERPOWERS_SKILLS=(
 	dispatching-parallel-agents
 	executing-plans
 	finishing-a-development-branch
-	receiving-code-review
 	requesting-code-review
 	subagent-driven-development
 	systematic-debugging
@@ -201,3 +201,25 @@ else
 		printf "linked %s\n" "$skill"
 	done
 fi
+
+# Removing a skill from the list above doesn't remove its link, so clear out links to skills that
+# are no longer listed. This runs even when the checkout above failed, since it doesn't depend on
+# which tag is checked out.
+for link in "$HOME"/.claude/skills/*; do
+	[ -L "$link" ] || continue
+
+	case "$( readlink "$link" )" in
+		"$SUPERPOWERS_DIR/skills/"*) ;;
+		*) continue ;;
+	esac
+
+	skill=$( basename "$link" )
+
+	case " ${SUPERPOWERS_SKILLS[*]} " in
+		*" $skill "*) ;;
+		*)
+			rm "$link"
+			printf "unlinked %s\n" "$skill"
+			;;
+	esac
+done
