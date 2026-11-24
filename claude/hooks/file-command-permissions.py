@@ -258,8 +258,8 @@ through, each observed running or writing with no prompt:
                                  tree: git prints both files from disk, wherever
                                  they are, with no repository involved (a
                                  --no-index whose operands are both regular files
-                                 inside the session cwd, or /dev/null, still
-                                 auto-approves)
+                                 or directories inside the session cwd, or
+                                 /dev/null, still auto-approves)
 
 `git fetch` therefore auto-approves only against a configured remote (or none,
 for `--all`), and only with options on GIT_FETCH_OPTIONS. A name that merely
@@ -326,6 +326,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -1329,8 +1330,9 @@ def git_diff_no_index_reason(tokens, subcommand_index, cwd, git_cwd):
     path. Revisions and pathspecs both resolve inside the working tree, which is what keeps
     `git diff HEAD~1 HEAD` on the allow side.
 
-    An explicit `--no-index` passes only when both operands are regular files inside the session's
-    cwd or are `/dev/null`, since those are files the Read tool opens without a prompt anyway.
+    An explicit `--no-index` passes only when both operands are regular files or directories inside
+    the session's cwd, or are `/dev/null`, since those are files the Read tool opens without a
+    prompt anyway.
     """
     operands = []
     no_index_flag = None
@@ -1338,6 +1340,10 @@ def git_diff_no_index_reason(tokens, subcommand_index, cwd, git_cwd):
     for argument in tokens[subcommand_index + 1:]:
         if end_of_options:
             operands.append(argument)
+        elif argument == '--end-of-options':
+            # git still honors a `--no-index` after it, but skips other words that start with `-`
+            # when it counts paths, so this loop can't count operands the way git does.
+            return '`--end-of-options` changes which words git diff reads as paths'
         elif argument == '--':
             end_of_options = True
         elif is_long_option(argument, '--no-index'):
@@ -1400,15 +1406,22 @@ def no_index_outside_reason(no_index_flag, operands, git_cwd, session_cwd):
     The bound is the session's cwd, where the Read tool opens files without a prompt, not the `-C`
     directory, so a `-C` can't widen it. A glob asks here but not in an implicit no-index diff,
     where a quoted one is a pathspec that git matches inside the repository. A link to a file
-    passes on where it sits, because git prints the link's text rather than its target. Anything
-    that isn't a regular file asks: git prints every file under a directory, follows a link to a
-    directory to the file named like the other operand, and blocks reading a FIFO.
+    passes on where it sits, because git prints the link's text rather than its target. A
+    directory passes when it isn't itself a link, since git follows a link to a directory to the
+    file named like the other operand, and when `no_index_directory_reason` clears everything
+    under it. Anything else asks, like a FIFO, which blocks the read.
+
+    A directory diffed against a file or `/dev/null` is the one place git follows a link inside
+    the directory: it compares `<directory>/<basename of the other operand>`, and opens whatever a
+    link there points to. So that one path asks unless it's missing or a regular file.
     """
     flag_reason = f'`{no_index_flag}` makes git diff compare files on disk rather than the repository'
     if len(operands) != 2:
         return flag_reason
     root = os.path.realpath(session_cwd)
     denied = read_deny_patterns(session_cwd)
+    budget = NoIndexWalkBudget()
+    directories = []
     for operand in operands:
         if operand == '/dev/null':
             continue
@@ -1419,11 +1432,63 @@ def no_index_outside_reason(no_index_flag, operands, git_cwd, session_cwd):
         if not is_inside(operand, root, git_cwd):
             return f'{flag_reason}, and `{operand}` is outside the working directory'
         path = resolve_all_but_final(operand, git_cwd)
-        if not os.path.isfile(path):
-            return f'{flag_reason}, and `{operand}` is not a regular file'
         if denied is None or any(is_read_denied(candidate, denied)
                                  for candidate in (path, os.path.realpath(path))):
             return f'{flag_reason}, and settings.json denies the Read tool `{operand}`'
+        if os.path.isdir(path) and not os.path.islink(path):
+            directory_reason = no_index_directory_reason(path, denied, budget)
+            if directory_reason:
+                return f'{flag_reason}, and `{operand}` {directory_reason}'
+            directories.append((operand, path))
+        elif not os.path.isfile(path):
+            return f'{flag_reason}, and `{operand}` is not a regular file or directory'
+
+    if len(directories) == 1:
+        directory_operand, directory = directories[0]
+        other_operand = operands[1] if operands[0] == directory_operand else operands[0]
+        name = os.path.basename(other_operand.rstrip('/'))
+        compared = os.path.join(directory, name)
+        if os.path.islink(compared) or (os.path.exists(compared) and not os.path.isfile(compared)):
+            return (f'{flag_reason}, and git would compare `{other_operand}` with `{name}` in '
+                    f'`{directory_operand}`, which is not a regular file')
+    return None
+
+
+class NoIndexWalkBudget:
+    """The time and entry limits that every directory walk on one `git diff` line shares."""
+
+    def __init__(self, seconds=5, max_entries=20000):
+        self.deadline = time.monotonic() + seconds
+        self.remaining_entries = max_entries
+
+
+def no_index_directory_reason(directory, denied, budget):
+    """Why git could read something it shouldn't under a `--no-index` directory, or None.
+
+    git walks the tree without following links, so one inside it prints as the link's text, even
+    when the other side has a directory by that name (verified with git 2.56).
+    `no_index_outside_reason` covers the one exception. So the walk only has to rule out a file
+    the Read tool is denied, and anything that isn't a file, a directory, or a link, like a FIFO
+    that would block the read. A tree too big for the shared budget asks, and so does one with a
+    folder the walk can't list, because git might still list it. The deadline is checked between
+    entries, so one huge or stalled listing can run past it; the hook's own timeout bounds that.
+    """
+    unlisted = []
+    for parent, directory_names, file_names in os.walk(directory, onerror=unlisted.append):
+        for name in directory_names + file_names:
+            budget.remaining_entries -= 1
+            if budget.remaining_entries < 0:
+                return 'holds too many files to check'
+            if time.monotonic() > budget.deadline:
+                return 'took too long to check'
+            path = os.path.join(parent, name)
+            relative = os.path.relpath(path, directory)
+            if is_read_denied(path, denied):
+                return f'holds `{relative}`, which settings.json denies the Read tool'
+            if not (os.path.islink(path) or os.path.isfile(path) or os.path.isdir(path)):
+                return f'holds `{relative}`, which is not a regular file, directory, or link'
+    if unlisted:
+        return f'holds a folder this hook could not list: {unlisted[0]}'
     return None
 
 

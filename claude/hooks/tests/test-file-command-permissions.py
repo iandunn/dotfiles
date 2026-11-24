@@ -3,6 +3,7 @@
 Tests for file-command-permissions.py.
 Run with: python3 test-file-command-permissions.py
 """
+import importlib.util
 import json
 import os
 import shutil
@@ -1729,15 +1730,34 @@ class GitDiffNoIndexTest(unittest.TestCase):
         for name in ('hosts', 'passwd'):
             Path(cls.temp, 'plain', name).write_text(name)
         os.mkdir(os.path.join(cls.repo, '~'))
+        for side in ('left', 'right'):
+            os.makedirs(os.path.join(cls.repo, side, 'nested'))
+            for name in ('x.php', 'nested/y.php'):
+                Path(cls.repo, side, name).write_text(side)
+        os.symlink('/etc/hosts', os.path.join(cls.repo, 'left', 'file-out'))
+        os.symlink(cls.other_repo, os.path.join(cls.repo, 'left', 'nested', 'dir-out'))
+        os.makedirs(os.path.join(cls.repo, 'with-secret', 'deep'))
+        Path(cls.repo, 'with-secret', 'deep', '.npmrc').write_text('secret')
+        os.mkdir(os.path.join(cls.repo, 'with-fifo'))
+        os.mkfifo(os.path.join(cls.repo, 'with-fifo', 'pipe'))
+        os.mkdir(os.path.join(cls.repo, 'fifo-links'))
+        for name in ('a.md', 'null'):
+            os.symlink(os.path.join(cls.repo, 'fifo'), os.path.join(cls.repo, 'fifo-links', name))
+        cls.locked = os.path.join(cls.repo, 'with-locked', 'locked')
+        os.makedirs(cls.locked)
+        os.chmod(cls.locked, 0)
 
     @classmethod
     def tearDownClass(cls):
+        os.chmod(cls.locked, 0o755)
         shutil.rmtree(cls.temp)
 
-    def assertDecision(self, expected, command, cwd=None):
+    def assertDecision(self, expected, command, cwd=None, reason=None):
         out, code = run(command, cwd=cwd or self.repo, env=self.env)
         self.assertEqual(code, 0, f'non-zero exit for: {command}')
         self.assertEqual(decision(out), expected, f'wrong decision for: {command}')
+        if reason:
+            self.assertIn(reason, json.loads(out)['hookSpecificOutput']['permissionDecisionReason'])
 
     def test_files_inside_the_tree_allowed(self):
         """Files inside the tree are ones the Read tool opens without a prompt anyway."""
@@ -1751,9 +1771,60 @@ class GitDiffNoIndexTest(unittest.TestCase):
         """Git prints a link's text rather than its target, so the target's location is moot."""
         self.assertDecision(ALLOW, 'git diff --no-index hosts-link a.md')
 
+    def test_directories_inside_the_tree_allowed(self):
+        """Git prints links inside a directory as their text, so only the files need checking."""
+        self.assertDecision(ALLOW, 'git diff --no-index --stat=200 left right')
+        self.assertDecision(ALLOW, 'git diff --no-index left/nested sub')
+        self.assertDecision(ALLOW, 'git diff --no-index sub a.md')
+        self.assertDecision(ALLOW, 'git diff --no-index left left/x.php')
+
+    def test_directories_holding_something_unreadable_ask(self):
+        self.assertDecision(ASK, 'git diff --no-index left with-secret',
+                            reason='`deep/.npmrc`, which settings.json denies the Read tool')
+        self.assertDecision(ASK, 'git diff --no-index with-fifo right',
+                            reason='`pipe`, which is not a regular file, directory, or link')
+        self.assertDecision(ASK, 'git diff --no-index with-locked right',
+                            reason='holds a folder this hook could not list')
+
+    def test_link_at_the_compared_path_asks(self):
+        """Against a file, git opens `<directory>/<basename>`, following a link there."""
+        self.assertDecision(ASK, 'git diff --no-index fifo-links a.md',
+                            reason='git would compare `a.md` with `a.md` in `fifo-links`')
+        self.assertDecision(ASK, 'git diff --no-index /dev/null fifo-links',
+                            reason='git would compare `/dev/null` with `null` in `fifo-links`')
+
+    def test_end_of_options_asks(self):
+        """git counts paths after `--end-of-options` differently than options before it."""
+        reason = '`--end-of-options` changes which words git diff reads as paths'
+        for command in (
+            'git diff --no-index --end-of-options -d/../../plain left right',
+            'git diff --end-of-options -d /private/etc hosts',
+            'git diff --end-of-options --no-index ../outside hosts',
+            'git diff --no-index --end-of-options left right',
+        ):
+            with self.subTest(command=command):
+                self.assertDecision(ASK, command, reason=reason)
+
+    def test_walk_budget(self):
+        """One budget covers every directory on the line, and running out of it asks."""
+        spec = importlib.util.spec_from_file_location('file_command_permissions', SCRIPT)
+        hook = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(hook)
+        left = os.path.join(self.repo, 'left')
+        self.assertIsNone(hook.no_index_directory_reason(left, [], hook.NoIndexWalkBudget()))
+
+        shared = hook.NoIndexWalkBudget(max_entries=5)
+        self.assertIsNone(hook.no_index_directory_reason(left, [], shared))
+        self.assertEqual(hook.no_index_directory_reason(left, [], shared),
+                         'holds too many files to check')
+
+        expired = hook.NoIndexWalkBudget(seconds=-1)
+        self.assertEqual(hook.no_index_directory_reason(left, [], expired),
+                         'took too long to check')
+
     def test_files_that_can_leave_the_tree_ask(self):
-        self.assertDecision(ASK, 'git diff --no-index sub a.md')
         self.assertDecision(ASK, 'git diff --no-index dir-link a.md')
+        self.assertDecision(ASK, 'git diff --no-index dir-link/ a.md')
         self.assertDecision(ASK, 'git diff --no-index fifo a.md')
         self.assertDecision(ASK, 'git diff --no-index ../a.md c.md',
                             cwd=os.path.join(self.repo, 'sub'))
