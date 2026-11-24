@@ -112,6 +112,18 @@ class NavigationGateTest(GateTestCase):
     def test_non_http_scheme_asks(self):
         self.assertDecision(ASK, 'javascript://localhost/%0aalert(1)', Path.home())
 
+    def test_view_source_of_local_host_allowed(self):
+        self.assertDecision(ALLOW, 'view-source:https://misc.localwp.test/', Path.home())
+
+    def test_uppercase_view_source_of_local_host_allowed(self):
+        self.assertDecision(ALLOW, 'VIEW-SOURCE:https://misc.localwp.test/', Path.home())
+
+    def test_view_source_of_external_host_asks(self):
+        self.assertDecision(ASK, 'view-source:https://example.com/', Path.home())
+
+    def test_nested_view_source_asks(self):
+        self.assertDecision(ASK, 'view-source:view-source:https://misc.localwp.test/', Path.home())
+
 
 @unittest.skipUnless(SITE_MATRIX.is_file(), f'{SITE_MATRIX} not present')
 class PreAuthorizedSiteMatrixTest(GateTestCase):

@@ -136,6 +136,8 @@ BLOCKED_SITE_ALLOWED_ARGUMENTS = {
 # while Chrome opens evil.com. An unmatched bracket makes urlparse raise instead.
 AMBIGUOUS_URL_CHARACTERS = ('\\', '\t', '\r', '\n', ' ', '[', ']')
 
+VIEW_SOURCE_PREFIX = 'view-source:'
+
 
 def is_local_host(host):
     """Returns True for localhost, 127.0.0.1, and *.localhost / *.test hosts."""
@@ -355,6 +357,11 @@ def gate_navigation(tool_input, session_id, cwd, tool_name):
     if not isinstance(url, str) or any(c in url for c in AMBIGUOUS_URL_CHARACTERS):
         emit('ask', f"'{url}' isn't a plain http or https URL, so its host can't be checked reliably.")
         return
+
+    # view-source: still requests the inner URL, so the inner URL's host is the one to check.
+    # Only one prefix is removed, so a nested one fails the scheme check below.
+    if url.lower().startswith(VIEW_SOURCE_PREFIX):
+        url = url[len(VIEW_SOURCE_PREFIX):]
 
     parsed_url = urlparse(url)
 
