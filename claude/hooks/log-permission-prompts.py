@@ -38,6 +38,7 @@ RERUN_HOOKS = {
     'file-command-permissions.py',
     'read-deny-permissions.py',
     'safe-curl-check.py',
+    'scratchpad-redirect.py',
 }
 
 HOOK_TIMEOUT_SECONDS = 10

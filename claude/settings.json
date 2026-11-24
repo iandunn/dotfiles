@@ -639,6 +639,15 @@
             "command": "python3 ~/.claude/hooks/read-deny-permissions.py"
           }
         ]
+      },
+      {
+        "matcher": "Bash|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/scratchpad-redirect.py"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [

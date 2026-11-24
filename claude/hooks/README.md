@@ -68,6 +68,10 @@ The hook also prompts on a few other ways to read a file the line never names: a
 `inject-keyword-rules.py` is a `UserPromptSubmit` hook. It adds a file from `claude/prompt-rules/` to the session's context when the prompt uses that file's keyword, such as "hold" or "pplan". Those rules are long and only matter in sessions that use the keyword, so keeping them out of `CLAUDE.md` saves space in every other session. `CLAUDE.md` keeps a short guardrail for each one, because compaction can summarize away the injected copy.
 
 
+## Scratchpad redirect
+The harness system prompt names a session scratchpad under `/private/tmp/claude-<uid>/` and tells Claude to always use it. The prompt is compiled into the CLI and turns on with a feature flag or the Artifact tool, so no setting removes it (verified in 2.1.331). Sessions followed it over `rules/debugging.md`, and because the scratchpad is outside the project, `git diff --no-index` between its files and the project's prompted. `scratchpad-redirect.py` denies a Write into the scratchpad, and any Bash command that names it without also naming `.claude/tmp`, with a reason that points to the project's `.claude/tmp/`. Edits pass, because tools the hook doesn't cover, like `Artifact` reads, still save files there, and a command that names `.claude/tmp` passes so those files can be moved out. It only steers Claude, because a variable or a relative path still reaches the scratchpad. It's on the prompt logger's `RERUN_HOOKS` even though it never asks, because the logger labels every prompt with each covering hook it doesn't re-run.
+
+
 ## Permission prompt log
 `claude/bin/permission-prompt-report.py` lists the permission prompts Claude Code showed, grouped by reason and sorted by count. `log-permission-prompts.py`, a `PermissionRequest` hook, feeds it through `permission_log.py`, which appends to `~/.local/state/claude-permission-prompts/log.jsonl` with mode `600`, because commands can hold tokens.
 
