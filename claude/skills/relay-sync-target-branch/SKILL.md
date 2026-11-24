@@ -1,12 +1,12 @@
 ---
 name: relay-sync-target-branch
-description: "Merges the trunk into feature branches in a Relay repo: resolves the Relay doc conflicts, commits the merge, pulls and publishes Relay Cloud, commits the sync state, and pushes. Given GitHub PR or GitLab MR numbers, it does that for each one in order, so each can be merged by hand without Relay conflicts. It never merges a PR or MR, and never pushes the repo's default branch."
-when_to_use: "Use when the user is syncing a series of PRs or MRs with the trunk, or updating a branch, in a repo with `.relay/` and `requirements/`. With no PR numbers, it finishes the merge already in progress on the current branch. Invoking this skill is the user's request to commit and push those branches, but nothing else. It never merges a PR or MR."
+description: "Merges the trunk into feature branches in a Relay repo: resolves the Relay doc conflicts, commits the merge, pulls and publishes Relay Cloud, commits the sync state, and pushes. Given GitHub PR or GitLab MR numbers, it does that for each one in order. After the user merges one by hand, the rest need another run, because that merge rewrites the trunk's Relay docs. It never merges a PR or MR, and never pushes the repo's default branch."
+when_to_use: "Use when the user is syncing a series of PRs or MRs with the trunk, or updating a branch, in a repo with `.relay/` and `requirements/`. With no PR numbers, it finishes the merge already in progress on the current branch. Invoking this skill is the user's request to commit and push those branches, but nothing else."
 ---
 
 With no arguments, run steps 1-5 on the merge already in progress on the current branch. With a list of PR or MR numbers, follow **Batch mode** at the bottom, which wraps steps 1-5 around each one.
 
-Never push the repo's default branch, which `git symbolic-ref --short refs/remotes/origin/HEAD` names as `origin/<branch>`. With no arguments, stop and tell the user if the current branch is the default branch.
+Never push the repo's default branch. Read its name with `git ls-remote --symref origin HEAD`, which prints it as `ref: refs/heads/<branch>`, and stop if that fails. It needs `dangerouslyDisableSandbox: true` to reach the remote. `git symbolic-ref refs/remotes/origin/HEAD` isn't reliable, because it can be missing or name a renamed branch. With no arguments, stop and tell the user if HEAD is detached or the current branch is the default branch.
 
 Run every step from the repo root, because `relay-site` looks for its project slug in the current directory and fails with "No project slug found" anywhere else. `git add`, `git commit`, `git push`, and `relay-site` all need `dangerouslyDisableSandbox: true` on the first attempt: the sandbox can't write `.git/index.lock`, reach the SSH agent for signing, or reach Relay Cloud.
 
@@ -58,9 +58,9 @@ Run `git push`. Report the branch, and anything the user has to act on: code con
 
 ## Batch mode
 
-The user's list of numbers is their approval to sync every PR in it, so don't confirm each one. This mode never merges a PR. The user merges each PR by hand afterward.
+The user's list of numbers is their approval to sync every PR in it, so don't confirm each one. This mode never merges a PR. The user merges each PR by hand afterward, and each of those merges rewrites the trunk's Relay docs, so the remaining PRs need another run after each one.
 
-Work through the list in the order given, except that a PR whose base is another listed PR's head goes after that PR. That way it absorbs the base branch after the base branch has been synced. Stop the whole batch at the first PR that hits any of these, and report which PRs were synced and which weren't:
+Stop the whole batch at the first PR that hits any of these. Report the synced PRs and the unsynced PRs as two lists, each in the order the user gave:
 
 - A conflict in any file outside `.relay/` and `requirements/`. Leave the merge in progress so the user can resolve it, then run this skill again with the PRs that are left.
 
@@ -70,18 +70,18 @@ Work through the list in the order given, except that a PR whose base is another
 
 - Any command that fails. Report its full output.
 
-Before the first PR, run `git status`. If the working tree has uncommitted changes, stop and tell the user. Checking out other branches would carry another session's work along with it, or refuse to switch. Record `git branch --show-current` too, so you can return to it at the end.
+Before the first PR, run `git status`. If the working tree has uncommitted changes, stop and tell the user. Checking out other branches would carry another session's work along with it, or refuse to switch. Record `git branch --show-current` too, or `git rev-parse HEAD` when HEAD is detached, so you can return to it at the end.
 
 Use `gh` when `git remote get-url origin` points at GitHub, and `glab` when it points at GitLab. `gh` and `glab` need `dangerouslyDisableSandbox: true` to reach the network.
 
+Read every PR's head and base branches and its state before syncing any of them, with `gh pr view <number> --json headRefName,baseRefName,state` or `glab mr view <number> -F json`. In GitLab's JSON those fields are `source_branch`, `target_branch`, and `state`. Work through the list in the order given, except sort it so every PR comes after any listed PR whose head is its base. That way each PR absorbs its base branch after the base branch has been synced.
+
 For each PR:
 
-1. Read the PR's head and base branches and its state, with `gh pr view <number> --json headRefName,baseRefName,state` or `glab mr view <number> -F json`. In GitLab's JSON those fields are `source_branch`, `target_branch`, and `state`.
+1. Run `git fetch origin`, `git checkout <head>`, then `git merge --ff-only origin/<head>`, so the local branch has every commit already pushed to it.
 
-2. Run `git fetch origin`, `git checkout <head>`, then `git merge --ff-only origin/<head>`, so the local branch has every commit already pushed to it.
+2. Run `git merge --no-edit origin/<base>`. When it merges cleanly, git makes the merge commit itself, so skip ahead to step 3 of the main procedure. Otherwise do steps 1 and 2 of the main procedure.
 
-3. Run `git merge --no-edit origin/<base>`. When it merges cleanly, git makes the merge commit itself, so skip ahead to step 3 of the main procedure. Otherwise do steps 1 and 2 of the main procedure.
+3. Do steps 3-5 of the main procedure: pull Relay Cloud, publish, and push. Then, if `.relay/config.json` is still modified and its diff only moves keys, run `git restore .relay/config.json`, because the next `git checkout` refuses to switch with it dirty, and the next `publish` reorders it again anyway. The clean-tree check before the first PR guarantees that reorder is the only change in it. If the diff changes any value, stop the batch and tell the user.
 
-4. Do steps 3-5 of the main procedure: pull Relay Cloud, publish, and push. Then, if `.relay/config.json` is still modified and its diff only moves keys, run `git restore .relay/config.json`, because the next `git checkout` refuses to switch with it dirty, and the next `publish` reorders it again anyway. The clean-tree check before the first PR guarantees that reorder is the only change in it. If the diff changes any value, stop the batch and tell the user.
-
-Once the list is done, check out the branch you recorded before the first PR. Report the synced PR numbers in one line.
+Once the list is done, check out the branch or commit you recorded before the first PR. Report the synced PR numbers in one line, and remind the user to run this skill again on the remaining PRs after merging each one by hand.
