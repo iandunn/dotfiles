@@ -56,6 +56,7 @@ def claude_sessions_by_tty():
                 "session_id": data.get("sessionId"),
                 "cwd": data.get("cwd"),
                 "name": data.get("name", ""),
+                "started_at": data.get("startedAt"),
             }
     return sessions
 

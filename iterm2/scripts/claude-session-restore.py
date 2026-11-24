@@ -4,13 +4,14 @@
 # has reopened its windows.
 
 import asyncio
-import functools
+import datetime
 import glob
 import json
 import os
 import re
 import shlex
 import subprocess
+import time
 
 import iterm2
 
@@ -52,7 +53,8 @@ def boot_time():
     return int(re.search(r"sec = (\d+)", output).group(1))
 
 
-def running_session_ids():
+def running_sessions():
+    """Returns session ID -> start time for every running Claude Code session."""
     output = subprocess.run(["ps", "-axo", "pid=,comm="], capture_output=True, text=True).stdout
     claude_pids = set()
     for line in output.splitlines():
@@ -60,15 +62,19 @@ def running_session_ids():
         if len(parts) == 2 and os.path.basename(parts[1]) == "claude":
             claude_pids.add(int(parts[0]))
 
-    running = set()
+    running = {}
     for path in glob.glob(os.path.expanduser("~/.claude/sessions/*.json")):
         try:
             with open(path) as file:
                 data = json.load(file)
         except (OSError, ValueError):
             continue
-        if data.get("pid") in claude_pids:
-            running.add(data.get("sessionId"))
+        if (
+            isinstance(data, dict)
+            and data.get("pid") in claude_pids
+            and isinstance(data.get("sessionId"), str)
+        ):
+            running[data["sessionId"]] = data.get("startedAt")
     return running
 
 
@@ -186,27 +192,118 @@ def modified_time(path):
         return 0
 
 
-@functools.lru_cache(maxsize=None)
-def resume_target(session_id):
-    """Returns `read_resume_target()` for the newest transcript with a usable folder, or None
-    when there's no transcript at all.
+def transcript_id_of(path):
+    return os.path.basename(path)[: -len(".jsonl")]
 
-    A session can have copies in several project folders, like when it was resumed from a
-    different folder, and the newest has its latest state. A copy whose folder name matches a
-    candidate is preferred over guessing from the first `cwd` of a newer one.
+
+def is_time(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+RECORD_SESSION_PATTERN = re.compile(r'"session_id":"([0-9a-f-]{36})"')
+UNKNOWN_START_LOOKBACK_SECONDS = 14 * 24 * 60 * 60
+
+
+def index_records(bounds):
+    """Returns session ID -> transcript -> the time (in milliseconds) of the newest record that
+    session wrote there, from every transcript modified since the earliest of `bounds` (session ID
+    -> time).
+
+    Records hold the ID of the session that wrote them as `session_id`, which can differ from the
+    transcript's ID, like after `/clear` followed by `/resumebody`.
     """
-    paths = glob.glob(TRANSCRIPTS % session_id)
-    if not paths:
+    index = {}
+    times = [time for time in bounds.values() if is_time(time)]
+    if not times:
+        return index
+    since = min(times)
+    for path in glob.glob(TRANSCRIPTS % "*"):
+        transcript_id = transcript_id_of(path)
+        if not SESSION_ID_PATTERN.fullmatch(transcript_id) or modified_time(path) * 1000 < since:
+            continue
+        try:
+            with open(path, encoding="utf-8", errors="replace") as file:
+                for line in file:
+                    # Parsing every line of every recent transcript would be slow. Every match is
+                    # checked, because a nested object can hold a `session_id` ahead of the
+                    # record's own.
+                    if not any(
+                        match.group(1) in bounds
+                        for match in RECORD_SESSION_PATTERN.finditer(line)
+                    ):
+                        continue
+                    try:
+                        entry = json.loads(line)
+                        record_time = datetime.datetime.fromisoformat(
+                            entry["timestamp"].replace("Z", "+00:00")
+                        ).timestamp() * 1000
+                    except (ValueError, TypeError, KeyError, AttributeError):
+                        continue
+                    # An ID can be reused by a later process, like after `--resume`, and records
+                    # from before this session started belong to an earlier one.
+                    if (
+                        isinstance(entry, dict)
+                        and entry.get("session_id") in bounds
+                        and entry.get("sessionId") == transcript_id
+                        and record_time >= bounds[entry["session_id"]]
+                    ):
+                        records = index.setdefault(entry["session_id"], {})
+                        records[path] = max(record_time, records.get(path, 0))
+        except OSError:
+            continue
+    return index
+
+
+def record_bounds(sessions):
+    """Returns the earliest time each session (session ID -> start time) could have written a
+    record, so `index_records` can skip older transcripts. A session saved without its start time
+    is looked for over a fixed window."""
+    unknown_start = (time.time() - UNKNOWN_START_LOOKBACK_SECONDS) * 1000
+    return {
+        session_id: started_at if is_time(started_at) else unknown_start
+        for session_id, started_at in sessions.items()
+    }
+
+
+def rank_transcripts(session_id, index):
+    """Returns the session's transcripts, best first.
+
+    The best holds the session's newest record, because that's where its latest work is, and the
+    session's own transcript wins a tie. The session's own transcript also counts as written when
+    the file was, because a process started with `--resume` writes its records under a different
+    `session_id`.
+    """
+    records = index.get(session_id, {})
+    own = sorted(glob.glob(TRANSCRIPTS % session_id), key=modified_time, reverse=True)
+    scored = [(max(records.get(path, 0), modified_time(path) * 1000), path) for path in own]
+    scored += [(time, path) for path, time in records.items() if path not in own]
+    # A stable sort keeps the session's own transcripts ahead of others with the same time.
+    return [path for _, path in sorted(scored, key=lambda item: item[0], reverse=True)]
+
+
+def resume_target(session_id, index):
+    """Returns `read_resume_target()` for the best transcript with a usable folder, plus the
+    transcript's ID for `--resume`, or None when there's no transcript at all.
+
+    A session can have copies of a transcript in several project folders, like when it was
+    resumed from a different folder. A copy whose folder name matches a candidate is preferred
+    over guessing from the first `cwd` of a newer one. Other transcripts are older work, so
+    they're never resumed in its place.
+    """
+    ranked = rank_transcripts(session_id, index)
+    if not ranked:
         return None
+    transcript_id = transcript_id_of(ranked[0])
+    copies = [path for path in ranked if transcript_id_of(path) == transcript_id]
     for allow_fallback in (False, True):
-        for path in sorted(paths, key=modified_time, reverse=True):
+        for path in copies:
             try:
                 root, worktree_name, lost_worktree = read_resume_target(path, allow_fallback)
             except OSError:
                 continue
             if root and os.path.isdir(root) and not CONTROL_CHARACTER_PATTERN.search(root):
-                return root, worktree_name, lost_worktree
-    return None, None, None
+                return root, worktree_name, lost_worktree, transcript_id
+    return None, None, None, None
 
 
 async def find_pane(app, window_frames, saved_window, tab_index, pane_index, pane_id):
@@ -260,8 +357,27 @@ async def restore(connection):
     resumed = []
     lost_worktrees = []
     skipped = {}
-    done = running_session_ids()
     used_panes = set()
+
+    # One pass over the recent transcripts finds where the saved and running sessions last wrote.
+    saved_sessions = {}
+    for snapshot in recent:
+        for _, _, _, pane in claude_panes(snapshot):
+            session_id = pane["claude"].get("session_id")
+            if isinstance(session_id, str) and SESSION_ID_PATTERN.fullmatch(session_id):
+                saved_sessions[session_id] = pane["claude"].get("started_at")
+    running = running_sessions()
+    index = index_records(record_bounds({**saved_sessions, **running}))
+    targets = {}
+
+    # Sessions that are running or already resumed, and the transcripts they're writing to.
+    done = set(running)
+    transcripts_in_use = set()
+    for session_id in running:
+        ranked = rank_transcripts(session_id, index)
+        if ranked:
+            transcripts_in_use.add(transcript_id_of(ranked[0]))
+
     for snapshot in reversed(recent):
         for saved_window, tab_index, pane_index, pane in claude_panes(snapshot):
             claude = pane["claude"]
@@ -275,13 +391,18 @@ async def restore(connection):
             if not SESSION_ID_PATTERN.fullmatch(session_id):
                 reason = "invalid session ID"
             else:
-                target = resume_target(session_id)
+                if session_id not in targets:
+                    targets[session_id] = resume_target(session_id, index)
+                target = targets[session_id]
                 if target is None:
                     reason = "no transcript"
                 elif target[0] is None:
                     reason = "no usable project folder in the transcript"
                 else:
-                    root, worktree_name, lost_worktree = target
+                    root, worktree_name, lost_worktree, transcript_id = target
+                    if transcript_id in transcripts_in_use:
+                        skipped.pop(session_id, None)
+                        continue
 
             if not reason:
                 session, matched_by = await find_pane(
@@ -302,7 +423,7 @@ async def restore(connection):
 
             worktree_option = "--worktree %s " % shlex.quote(worktree_name) if worktree_name else ""
             command = "cd %s && claude %s--resume %s\n" % (
-                shlex.quote(root), worktree_option, session_id
+                shlex.quote(root), worktree_option, transcript_id
             )
             await session.async_activate(select_tab=True, order_window_front=True)
             # With Broadcast Input on, the text would also reach panes the shell check never saw.
@@ -310,6 +431,7 @@ async def restore(connection):
             await asyncio.sleep(RESUME_DELAY_SECONDS)
             used_panes.add(session.session_id)
             done.add(session_id)
+            transcripts_in_use.add(transcript_id)
             skipped.pop(session_id, None)
             resumed.append("%s (by %s)" % (label, matched_by))
             if lost_worktree:
