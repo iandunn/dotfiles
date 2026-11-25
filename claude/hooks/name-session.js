@@ -431,16 +431,33 @@ function startRefresh(job) {
   }
 }
 
-function emit(sessionTitle) {
+// In iTerm, `.bashrc` sets `CLAUDE_CODE_DISABLE_TERMINAL_TITLE` so `iterm-status-dot.py` can show
+// the status dot without its words, which also stops Claude Code from titling the tab.
+function tabTitleSequence(title) {
+  // An app like VS Code that was launched from iTerm inherits iTerm's variables, but isn't iTerm.
+  const isIterm =
+    process.env.TERM_PROGRAM === 'iTerm.app' && process.env.CLAUDE_CODE_ENTRYPOINT === 'cli';
+  if (!title || !isIterm || !process.env.CLAUDE_CODE_DISABLE_TERMINAL_TITLE) {
+    return null;
+  }
+  // A control character in the title would end the escape sequence early.
+  return `\x1b]0;${title.replace(/[\x00-\x1f\x7f-\x9f]/g, '')}\x07`;
+}
+
+function emit(sessionTitle, tabTitle = sessionTitle) {
+  const output = {};
   if (sessionTitle) {
-    process.stdout.write(
-      JSON.stringify({
-        hookSpecificOutput: {
-          hookEventName: 'UserPromptSubmit',
-          sessionTitle,
-        },
-      })
-    );
+    output.hookSpecificOutput = {
+      hookEventName: 'UserPromptSubmit',
+      sessionTitle,
+    };
+  }
+  const sequence = tabTitleSequence(tabTitle);
+  if (sequence) {
+    output.terminalSequence = sequence;
+  }
+  if (Object.keys(output).length > 0) {
+    process.stdout.write(JSON.stringify(output));
   }
   process.exit(0);
 }
@@ -538,7 +555,11 @@ if (process.argv[2] === '--refresh') {
     }
 
     try {
-      emit(handlePrompt(data));
+      // A title from `/rename` or `--name` gets no new title here, but the tab still shows it.
+      // During `/rename` itself, `session_title` still holds the old title.
+      const title = handlePrompt(data);
+      const isRename = typeof data.prompt === 'string' && data.prompt.trim().startsWith('/rename');
+      emit(title, title || (isRename ? null : data.session_title));
     } catch (error) {
       emit(null);
     }

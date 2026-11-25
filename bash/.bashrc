@@ -94,6 +94,16 @@ if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
 	source ~/.iterm2_shell_integration.bash
 fi
 
+# iTerm2 can't show Claude Code's status dot without the status words, so in iTerm this turns off
+# Claude Code's own status reports and `claude/hooks/iterm-status-dot.py` draws a dot-only status.
+# It also turns off Claude Code's tab titles, which the hooks set instead. Other terminals keep
+# Claude Code's reports, and the `unset` stops a terminal launched from iTerm inheriting it.
+if [[ 'iTerm.app' = $TERM_PROGRAM ]]; then
+	export CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1
+else
+	unset CLAUDE_CODE_DISABLE_TERMINAL_TITLE
+fi
+
 # Have to install Bash v5, edit `/etc/shells`, then `chsh`` in order for this to work.
 # See https://github.com/JanDeDobbeleer/oh-my-posh/discussions/3429#discussioncomment-4910228
 # See https://github.com/JanDeDobbeleer/oh-my-posh/issues/3430

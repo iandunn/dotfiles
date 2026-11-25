@@ -21,7 +21,7 @@ There are tests for each hook in [`hooks/tests/`](./hooks/tests/).
 * **[`name-session.js`](./hooks/name-session.js):** Names a session after the ticket it's working on, and updates the name as the work changes. It looks the ticket up in Jira or Teamwork, so you'd need to swap in your own tracker. A manual `/rename` always wins.
 * **[`inject-keyword-rules.py`](./hooks/inject-keyword-rules.py):** Adds a file from [`prompt-rules/`](./prompt-rules/) to the context when a prompt uses its keyword, like "hold" or "pplan". That keeps long, rarely-used instructions out of `CLAUDE.md`, so they don't take up space in every session.
 * **[`inject-open-vscode-tabs.js`](./hooks/inject-open-vscode-tabs.js):** Tells Claude which tabs are open in VS Code, so "this file" or a fuzzy file name works in any terminal session, not just the one connected to the IDE. It reads state written by the [`claude-active-tab-informer`](../vscode/extensions/claude-active-tab-informer/) extension.
-* **[`iterm-approval-dot.py`](./hooks/iterm-approval-dot.py):** Turns the iTerm2 tab's status dot red while Claude is waiting on a permission prompt. iTerm2 uses the same blue for that as it does for new output, so it's easy to miss a session that's blocked.
+* **[`iterm-status-dot.py`](./hooks/iterm-status-dot.py):** Shows Claude's status as a colored dot on the iTerm2 tab, without the status words iTerm2 3.7.8 puts in the tab subtitle. The dot turns red while Claude is waiting on a permission prompt, because iTerm2's own blue for that matches its new-output dot. It needs `CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1` in iTerm, which `bash/.bashrc` sets.
 
 
 ## Skills and commands

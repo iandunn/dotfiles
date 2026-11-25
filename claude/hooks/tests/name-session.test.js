@@ -49,6 +49,9 @@ function environment(directory, { output = "Fake title", lookupOutput = "NONE", 
     CLAUDE_NAME_SESSION_HOOK: "",
     CLAUDE_SESSION_TITLES_DIR: join(directory, "titles"),
     CLAUDE_ACTIVE_VSCODE_TABS_DIR: join(directory, "tabs"),
+    TERM_PROGRAM: "",
+    CLAUDE_CODE_DISABLE_TERMINAL_TITLE: "",
+    CLAUDE_CODE_ENTRYPOINT: "cli",
     ...env,
   };
 }
@@ -232,6 +235,43 @@ test("skips an empty prompt", withSandbox((directory) => {
   const { stdout, calls: made } = prompt(directory, { prompt: "   " });
   assert.equal(stdout, "");
   assert.equal(made.length, 0);
+}));
+
+// -- titling the iTerm tab --
+
+const ITERM = { env: { TERM_PROGRAM: "iTerm.app", CLAUDE_CODE_DISABLE_TERMINAL_TITLE: "1" } };
+
+test("titles the iTerm tab along with the session", withSandbox((directory) => {
+  const { stdout } = prompt(directory, { prompt: "Fix the footer" }, { ...ITERM, output: "Footer fix" });
+  assert.equal(titleFrom(stdout), "Footer fix");
+  assert.equal(JSON.parse(stdout).terminalSequence, "\x1b]0;Footer fix\x07");
+}));
+
+test("titles the iTerm tab with a title the user owns", withSandbox((directory) => {
+  const { stdout } = prompt(directory, { prompt: "Fix the footer", session_title: "foot\x07er" }, ITERM);
+  assert.deepEqual(JSON.parse(stdout), { terminalSequence: "\x1b]0;footer\x07" });
+}));
+
+test("leaves the tab alone outside iTerm", withSandbox((directory) => {
+  const { stdout } = prompt(directory, { prompt: "Fix the footer", session_title: "footer" });
+  assert.equal(stdout, "");
+}));
+
+test("leaves the tab alone during /rename, while the old title is still current", withSandbox((directory) => {
+  const { stdout } = prompt(directory, { prompt: "/rename Header", session_title: "footer" }, ITERM);
+  assert.equal(stdout, "");
+}));
+
+test("leaves the tab alone in an app launched from iTerm", withSandbox((directory) => {
+  const env = { env: { ...ITERM.env, CLAUDE_CODE_ENTRYPOINT: "claude-vscode" } };
+  const { stdout } = prompt(directory, { prompt: "Fix the footer", session_title: "footer" }, env);
+  assert.equal(stdout, "");
+}));
+
+test("leaves the tab to Claude Code when it still titles tabs", withSandbox((directory) => {
+  const env = { env: { TERM_PROGRAM: "iTerm.app" } };
+  const { stdout } = prompt(directory, { prompt: "Fix the footer", session_title: "footer" }, env);
+  assert.equal(stdout, "");
 }));
 
 // -- the refresh --
